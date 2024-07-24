@@ -1,8 +1,15 @@
+using System.IO;
+using System.Media;
+using System.Reflection;
+
 namespace MakeMKV_Title_Decoder {
     public partial class Form1 : Form {
         string OutputFolder = null;
         SegmentIdentifier identifier = null;
         List<Title> AllTitles = null;
+
+        const string HappySound = "Success.wav";
+        const string SadSound = "Success.wav";
 
         public Form1() {
             InitializeComponent();
@@ -77,7 +84,8 @@ namespace MakeMKV_Title_Decoder {
 
                 // Print data
                 Console.WriteLine($"The main feature is {identifier.MainFeature.SimplifiedFileName}");
-                if (!identifier.IsMovie) {
+                if (!identifier.IsMovie)
+                {
                     for (int i = 0; i < identifier.MainTitleTracks.Count; i++)
                     {
                         int episode = i + 1;
@@ -87,11 +95,12 @@ namespace MakeMKV_Title_Decoder {
                 }
                 Console.WriteLine("Possible bonus features:");
                 IEnumerable<Title> bonusFeatures = identifier.BonusFeatures.Select(i => AllTitles[i]);
-                foreach(Title bonus in bonusFeatures.OrderBy(x => x.SimplifiedFileName))
+                foreach (Title bonus in bonusFeatures.OrderBy(x => x.SimplifiedFileName))
                 {
                     Console.WriteLine($"\t{bonus.SimplifiedFileName}");
                 }
 
+                PlaySound(HappySound);
                 /*int n = scraper.Titles[0].SourceFileDuplicateNumber;
                 PlaylistCreater file = new();
                 file.Add("Test1.txt");
@@ -102,6 +111,7 @@ namespace MakeMKV_Title_Decoder {
             }
             catch (Exception err)
             {
+                PlaySound(SadSound);
                 MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -113,15 +123,35 @@ namespace MakeMKV_Title_Decoder {
             this.WindowState = FormWindowState.Normal;
         }
 
+        private void PlaySound(string name) {
+            var assembly = Assembly.GetExecutingAssembly();
+
+            /*foreach(string str in assembly.GetManifestResourceNames())
+            {
+                Console.WriteLine(str);
+            }*/
+            string file = "MakeMKV_Title_Decoder." + name;
+            using (Stream stream = assembly.GetManifestResourceStream(file))
+            {
+                SoundPlayer sound = new SoundPlayer(stream);
+                sound.Play();
+            }
+        }
+
         private void RenameBtn_Click(object sender, EventArgs e) {
-            string folder = null;
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            if (this.OutputFolder == null)
+            {
+                return;
+            }
+            string folder = Path.GetFullPath(this.OutputFolder);
+            /*using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
                 string path = this.OutputFolder;
                 if (path != null)
                 {
                     path = Path.GetFullPath(path);
-                } else
+                }
+                else
                 {
                     path = "C:\\";
                 }
@@ -132,7 +162,7 @@ namespace MakeMKV_Title_Decoder {
                 {
                     folder = openFileDialog.SelectedPath;
                 }
-            }
+            }*/
 
             if (folder != null && identifier != null)
             {
@@ -144,12 +174,14 @@ namespace MakeMKV_Title_Decoder {
                         string newPath = Path.Combine(folder, "MainFeature.mkv");
                         File.Move(oldPath, newPath);
                         Console.WriteLine($"Renamed from {oldPath} to {newPath}");
-                    }catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         Console.WriteLine("Failed to rename file.");
                         MessageBox.Show(ex.Message, "Failed to rename file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-                } else
+                }
+                else
                 {
                     try
                     {
@@ -169,6 +201,10 @@ namespace MakeMKV_Title_Decoder {
                     }
                 }
             }
+        }
+
+        private void Form1_Load(object sender, EventArgs e) {
+            
         }
     }
 }
