@@ -33,6 +33,11 @@ namespace MakeMKV_Title_Decoder {
         public int SourceFileDuplicateNumber {
             get
             {
+                if (SourceFileName == null)
+                {
+                    return 0;
+                }
+
                 int dot = SourceFileName.LastIndexOf('.');
                 string ext = SourceFileName.Substring(dot + 1);
                 if (ext.EndsWith(')'))
@@ -74,9 +79,9 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public void Scrape(int maxScrapesDebug = -1) {
-            // Give time for mouse to stop moving
-            Thread.Sleep(3000);
+            Console.WriteLine("Scraping...");
 
+            input.ResetCursor();
             bool checkNext = true;
             for (int i = 0; checkNext; i++)
             {
@@ -92,6 +97,7 @@ namespace MakeMKV_Title_Decoder {
                 if (i == 0)
                 {
                     Titles.Add(title);
+                    input.ScrollDown(1);
                     continue;
                 }
 
@@ -105,11 +111,15 @@ namespace MakeMKV_Title_Decoder {
                 {
                     checkNext = false;
                 }
+
+                input.ScrollDown(1);
             }
+
+            // TODO tell input what the max title length is?
         }
 
         private Title ParseTitle(int index) {
-            input.SelectTitle(index);
+            //input.SelectTitle(index);
             string data = input.CopyTitleInformation();
             Title title = new();
             title.Index = index;
@@ -164,12 +174,28 @@ namespace MakeMKV_Title_Decoder {
                             }
                             break;
                         case "Segment map":
-                            title.Segments = value.Split(',').Select(int.Parse).ToList();
+                            foreach(string range in value.Split(',')) {
+                                int dash = range.IndexOf('-');
+                                if (dash >= 0)
+                                {
+                                    int min = int.Parse(range.Substring(0, dash));
+                                    int max = int.Parse(range.Substring(dash + 1));
+                                    for(int i = min; i <= max; i++)
+                                    {
+                                        title.Segments.Add(i);
+                                    }
+                                } else
+                                {
+                                    title.Segments.Add(int.Parse(range));
+                                }
+                            }
                             break;
                         case "File name":
                             title.FileName = value;
                             break;
                         case "Segment count":
+                        case "Comment":
+                        case "Source title ID":
                             // Ignored
                             break;
                         default:

@@ -32,6 +32,7 @@
             toolTip1 = new ToolTip(components);
             ScrapeBtn = new Button();
             IncludeAttachmentsCheckBox = new CheckBox();
+            RenameBtn = new Button();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -102,11 +103,22 @@
             IncludeAttachmentsCheckBox.Text = "Include Attachments";
             IncludeAttachmentsCheckBox.UseVisualStyleBackColor = true;
             // 
+            // RenameBtn
+            // 
+            RenameBtn.Location = new Point(123, 154);
+            RenameBtn.Name = "RenameBtn";
+            RenameBtn.Size = new Size(75, 23);
+            RenameBtn.TabIndex = 3;
+            RenameBtn.Text = "Rename";
+            RenameBtn.UseVisualStyleBackColor = true;
+            RenameBtn.Click += RenameBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(355, 219);
+            ClientSize = new Size(435, 219);
+            Controls.Add(RenameBtn);
             Controls.Add(IncludeAttachmentsCheckBox);
             Controls.Add(ScrapeBtn);
             Controls.Add(panel1);
@@ -127,5 +139,6 @@
         private Button ScrapeBtn;
         private RadioButton BonusFeaturesRadioBtn;
         private CheckBox IncludeAttachmentsCheckBox;
+        private Button RenameBtn;
     }
 }
