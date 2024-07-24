@@ -51,6 +51,13 @@ namespace MakeMKV_Title_Decoder {
                 }
             }
         }
+        public string SimplifiedFileName {
+            get
+            {
+                int underscore = this.FileName.LastIndexOf('_');
+                return this.FileName.Substring(underscore + 1);
+            }
+        }
 
         public Title() { }
 

@@ -44,7 +44,6 @@ namespace MakeMKV_Title_Decoder {
                 Console.WriteLine($"Found {scraper.Titles.Count} titles.");
 
                 identifier = new SegmentIdentifier(scraper.Titles, getDvdType());
-                Console.WriteLine($"MainFeature = {identifier.MainFeature.FileName}");
 
                 input.ResetCursor();
                 List<int> sortedDeselect = new(identifier.DeselectTitlesIndicies);
@@ -77,15 +76,20 @@ namespace MakeMKV_Title_Decoder {
                 Refocus();
 
                 // Print data
-                Console.WriteLine($"The main feature is {identifier.MainFeature.FileName}");
-                if (identifier.MainTitleTracks.Count > 0)
-                {
-                    for(int i = 0; i < identifier.MainTitleTracks.Count; i++)
+                Console.WriteLine($"The main feature is {identifier.MainFeature.SimplifiedFileName}");
+                if (!identifier.IsMovie) {
+                    for (int i = 0; i < identifier.MainTitleTracks.Count; i++)
                     {
                         int episode = i + 1;
                         Title title = AllTitles[identifier.MainTitleTracks[i]];
-                        Console.WriteLine($"Episode {episode:D2} is file {title.FileName}");
+                        Console.WriteLine($"\tEpisode {episode:D2} is file {title.SimplifiedFileName}");
                     }
+                }
+                Console.WriteLine("Possible bonus features:");
+                IEnumerable<Title> bonusFeatures = identifier.BonusFeatures.Select(i => AllTitles[i]);
+                foreach(Title bonus in bonusFeatures.OrderBy(x => x.SimplifiedFileName))
+                {
+                    Console.WriteLine($"\t{bonus.SimplifiedFileName}");
                 }
 
                 /*int n = scraper.Titles[0].SourceFileDuplicateNumber;

@@ -15,18 +15,13 @@ namespace MakeMKV_Title_Decoder {
         }*/
 
         public Title MainFeature; // Movies only
-        //public bool HasMainFeature = false;
         public List<int> MainTitleTracks = new(); // Non-movies only
         public bool IsMovie { get => MainTitleTracks.Count == 0; }
         public HashSet<int> DeselectTitlesIndicies = new();
+        public HashSet<int> BonusFeatures = new();
 
         public SegmentIdentifier(List<Title> allTitles, DvdType type) {
             HashSet<int> titles = new(allTitles.Select(x => x.Index)); // Create a copy so we can edit
-
-            if (type == DvdType.Movie)
-            {
-                //HasMainFeature = true;
-            }
 
             // Main feature will have the longest run time. In case of a tie, pick the playlist file that contains chapter info
             // NOTE: this is still done for the non-movie types to weed-out the play-all playlist and help
@@ -49,7 +44,7 @@ namespace MakeMKV_Title_Decoder {
                 }
             }
             titles.Remove(MainFeature.Index);
-            Console.WriteLine($"MainFeature = {MainFeature.FileName}");
+            Console.WriteLine($"MainFeature = {MainFeature.SimplifiedFileName}");
             Console.WriteLine($"\tSegments = [{string.Join(", ", MainFeature.Segments)}]");
             if (type != DvdType.Movie)
             {
@@ -68,7 +63,7 @@ namespace MakeMKV_Title_Decoder {
                 {
                     this.DeselectTitlesIndicies.Add(index);
                     titles.Remove(index);
-                    Console.WriteLine($"Found dupicate main feature = {allTitles[index].FileName}");
+                    Console.WriteLine($"Found dupicate main feature = {allTitles[index].SimplifiedFileName}");
                 }
             }
 
@@ -85,7 +80,7 @@ namespace MakeMKV_Title_Decoder {
                     Console.WriteLine("Found solution for episode layout.");
                     foreach(int index in titleIndex)
                     {
-                        Console.WriteLine($"\t[{string.Join(", ", allTitles[index].Segments)}] @ {allTitles[index].FileName}");
+                        Console.WriteLine($"\t[{string.Join(", ", allTitles[index].Segments)}] @ {allTitles[index].SimplifiedFileName}");
                     }
 
                     // Adjust lists as needed
@@ -108,11 +103,12 @@ namespace MakeMKV_Title_Decoder {
 
                         if (!MainTitleTracks.Contains(index) && areAllSegmentsInList(allTitles[index].Segments, this.MainFeature.Segments))
                         {
-                            Console.WriteLine($"Segments [{string.Join(", ", allTitles[index].Segments)}] found in main feature, deselting {allTitles[index].FileName}");
+                            Console.WriteLine($"Segments [{string.Join(", ", allTitles[index].Segments)}] found in main feature, deselting {allTitles[index].SimplifiedFileName}");
                             DeselectTitlesIndicies.Add(index);
                             titles.Remove(index);
                         }
                     }
+
                 } else {
                     Console.WriteLine("Failed to find enough segments for TV/Bonus features, treating as a movie instead.");
 
@@ -143,60 +139,104 @@ namespace MakeMKV_Title_Decoder {
                         titles.Remove(index);
                     }
                 }
+            }
 
-                // Double check any playlists/streams that were deselected, and deselect all streams
-                // that whose segments are only contained in deselected stream (done recursivley)
-                // For instance, in 'Into the spider-verse' the second main feature gets deselected,
-                // but it has a unique credits stream that only it uses, so there is no point in
-                // downloading that credit stream separately if we didnt want that feature
-                //
-                // NOTE to be deselected, segment MUST ASLO be contained in a deselected title.
-                // This is to prevent removing things like special features
-                bool changes = true;
-                while (changes)
+            // Now attempt to find other playlists that can be broken down into smaller chunks.
+            // For example, there is usually a "play all" button for bonus features, but we want those to be separate
+            // This is done for every remaining item to try and get the smallest possible chunk
+            bool changed = true;
+            while (changed)
+            {
+                changed = false;
+
+                temp = new(titles);
+                foreach (int playlistIndex in temp)
                 {
-                    temp = new(titles);
-                    foreach (int index in temp)
+                    if (playlistIndex == MainFeature.Index || MainTitleTracks.Contains(playlistIndex))
                     {
-                        int danglingSegmentCount = 0;
-                        foreach (int segment in allTitles[index].Segments)
+                        // Skip anything that we already determined to be a part of the main feature
+                        continue;
+                    }
+
+                    IEnumerable<Title> remainingTitles = titles.Where(index => index != playlistIndex).Select(index => allTitles[index]);
+                    List<int>? subtitlesIndexs = solveEpisodes(allTitles[playlistIndex], remainingTitles); // Subtitles as in titles that make up the larger main title
+                    if (subtitlesIndexs != null)
+                    {
+                        // We managed to divide this title into smaller bits
+                        DeselectTitlesIndicies.Add(playlistIndex);
+                        titles.Remove(playlistIndex);
+                        BonusFeatures.Remove(playlistIndex); // Incase it was added here by a different playlist
+                        changed = true;
+
+                        Console.WriteLine($"Title was subdivided into smaller videos: [{string.Join(", ", allTitles[playlistIndex].Segments)}] @ {allTitles[playlistIndex].SimplifiedFileName}");
+                        foreach(int subindex in subtitlesIndexs)
                         {
-                            bool referencedInDeselected = false;
-                            foreach (int deselectedIndex in DeselectTitlesIndicies)
-                            {
-                                if (allTitles[deselectedIndex].Segments.Contains(segment))
-                                {
-                                    referencedInDeselected = true;
-                                    break;
-                                }
-                            }
+                            Console.WriteLine($"\t[{string.Join(", ", allTitles[subindex].Segments)}] @ {allTitles[subindex].SimplifiedFileName}");
+                            BonusFeatures.Add(subindex); // So we dont accidently remove them later, we do care about them <3
+                        }
+                    }
+                }
+            }
 
-                            bool referencedInKeptTitle = false;
-                            foreach (int keptIndex in titles.Where(x => x != index))
-                            {
-                                if (allTitles[keptIndex].Segments.Contains(segment))
-                                {
-                                    referencedInKeptTitle = true;
-                                    break;
-                                }
-                            }
+            // Double check any playlists/streams that were deselected, and deselect all streams
+            // that whose segments are only contained in deselected stream (done recursivley)
+            // For instance, in 'Into the spider-verse' the second main feature gets deselected,
+            // but it has a unique credits stream that only it uses, so there is no point in
+            // downloading that credit stream separately if we didnt want that feature
+            //
+            // NOTE to be deselected, segment MUST ASLO be contained in a deselected title.
+            // This is to prevent removing things like special features
+            bool changes = true;
+            while (changes)
+            {
+                temp = new(titles);
+                foreach (int index in temp)
+                {
+                    if (MainTitleTracks.Contains(index) || index == MainFeature.Index || BonusFeatures.Contains(index))
+                    {
+                        // We want to save these, dont deselect them even if they are dangling
+                        continue;
+                    }
 
-                            if (referencedInDeselected && !referencedInKeptTitle)
+                    int danglingSegmentCount = 0;
+                    foreach (int segment in allTitles[index].Segments)
+                    {
+                        bool referencedInDeselected = false;
+                        foreach (int deselectedIndex in DeselectTitlesIndicies)
+                        {
+                            if (allTitles[deselectedIndex].Segments.Contains(segment))
                             {
-                                danglingSegmentCount++;
+                                referencedInDeselected = true;
+                                break;
                             }
                         }
 
-                        // If ALL segments are dangling i.e. this file was only used in deselected segments
-                        if (danglingSegmentCount == allTitles[index].Segments.Count)
+                        bool referencedInKeptTitle = false;
+                        foreach (int keptIndex in titles.Where(x => x != index))
                         {
-                            DeselectTitlesIndicies.Add(index);
-                            titles.Remove(index);
+                            if (allTitles[keptIndex].Segments.Contains(segment))
+                            {
+                                referencedInKeptTitle = true;
+                                break;
+                            }
+                        }
+
+                        if (referencedInDeselected && !referencedInKeptTitle)
+                        {
+                            danglingSegmentCount++;
                         }
                     }
 
-                    changes = (temp.Count != titles.Count);
+                    // If ALL segments are dangling i.e. this file was only used in deselected segments
+                    if (danglingSegmentCount == allTitles[index].Segments.Count)
+                    {
+                        Console.WriteLine($"Removed {allTitles[index].SimplifiedFileName} as its segments were only found in deselected titles [{string.Join(", ", allTitles[index].Segments)}]");
+                        DeselectTitlesIndicies.Add(index);
+                        titles.Remove(index);
+                    }
                 }
+
+                changes = (temp.Count != titles.Count);
             }
         }
 
