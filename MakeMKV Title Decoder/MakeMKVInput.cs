@@ -7,6 +7,26 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder {
+
+    internal struct TitleInfo {
+        public bool Audio = false;
+        public bool Video = false;
+        public bool Subtitles = false;
+        public bool Attachment = false;
+
+        public TitleInfo() {
+
+        }
+
+        public bool MeetsRequirements(TitleInfo requirements) {
+            // Requirement means we must have that value, but if requirement is false it doesnt matter what the value is
+            return (!requirements.Audio || this.Audio)
+                && (!requirements.Video || this.Video)
+                && (!requirements.Subtitles || this.Subtitles)
+                && (!requirements.Attachment || this.Attachment);
+        }
+    }
+
     internal class MakeMKVInput {
         // TODO until I can add support for scrolling
         const int MaxTitles = 56;
@@ -21,7 +41,7 @@ namespace MakeMKV_Title_Decoder {
         const int TitleCheckBoxX = 50;
         const int DropdownX = 29;
 
-        int currentIndex = 0;
+        public int CurrentIndex { get; private set; } = 0;
         Dictionary<int, int> attachmentDistance = new();
 
         public string ReadOutputFolder() {
@@ -35,23 +55,23 @@ namespace MakeMKV_Title_Decoder {
         public void FocusMKV() {
             MoveMouse(FirstTitleLocation);
             ClickMouse();
-            currentIndex = 0;
+            CurrentIndex = 0;
             if (verbose) Console.WriteLine($"Input: reset to index=0");
         }
 
         public void ResetCursor() {
-            int resetCount = currentIndex + 10;
+            int resetCount = CurrentIndex + 10;
             if(verbose) Console.WriteLine($"Resetting by scrolling up {resetCount} times.");
             ScrollUp(resetCount);
             ScrollDown(1); // Get off the root node
-            currentIndex = 0;
+            CurrentIndex = 0;
             if (verbose) Console.WriteLine("Reset. New index=0");
         }
 
         // NOTE: Forces scroll and breaks known state
         public void ScrollDown(int count) {
-            currentIndex += count;
-            if (verbose) Console.WriteLine($"Input: scroll down {count} counts. New index={currentIndex}");
+            CurrentIndex += count;
+            if (verbose) Console.WriteLine($"Input: scroll down {count} counts. New index={CurrentIndex}");
             while (count > 0)
             {
                 DownArrow();
@@ -61,8 +81,8 @@ namespace MakeMKV_Title_Decoder {
 
         // NOTE: Forces scroll and breaks known state
         public void ScrollUp(int count) {
-            currentIndex -= count;
-            if (verbose) Console.WriteLine($"Input: scroll up {count} counts. New index={currentIndex}");
+            CurrentIndex -= count;
+            if (verbose) Console.WriteLine($"Input: scroll up {count} counts. New index={CurrentIndex}");
             while (count > 0)
             {
                 UpArrow();
@@ -71,8 +91,8 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public void ScrollTo(int index) {
-            if (verbose) Console.WriteLine($"Input: scroll from current={currentIndex} to target={index}");
-            int delta = index - currentIndex;
+            if (verbose) Console.WriteLine($"Input: scroll from current={CurrentIndex} to target={index}");
+            int delta = index - CurrentIndex;
             if (delta >= 0)
             {
                 if (verbose) Console.WriteLine($"\tScroll down x{delta}");
@@ -88,16 +108,26 @@ namespace MakeMKV_Title_Decoder {
 
         // Expensive. Has to search for the attachment field
         public void ToggleAttachment() {
-            if (!attachmentDistance.ContainsKey(currentIndex))
+            if (!attachmentDistance.ContainsKey(CurrentIndex))
             {
                 OpenDropdown();
 
-                int distance = 0;
+                int oldIndex = CurrentIndex;
+                string lastInfo = null;
+
                 while (true)
                 {
-                    DownArrow();
-                    distance++;
+                    ScrollDown(1);
                     string data = CopyTitleInformation();
+                    if (data == lastInfo)
+                    {
+                        CurrentIndex--; // We didnt actually move down
+                        break;
+                    } else
+                    {
+                        lastInfo = data;
+                    }
+
                     if (data.StartsWith("Attachment information"))
                     {
                         Space();
@@ -105,25 +135,102 @@ namespace MakeMKV_Title_Decoder {
                     } else if (data.StartsWith("Title information"))
                     {
                         UpArrow();
-                        distance = -1;
                         break;
                     }
                 }
-                attachmentDistance[currentIndex] = distance;
+                attachmentDistance[CurrentIndex] = (CurrentIndex - oldIndex);
+                ScrollTo(oldIndex);
                 LeftArrow();
-                LeftArrow();
+                CurrentIndex = oldIndex;
             } else
             {
-                int distance = attachmentDistance[currentIndex];
+                int distance = attachmentDistance[CurrentIndex];
                 if (distance >= 0)
                 {
                     OpenDropdown();
                     ScrollDown(distance);
                     Space();
-                    LeftArrow();
+                    ScrollUp(distance);
                     LeftArrow();
                 }
             }
+        }
+
+        // If all requiredTracks are found, will end the search early
+        public TitleInfo SearchTitleInfo(TitleInfo requiredTracks, bool selectAttachment) {
+            TitleInfo result = new();
+
+            Console.WriteLine("Searching title for tracks...");
+            OpenDropdown();
+
+            int oldIndex = CurrentIndex;
+            string lastInfo = null;
+
+            while (true)
+            {
+                if (result.MeetsRequirements(requiredTracks))
+                {
+                    break;
+                }
+
+                ScrollDown(1);
+                string data = CopyTitleInformation();
+                if (data == lastInfo)
+                {
+                    CurrentIndex--; // We didnt actually move down
+                    break;
+                } else
+                {
+                    lastInfo = data;
+                }
+
+                if (data.StartsWith("Track information"))
+                {
+                    using (StringReader sr = new StringReader(data))
+                    {
+                        string line = sr.ReadLine(); // Track information
+                        line = sr.ReadLine();
+                        if (line != null)
+                        {
+                            if (line == "Type: Subtitles")
+                            {
+                                if (!result.Subtitles) Console.WriteLine("\tFound subtitles.");
+                                result.Subtitles = true;
+                            }
+                            else if (line == "Type: Video")
+                            {
+                                if (!result.Video) Console.WriteLine("\tFound video.");
+                                result.Video = true;
+                            }
+                            else if (line == "Type: Audio")
+                            {
+                                if (!result.Audio) Console.WriteLine("\tFound audio.");
+                                result.Audio = true;
+                            }
+                        }
+                    }
+                }
+                else if (data.StartsWith("Attachment information"))
+                {
+                    attachmentDistance[CurrentIndex] = (CurrentIndex - oldIndex);
+                    if (!result.Attachment) Console.WriteLine("\tFound attachment.");
+                    result.Attachment = true;
+                    if (selectAttachment)
+                    {
+                        Space();
+                    }
+                }
+                else if (data.StartsWith("Title information"))
+                {
+                    break;
+                }
+            }
+            
+            ScrollTo(oldIndex);
+            LeftArrow();
+            CurrentIndex = oldIndex;
+
+            return result;
         }
 
         public void ToggleTitleSelection() {

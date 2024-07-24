@@ -33,6 +33,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void ScrapeBtn_Click(object sender, EventArgs e) {
+            Console.Clear();
             try
             {
                 // Give time for mouse to stop moving
@@ -40,19 +41,23 @@ namespace MakeMKV_Title_Decoder {
                 Thread.Sleep(3000);
 
                 MakeMKVInput input = new();
+                MakeMKVScraper scraper = new MakeMKVScraper(input);
+
+                // Save output folder for later
                 this.OutputFolder = input.ReadOutputFolder();
                 Console.WriteLine($"Found output path: {this.OutputFolder ?? "null"}");
 
+                // scrape all titles
                 input.FocusMKV();
-                MakeMKVScraper scraper = new MakeMKVScraper(input);
                 scraper.Scrape();
+                input.ResetCursor(); // Get back to a known state after scraping
                 AllTitles = scraper.Titles;
 
                 Console.WriteLine($"Found {scraper.Titles.Count} titles.");
 
+                // identify which to keep
                 identifier = new SegmentIdentifier(scraper.Titles, getDvdType());
-
-                input.ResetCursor();
+                
                 List<int> sortedDeselect = new(identifier.DeselectTitlesIndicies);
                 sortedDeselect.Sort();
                 foreach (int titleIndex in sortedDeselect)
@@ -63,7 +68,7 @@ namespace MakeMKV_Title_Decoder {
 
                 if (this.IncludeAttachmentsCheckBox.Checked)
                 {
-                    if (identifier.MainTitleTracks.Count == 0)
+                    if (identifier.IsMovie)
                     {
                         input.ScrollTo(identifier.MainFeature.Index);
                         input.ToggleAttachment();
@@ -76,6 +81,43 @@ namespace MakeMKV_Title_Decoder {
                         {
                             input.ScrollTo(index);
                             input.ToggleAttachment();
+                        }
+                    }
+                }
+
+                // Filter additional titles
+                HashSet<int> attachments = new(identifier.MainTitleTracks);
+                HashSet<int> remainingTitles = new(AllTitles.Select(x => x.Index));
+                remainingTitles.RemoveWhere(i => identifier.DeselectTitlesIndicies.Contains(i));
+                List<int> sortedRemainingTitles = new(remainingTitles);
+                sortedRemainingTitles.Sort();
+                IEnumerable<int> remainingTitlesOrder = sortedRemainingTitles;
+                if (Math.Abs(input.CurrentIndex - sortedRemainingTitles.First()) > Math.Abs(input.CurrentIndex - sortedRemainingTitles.Last()))
+                {
+                    // If closer to the bottom than the top, reverse the order for maximum SPEED
+                    remainingTitlesOrder = sortedRemainingTitles.Reverse<int>();
+                }
+                if (identifier.IsMovie)
+                {
+                    attachments.Add(identifier.MainFeature.Index);
+                }
+                if (this.IgnoreIncompleteCheckBox.Checked)
+                {
+                    TitleInfo requiredTracks = new();
+                    requiredTracks.Audio = true;
+                    requiredTracks.Video = true;
+                    foreach (int index in remainingTitlesOrder)
+                    {
+                        input.ScrollTo(index);
+                        var titleInfo = input.SearchTitleInfo(requiredTracks, false);
+                        if (!(titleInfo.Video && titleInfo.Audio))
+                        {
+                            input.ToggleTitleSelection(); //identifier.DeselectTitlesIndicies.Add(index);
+                            Console.WriteLine($"Deselected {AllTitles[index].SimplifiedFileName} did not have both audio and video.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Title {AllTitles[index].SimplifiedFileName} met all requirements.");
                         }
                     }
                 }
@@ -204,7 +246,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void Form1_Load(object sender, EventArgs e) {
-            
+
         }
     }
 }

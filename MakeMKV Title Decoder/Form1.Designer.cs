@@ -30,6 +30,7 @@
             TvRadioBtn = new RadioButton();
             MovieRadioBtn = new RadioButton();
             toolTip1 = new ToolTip(components);
+            IgnoreIncompleteCheckBox = new CheckBox();
             ScrapeBtn = new Button();
             IncludeAttachmentsCheckBox = new CheckBox();
             RenameBtn = new Button();
@@ -81,6 +82,19 @@
             toolTip1.SetToolTip(MovieRadioBtn, "Movies prefer the single playlist for the main feature");
             MovieRadioBtn.UseVisualStyleBackColor = true;
             // 
+            // IgnoreIncompleteCheckBox
+            // 
+            IgnoreIncompleteCheckBox.AutoSize = true;
+            IgnoreIncompleteCheckBox.Checked = true;
+            IgnoreIncompleteCheckBox.CheckState = CheckState.Checked;
+            IgnoreIncompleteCheckBox.Location = new Point(15, 118);
+            IgnoreIncompleteCheckBox.Name = "IgnoreIncompleteCheckBox";
+            IgnoreIncompleteCheckBox.Size = new Size(155, 19);
+            IgnoreIncompleteCheckBox.TabIndex = 4;
+            IgnoreIncompleteCheckBox.Text = "Ignore incomplete video";
+            toolTip1.SetToolTip(IgnoreIncompleteCheckBox, "If a stream contains only video or only audio it will be ignored");
+            IgnoreIncompleteCheckBox.UseVisualStyleBackColor = true;
+            // 
             // ScrapeBtn
             // 
             ScrapeBtn.Location = new Point(12, 154);
@@ -118,6 +132,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(435, 219);
+            Controls.Add(IgnoreIncompleteCheckBox);
             Controls.Add(RenameBtn);
             Controls.Add(IncludeAttachmentsCheckBox);
             Controls.Add(ScrapeBtn);
@@ -141,5 +156,6 @@
         private RadioButton BonusFeaturesRadioBtn;
         private CheckBox IncludeAttachmentsCheckBox;
         private Button RenameBtn;
+        private CheckBox IgnoreIncompleteCheckBox;
     }
 }
