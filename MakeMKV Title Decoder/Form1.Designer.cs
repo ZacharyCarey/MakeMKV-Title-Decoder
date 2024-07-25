@@ -34,6 +34,7 @@
             ScrapeBtn = new Button();
             IncludeAttachmentsCheckBox = new CheckBox();
             RenameBtn = new Button();
+            CollapseCheckBox = new CheckBox();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -97,7 +98,8 @@
             // 
             // ScrapeBtn
             // 
-            ScrapeBtn.Location = new Point(12, 154);
+            ScrapeBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            ScrapeBtn.Location = new Point(12, 184);
             ScrapeBtn.Name = "ScrapeBtn";
             ScrapeBtn.Size = new Size(75, 23);
             ScrapeBtn.TabIndex = 1;
@@ -119,7 +121,8 @@
             // 
             // RenameBtn
             // 
-            RenameBtn.Location = new Point(123, 154);
+            RenameBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            RenameBtn.Location = new Point(123, 184);
             RenameBtn.Name = "RenameBtn";
             RenameBtn.Size = new Size(75, 23);
             RenameBtn.TabIndex = 3;
@@ -127,11 +130,25 @@
             RenameBtn.UseVisualStyleBackColor = true;
             RenameBtn.Click += RenameBtn_Click;
             // 
+            // CollapseCheckBox
+            // 
+            CollapseCheckBox.AutoSize = true;
+            CollapseCheckBox.Checked = true;
+            CollapseCheckBox.CheckState = CheckState.Checked;
+            CollapseCheckBox.Location = new Point(15, 143);
+            CollapseCheckBox.Name = "CollapseCheckBox";
+            CollapseCheckBox.Size = new Size(163, 19);
+            CollapseCheckBox.TabIndex = 5;
+            CollapseCheckBox.Text = "Collapse all when finished";
+            toolTip1.SetToolTip(CollapseCheckBox, "When finished scraping, will collapse all titles.");
+            CollapseCheckBox.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(435, 219);
+            Controls.Add(CollapseCheckBox);
             Controls.Add(IgnoreIncompleteCheckBox);
             Controls.Add(RenameBtn);
             Controls.Add(IncludeAttachmentsCheckBox);
@@ -157,5 +174,6 @@
         private CheckBox IncludeAttachmentsCheckBox;
         private Button RenameBtn;
         private CheckBox IgnoreIncompleteCheckBox;
+        private CheckBox CollapseCheckBox;
     }
 }

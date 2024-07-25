@@ -124,7 +124,11 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void ScrollTo(Title title, int offset) {
-            int index = quickLookup[title.Index] + offset;
+            ScrollTo(title.Index, offset);
+        }
+
+        private void ScrollTo(int titleIndex, int offset) {
+            int index = quickLookup[titleIndex] + offset;
             if (verbose) Console.WriteLine($"Input: scroll from current={CurrentIndex} to target={index}");
             int delta = index - CurrentIndex;
             if (delta >= 0)
@@ -176,6 +180,17 @@ namespace MakeMKV_Title_Decoder {
             Tab();
             Tab();
             return data;
+        }
+
+        // Note: this leaves the input in a bit of an unknown state when finished
+        public void CollapseAll() {
+            ScrollTo(0, 0);
+            CloseDropdown();
+            for (int i = 1; i < quickLookup.Count; i++)
+            {
+                DownArrow();
+                CloseDropdown();
+            }
         }
 
 

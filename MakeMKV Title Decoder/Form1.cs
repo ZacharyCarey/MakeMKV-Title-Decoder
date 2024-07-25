@@ -89,6 +89,11 @@ namespace MakeMKV_Title_Decoder {
                     }
                 }
 
+                if (this.CollapseCheckBox.Checked)
+                {
+                    input.CollapseAll();
+                }
+
                 Refocus();
 
                 // Print data
