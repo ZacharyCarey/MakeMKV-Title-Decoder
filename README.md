@@ -15,6 +15,7 @@ It will then automatically deselect any MKV files that are repeated sections of 
 while disabling the "Play All" videos so you are only ripping the smallest amount of data possible.
 
 There is an optional feature to automatically detect MKV files with no sound, which are usually federal warning screens, and deselect them automatically.
+Assuming you didn't change the output folder after scraping, the "Rename" button will rename any main features or episodes found to assist in renaming files to something more useful.
 
 ## Movie
 When "Movie" is selected, the main feature is considered the longest file in the list, and any files that contain the same segments are automatically deselected.
@@ -22,3 +23,4 @@ When "Movie" is selected, the main feature is considered the longest file in the
 ## TV
 When "TV" is selected, the main feature is found, but deselected. Instead the individual files that make up that main feature are kept i.e. it tries to keep the individual episodes.
 If you would rather keep all the episodes as one long "play all" file, simply select "Movie" instead.
+

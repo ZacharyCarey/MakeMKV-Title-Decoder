@@ -74,7 +74,13 @@ namespace MakeMKV_Title_Decoder {
                 Console.WriteLine("Searching for TV episodes...");
 
                 IEnumerable<Title> remainingTitles = titles.Select(index => allTitles[index]);
-                List<int>? titleIndex = solveEpisodes(MainFeature, remainingTitles);
+                HashSet<int> deselections = new();
+                List<int>? titleIndex = solveEpisodes(MainFeature, remainingTitles, deselections);
+                foreach (int d in deselections)
+                {
+                    this.DeselectTitlesIndicies.Add(d);
+                    titles.Remove(d);
+                }
                 if (titleIndex != null)
                 {
                     Console.WriteLine("Found solution for episode layout.");
@@ -152,14 +158,20 @@ namespace MakeMKV_Title_Decoder {
                 temp = new(titles);
                 foreach (int playlistIndex in temp)
                 {
-                    if (playlistIndex == MainFeature.Index || MainTitleTracks.Contains(playlistIndex))
+                    if (playlistIndex == MainFeature.Index || MainTitleTracks.Contains(playlistIndex) || DeselectTitlesIndicies.Contains(playlistIndex))
                     {
                         // Skip anything that we already determined to be a part of the main feature
                         continue;
                     }
 
                     IEnumerable<Title> remainingTitles = titles.Where(index => index != playlistIndex).Select(index => allTitles[index]);
-                    List<int>? subtitlesIndexs = solveEpisodes(allTitles[playlistIndex], remainingTitles); // Subtitles as in titles that make up the larger main title
+                    HashSet<int> deselections = new(); // usually exact matches only
+                    List<int>? subtitlesIndexs = solveEpisodes(allTitles[playlistIndex], remainingTitles, deselections); // Subtitles as in titles that make up the larger main title
+                    foreach(int d in deselections)
+                    {
+                        this.DeselectTitlesIndicies.Add(d);
+                        titles.Remove(d);
+                    }
                     if (subtitlesIndexs != null)
                     {
                         // We managed to divide this title into smaller bits
@@ -244,12 +256,12 @@ namespace MakeMKV_Title_Decoder {
             return segments.Where(checkInList.Contains).Count() == segments.Count;
         }
 
-        static List<int>? solveEpisodes(Title mainFeature, IEnumerable<Title> titles) {
+        static List<int>? solveEpisodes(Title mainFeature, IEnumerable<Title> titles, HashSet<int> deselections) {
             List<Title> sorted = titles.OrderBy(x => x.Segments.Count).ToList();
-            return solveEpisodes(mainFeature, sorted, 0);
+            return solveEpisodes(mainFeature, sorted, 0, deselections);
         }
 
-        static List<int>? solveEpisodes(Title mainFeature, List<Title> titles, int index) {
+        static List<int>? solveEpisodes(Title mainFeature, List<Title> titles, int index, HashSet<int> deselections) {
             if (index == mainFeature.Segments.Count)
             {
                 // Success! Start returning the result
@@ -260,7 +272,15 @@ namespace MakeMKV_Title_Decoder {
             {
                 if (segmentsMatch(title.Segments, mainFeature, index))
                 {
-                    List<int>? result = solveEpisodes(mainFeature, titles, index + title.Segments.Count);
+                    // Special case. If they are exactly the same as the main feature, just keep the main feature
+                    if (index == 0 && title.Segments.Count == mainFeature.Segments.Count)
+                    {
+                        Console.WriteLine($"Deselected {title.SimplifiedFileName} because it has the exact same segments as another feature ({mainFeature.SimplifiedFileName}).");
+                        deselections.Add(title.Index);
+                        continue;
+                    }
+
+                    List<int>? result = solveEpisodes(mainFeature, titles, index + title.Segments.Count, deselections);
                     if (result != null)
                     {
                         result.Insert(0, title.Index);
