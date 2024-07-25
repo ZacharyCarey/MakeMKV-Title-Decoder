@@ -41,6 +41,9 @@ namespace MakeMKV_Title_Decoder {
         const int TitleCheckBoxX = 50;
         const int DropdownX = 29;
 
+        Dictionary<int, int> quickLookup = new();
+        int maxIndex = -1;
+
         public int CurrentIndex { get; private set; } = 0;
 
         public string ReadOutputFolder() {
@@ -58,18 +61,44 @@ namespace MakeMKV_Title_Decoder {
             if (verbose) Console.WriteLine($"Input: reset to index=0");
         }
 
-        public void ResetCursor() {
+        /*public void ResetCursor(List<Title> allTitles) {
             int resetCount = CurrentIndex + 10;
             if(verbose) Console.WriteLine($"Resetting by scrolling up {resetCount} times.");
+            maxIndex = -1;
             ScrollUp(resetCount);
             ScrollDown(1); // Get off the root node
             CurrentIndex = 0;
             if (verbose) Console.WriteLine("Reset. New index=0");
+
+            quickLookup.Clear();
+            int index = -1;
+            for (int i = 0; i < allTitles.Count; i++)
+            {
+                index++;
+                quickLookup[i] = index;
+                index += allTitles[i].Tracks.Count();
+            }
+            maxIndex = index;
+        }*/
+
+        // Special function called by the scraper to get into a known state
+        public void SetTitles(List<Title> allTitles) {
+            quickLookup.Clear();
+            int index = -1;
+            for (int i = 0; i < allTitles.Count; i++)
+            {
+                index++;
+                quickLookup[i] = index;
+                index += allTitles[i].Tracks.Count();
+            }
+            maxIndex = index;
+            this.CurrentIndex = maxIndex;
         }
 
         // NOTE: Forces scroll and breaks known state
         public void ScrollDown(int count) {
             CurrentIndex += count;
+            if (maxIndex >= 0) Debug.Assert(CurrentIndex >= 0 && CurrentIndex <= maxIndex, "Scrolled out of bounds.");
             if (verbose) Console.WriteLine($"Input: scroll down {count} counts. New index={CurrentIndex}");
             while (count > 0)
             {
@@ -81,6 +110,7 @@ namespace MakeMKV_Title_Decoder {
         // NOTE: Forces scroll and breaks known state
         public void ScrollUp(int count) {
             CurrentIndex -= count;
+            if (maxIndex >= 0) Debug.Assert(CurrentIndex >= 0 && CurrentIndex <= maxIndex, "Scrolled out of bounds.");
             if (verbose) Console.WriteLine($"Input: scroll up {count} counts. New index={CurrentIndex}");
             while (count > 0)
             {
@@ -89,7 +119,12 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
-        public void ScrollTo(int index) {
+        public void ScrollTo(Title title) {
+            ScrollTo(title, 0);
+        }
+
+        private void ScrollTo(Title title, int offset) {
+            int index = quickLookup[title.Index] + offset;
             if (verbose) Console.WriteLine($"Input: scroll from current={CurrentIndex} to target={index}");
             int delta = index - CurrentIndex;
             if (delta >= 0)
@@ -107,21 +142,20 @@ namespace MakeMKV_Title_Decoder {
 
         // Will auto scroll to desired title
         public void ToggleAttachment(Title titleInfo) {
-            ScrollTo(titleInfo.Index);
+            int offset = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index + 1; // The +1 is to reach the first track
 
-            int dist = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index;
-
-            OpenDropdown();
-            ScrollDown(dist + 1); // The +1 is to reach the first track
+            //OpenDropdown();
+            ScrollTo(titleInfo, offset); 
             Space();
-            ScrollUp(dist + 1);
-            CloseDropdown();
+            //ScrollUp(dist + 1);
+            //CloseDropdown();
 
             // Sanity check
-            Debug.Assert(CurrentIndex == titleInfo.Index, "Index matching failed.");
+            //Debug.Assert(CurrentIndex == titleInfo.Index, "Index matching failed.");
         }
 
-        public void ToggleTitleSelection(int index) {
+        public void ToggleTitleSelection(Title title) {
+            ScrollTo(title);
             Space();
         }
 

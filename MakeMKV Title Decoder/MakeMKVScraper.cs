@@ -98,7 +98,7 @@ namespace MakeMKV_Title_Decoder {
         public void Scrape(int maxScrapesDebug = -1) {
             Console.WriteLine("Scraping...");
 
-            input.ResetCursor();
+            //input.ResetCursor();
             Title lastTitle = ParseTitle(0);
             while (true)
             {
@@ -168,41 +168,23 @@ namespace MakeMKV_Title_Decoder {
                 {
                     // We found the last title
                     if (verbose) Console.WriteLine("\tFound the end of the list while searching for tracks, finishing up last track now.");
-                    input.ScrollUp(lastTitle.Tracks.Count - 1); // Note: the last "scroll down" didnt move so this accounts for that
-                    input.CloseDropdown();
                     Titles.Add(lastTitle);
                     break;
                 }
 
-                // Close the current dropdown
-                input.ScrollTo(lastTitle.Index); //input.ScrollUp(lastTitle.Tracks.Count + 1); // Plus one since we should be on the next title now
-                input.CloseDropdown();
+                // Add to master list of titles
                 Titles.Add(lastTitle);
 
-                // Assert for expected index
-                if (input.CurrentIndex != lastTitle.Index)
-                {
-                    throw new Exception("Assert failed while scraping: expected title index did not match.");
-                }
-
-                if (input.CurrentIndex == maxScrapesDebug)
+                if (Titles.Count == maxScrapesDebug)
                 {
                     break;
                 }
 
-                // Move to the next title
-                input.ScrollDown(1);
-
-                // Double check the index is correct
-                if (input.CurrentIndex != lastTitle.Index + 1)
-                {
-                    throw new Exception("Assert failed while scraping: expected title index does not follow the previous title index.");
-                }
-
-                // Parse the title and repeat to parse the tracks
+                // Parse the next title and repeat to parse the tracks
                 lastTitle = ParseTitle(Titles.Count, lastData);
             }
 
+            input.SetTitles(Titles);
             Console.WriteLine("Finished scraping.");
         }
 

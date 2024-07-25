@@ -51,15 +51,14 @@ namespace MakeMKV_Title_Decoder {
                 // scrape all titles
                 input.FocusMKV();
                 scraper.Scrape();
-                input.ResetCursor(); // Get back to a known state after scraping
                 AllTitles = scraper.Titles;
 
                 Console.WriteLine($"Found {scraper.Titles.Count} titles.");
-                Application.Exit();
+
                 // identify which to keep
                 identifier = new SegmentIdentifier(scraper.Titles, getDvdType());
                
-                foreach(Title title in AllTitles)
+                foreach(Title title in AllTitles.Reverse<Title>()) // Reverse since our cursor will be at the 
                 {
                     // Determined by identifier
                     bool deselect = identifier.DeselectTitlesIndicies.Contains(title.Index);
@@ -78,16 +77,15 @@ namespace MakeMKV_Title_Decoder {
                         }
                     }
 
-                    input.ScrollTo(title.Index);
-
-                    if (deselect)
-                    {
-                        input.ToggleTitleSelection(title.Index);
-                    }
-
+                    // Do in bottom-up order
                     if ((deselect == false) && isMainFeature && this.IncludeAttachmentsCheckBox.Checked)
                     {
                         input.ToggleAttachment(title);
+                    }
+
+                    if (deselect)
+                    {
+                        input.ToggleTitleSelection(title);
                     }
                 }
 
