@@ -244,18 +244,7 @@ namespace MakeMKV_Title_Decoder {
             return segments.Where(checkInList.Contains).Count() == segments.Count;
         }
 
-        /*struct IndexWithValue<T> {
-            public int Index;
-            public T Value;
-
-            public IndexWithValue(int index, T value) {
-                Index = index;
-                Value = value;
-            }
-        }*/
-
         static List<int>? solveEpisodes(Title mainFeature, IEnumerable<Title> titles) {
-            //List<IndexWithValue<Title>> withIndex = titles.Select(t => new IndexWithValue<Title>())
             List<Title> sorted = titles.OrderBy(x => x.Segments.Count).ToList();
             return solveEpisodes(mainFeature, sorted, 0);
         }

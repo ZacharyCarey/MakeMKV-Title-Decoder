@@ -8,6 +8,14 @@ using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace MakeMKV_Title_Decoder {
+    internal enum TrackType {
+        Video,
+        Audio,
+        Subtitle,
+        Attachment,
+        Other
+    }
+
     internal struct Title {
         public string Name;
         public string SourceFileName;
@@ -17,6 +25,7 @@ namespace MakeMKV_Title_Decoder {
         public double Size; // Expressed in GB
         public string FileName;
         public int Index;
+        public List<TrackType> Tracks = new();
         public string SourceFileExtension {
             get {
                 int dot = SourceFileName.LastIndexOf('.');
@@ -78,6 +87,7 @@ namespace MakeMKV_Title_Decoder {
 
     internal class MakeMKVScraper {
 
+        const bool verbose = true;
         public List<Title> Titles = new();
         MakeMKVInput input;
 
@@ -89,45 +99,118 @@ namespace MakeMKV_Title_Decoder {
             Console.WriteLine("Scraping...");
 
             input.ResetCursor();
-            bool checkNext = true;
-            for (int i = 0; checkNext; i++)
+            Title lastTitle = ParseTitle(0);
+            while (true)
             {
-                if (i == maxScrapesDebug)
+                if (verbose) Console.WriteLine($"Found title {lastTitle.SimplifiedFileName}");
+
+                // Get track info
+                input.OpenDropdown();
+                string lastData = null;
+                while (true)
+                {
+                    input.ScrollDown(1);
+                    string data = input.CopyTitleInformation();
+                    if (data == lastData)
+                    {
+                        // Found the end of the list while searching tracks
+                        //if (verbose) Console.WriteLine($"\tFound end-of-list while searching tracks for {lastTitle.SimplifiedFileName}.");
+                        lastData = null;
+                        break;
+                    } else
+                    {
+                        lastData = data;
+                    }
+
+                    // get track name
+                    if (data.StartsWith("Track information"))
+                    {
+                        using (StringReader sr = new StringReader(data))
+                        {
+                            string line = sr.ReadLine(); // Track information
+                            line = sr.ReadLine();
+                            if (line == "Type: Subtitles")
+                            {
+                                lastTitle.Tracks.Add(TrackType.Subtitle);
+                                if (verbose) Console.WriteLine("\tFound track 'Subtitle'.");
+                            }
+                            else if (line == "Type: Video")
+                            {
+                                lastTitle.Tracks.Add(TrackType.Video);
+                                if (verbose) Console.WriteLine("\tFound track 'Video'.");
+                            }
+                            else if (line == "Type: Audio")
+                            {
+                                lastTitle.Tracks.Add(TrackType.Audio);
+                                if (verbose) Console.WriteLine("\tFound track 'Audio'.");
+                            } else
+                            {
+                                lastTitle.Tracks.Add(TrackType.Other);
+                                if (verbose) Console.WriteLine("\tFound track 'Other'.");
+                            }
+
+                        }
+                    }
+                    else if (data.StartsWith("Attachment information"))
+                    {
+                        lastTitle.Tracks.Add(TrackType.Attachment);
+                        if (verbose) Console.WriteLine("\tFound track 'Attachment'");
+                    }
+                    else if (data.StartsWith("Title information"))
+                    {
+                        // Found the next title while searching tracks
+                        if (verbose) Console.WriteLine("Found title for next track, finishing up last track now.");
+                        break;
+                    }
+                }
+
+                if (lastData == null)
+                {
+                    // We found the last title
+                    if (verbose) Console.WriteLine("\tFound the end of the list while searching for tracks, finishing up last track now.");
+                    input.ScrollUp(lastTitle.Tracks.Count - 1); // Note: the last "scroll down" didnt move so this accounts for that
+                    input.CloseDropdown();
+                    Titles.Add(lastTitle);
+                    break;
+                }
+
+                // Close the current dropdown
+                input.ScrollTo(lastTitle.Index); //input.ScrollUp(lastTitle.Tracks.Count + 1); // Plus one since we should be on the next title now
+                input.CloseDropdown();
+                Titles.Add(lastTitle);
+
+                // Assert for expected index
+                if (input.CurrentIndex != lastTitle.Index)
+                {
+                    throw new Exception("Assert failed while scraping: expected title index did not match.");
+                }
+
+                if (input.CurrentIndex == maxScrapesDebug)
                 {
                     break;
                 }
 
-                // Get the title info
-                Title title = ParseTitle(i);
-
-                // this is our first entry so dont try to compare for end of list yet
-                if (i == 0)
-                {
-                    Titles.Add(title);
-                    input.ScrollDown(1);
-                    continue;
-                }
-
-                // Compare to see if this is the end of the list
-                if (title != Titles.Last())
-                {
-                    // Valid title
-                    Titles.Add(title);
-                    checkNext = true;
-                } else
-                {
-                    checkNext = false;
-                }
-
+                // Move to the next title
                 input.ScrollDown(1);
+
+                // Double check the index is correct
+                if (input.CurrentIndex != lastTitle.Index + 1)
+                {
+                    throw new Exception("Assert failed while scraping: expected title index does not follow the previous title index.");
+                }
+
+                // Parse the title and repeat to parse the tracks
+                lastTitle = ParseTitle(Titles.Count, lastData);
             }
 
-            // TODO tell input what the max title length is?
+            Console.WriteLine("Finished scraping.");
         }
 
-        private Title ParseTitle(int index) {
-            //input.SelectTitle(index);
-            string data = input.CopyTitleInformation();
+        private Title ParseTitle(int index, string data = null) {
+            if (data == null)
+            {
+                data = input.CopyTitleInformation();
+            }
             Title title = new();
             title.Index = index;
             using (StringReader sr = new StringReader(data))

@@ -42,7 +42,6 @@ namespace MakeMKV_Title_Decoder {
         const int DropdownX = 29;
 
         public int CurrentIndex { get; private set; } = 0;
-        Dictionary<int, int> attachmentDistance = new();
 
         public string ReadOutputFolder() {
             MoveMouse(OutputFolderLocation);
@@ -106,142 +105,31 @@ namespace MakeMKV_Title_Decoder {
             //Console.WriteLine($"\tnew index={currentIndex}");
         }
 
-        // Expensive. Has to search for the attachment field
-        public void ToggleAttachment() {
-            if (!attachmentDistance.ContainsKey(CurrentIndex))
-            {
-                OpenDropdown();
+        // Will auto scroll to desired title
+        public void ToggleAttachment(Title titleInfo) {
+            ScrollTo(titleInfo.Index);
 
-                int oldIndex = CurrentIndex;
-                string lastInfo = null;
+            int dist = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index;
 
-                while (true)
-                {
-                    ScrollDown(1);
-                    string data = CopyTitleInformation();
-                    if (data == lastInfo)
-                    {
-                        CurrentIndex--; // We didnt actually move down
-                        break;
-                    } else
-                    {
-                        lastInfo = data;
-                    }
-
-                    if (data.StartsWith("Attachment information"))
-                    {
-                        Space();
-                        break;
-                    } else if (data.StartsWith("Title information"))
-                    {
-                        UpArrow();
-                        break;
-                    }
-                }
-                attachmentDistance[CurrentIndex] = (CurrentIndex - oldIndex);
-                ScrollTo(oldIndex);
-                LeftArrow();
-                CurrentIndex = oldIndex;
-            } else
-            {
-                int distance = attachmentDistance[CurrentIndex];
-                if (distance >= 0)
-                {
-                    OpenDropdown();
-                    ScrollDown(distance);
-                    Space();
-                    ScrollUp(distance);
-                    LeftArrow();
-                }
-            }
-        }
-
-        // If all requiredTracks are found, will end the search early
-        public TitleInfo SearchTitleInfo(TitleInfo requiredTracks, bool selectAttachment) {
-            TitleInfo result = new();
-
-            Console.WriteLine("Searching title for tracks...");
             OpenDropdown();
+            ScrollDown(dist + 1); // The +1 is to reach the first track
+            Space();
+            ScrollUp(dist + 1);
+            CloseDropdown();
 
-            int oldIndex = CurrentIndex;
-            string lastInfo = null;
-
-            while (true)
-            {
-                if (result.MeetsRequirements(requiredTracks))
-                {
-                    break;
-                }
-
-                ScrollDown(1);
-                string data = CopyTitleInformation();
-                if (data == lastInfo)
-                {
-                    CurrentIndex--; // We didnt actually move down
-                    break;
-                } else
-                {
-                    lastInfo = data;
-                }
-
-                if (data.StartsWith("Track information"))
-                {
-                    using (StringReader sr = new StringReader(data))
-                    {
-                        string line = sr.ReadLine(); // Track information
-                        line = sr.ReadLine();
-                        if (line != null)
-                        {
-                            if (line == "Type: Subtitles")
-                            {
-                                if (!result.Subtitles) Console.WriteLine("\tFound subtitles.");
-                                result.Subtitles = true;
-                            }
-                            else if (line == "Type: Video")
-                            {
-                                if (!result.Video) Console.WriteLine("\tFound video.");
-                                result.Video = true;
-                            }
-                            else if (line == "Type: Audio")
-                            {
-                                if (!result.Audio) Console.WriteLine("\tFound audio.");
-                                result.Audio = true;
-                            }
-                        }
-                    }
-                }
-                else if (data.StartsWith("Attachment information"))
-                {
-                    attachmentDistance[CurrentIndex] = (CurrentIndex - oldIndex);
-                    if (!result.Attachment) Console.WriteLine("\tFound attachment.");
-                    result.Attachment = true;
-                    if (selectAttachment)
-                    {
-                        Space();
-                    }
-                }
-                else if (data.StartsWith("Title information"))
-                {
-                    break;
-                }
-            }
-            
-            ScrollTo(oldIndex);
-            LeftArrow();
-            CurrentIndex = oldIndex;
-
-            return result;
+            // Sanity check
+            Debug.Assert(CurrentIndex == titleInfo.Index, "Index matching failed.");
         }
 
-        public void ToggleTitleSelection() {
+        public void ToggleTitleSelection(int index) {
             Space();
         }
 
-        private void OpenDropdown() {
+        public void OpenDropdown() {
             RightArrow();
         }
 
-        private void CloseDropdown() {
+        public void CloseDropdown() {
             LeftArrow();
         }
 

@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Media;
 using System.Reflection;
@@ -9,7 +10,7 @@ namespace MakeMKV_Title_Decoder {
         List<Title> AllTitles = null;
 
         const string HappySound = "Success.wav";
-        const string SadSound = "Success.wav";
+        const string SadSound = "Error.wav";
 
         public Form1() {
             InitializeComponent();
@@ -54,71 +55,39 @@ namespace MakeMKV_Title_Decoder {
                 AllTitles = scraper.Titles;
 
                 Console.WriteLine($"Found {scraper.Titles.Count} titles.");
-
+                Application.Exit();
                 // identify which to keep
                 identifier = new SegmentIdentifier(scraper.Titles, getDvdType());
-                
-                List<int> sortedDeselect = new(identifier.DeselectTitlesIndicies);
-                sortedDeselect.Sort();
-                foreach (int titleIndex in sortedDeselect)
+               
+                foreach(Title title in AllTitles)
                 {
-                    input.ScrollTo(titleIndex);
-                    input.ToggleTitleSelection();
-                }
+                    // Determined by identifier
+                    bool deselect = identifier.DeselectTitlesIndicies.Contains(title.Index);
+                    bool isMainFeature = (title.Index == identifier.MainFeature.Index) || (identifier.MainTitleTracks.Contains(title.Index));
+                    bool isBonusFeature = identifier.BonusFeatures.Contains(title.Index);
 
-                if (this.IncludeAttachmentsCheckBox.Checked)
-                {
-                    if (identifier.IsMovie)
+                    // Filter additional titles
+                    if ((deselect == false) && (isMainFeature == false) && (isBonusFeature == false) && this.IgnoreIncompleteCheckBox.Checked)
                     {
-                        input.ScrollTo(identifier.MainFeature.Index);
-                        input.ToggleAttachment();
-                    }
-                    else
-                    {
-                        List<int> sortedTracks = new(identifier.MainTitleTracks);
-                        sortedTracks.Sort();
-                        foreach (int index in sortedTracks)
+                        bool hasAudio = title.Tracks.Contains(TrackType.Audio);
+                        bool hasVideo = title.Tracks.Contains(TrackType.Video);
+                        if (!(hasAudio && hasVideo))
                         {
-                            input.ScrollTo(index);
-                            input.ToggleAttachment();
+                            deselect = true;
+                            Console.WriteLine($"Deselected {title.SimplifiedFileName} did not have both audio and video.");
                         }
                     }
-                }
 
-                // Filter additional titles
-                HashSet<int> attachments = new(identifier.MainTitleTracks);
-                HashSet<int> remainingTitles = new(AllTitles.Select(x => x.Index));
-                remainingTitles.RemoveWhere(i => identifier.DeselectTitlesIndicies.Contains(i));
-                List<int> sortedRemainingTitles = new(remainingTitles);
-                sortedRemainingTitles.Sort();
-                IEnumerable<int> remainingTitlesOrder = sortedRemainingTitles;
-                if (Math.Abs(input.CurrentIndex - sortedRemainingTitles.First()) > Math.Abs(input.CurrentIndex - sortedRemainingTitles.Last()))
-                {
-                    // If closer to the bottom than the top, reverse the order for maximum SPEED
-                    remainingTitlesOrder = sortedRemainingTitles.Reverse<int>();
-                }
-                if (identifier.IsMovie)
-                {
-                    attachments.Add(identifier.MainFeature.Index);
-                }
-                if (this.IgnoreIncompleteCheckBox.Checked)
-                {
-                    TitleInfo requiredTracks = new();
-                    requiredTracks.Audio = true;
-                    requiredTracks.Video = true;
-                    foreach (int index in remainingTitlesOrder)
+                    input.ScrollTo(title.Index);
+
+                    if (deselect)
                     {
-                        input.ScrollTo(index);
-                        var titleInfo = input.SearchTitleInfo(requiredTracks, false);
-                        if (!(titleInfo.Video && titleInfo.Audio))
-                        {
-                            input.ToggleTitleSelection(); //identifier.DeselectTitlesIndicies.Add(index);
-                            Console.WriteLine($"Deselected {AllTitles[index].SimplifiedFileName} did not have both audio and video.");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Title {AllTitles[index].SimplifiedFileName} met all requirements.");
-                        }
+                        input.ToggleTitleSelection(title.Index);
+                    }
+
+                    if ((deselect == false) && isMainFeature && this.IncludeAttachmentsCheckBox.Checked)
+                    {
+                        input.ToggleAttachment(title);
                     }
                 }
 
