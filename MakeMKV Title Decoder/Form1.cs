@@ -381,12 +381,16 @@ namespace MakeMKV_Title_Decoder {
                         }
                         input.SetTitles(scraper.Titles, true);
                         input.FocusMKV();
+                        this.IdentifyData();
                     } else
                     {
-                        input = null;
+                        MakeMKVInput? oldInput = this.input;
+                        this.input = null;
+                        this.IdentifyData();
+                        this.input = oldInput;
                     }
 
-                    this.IdentifyData();
+                    
                 }
             }
         }

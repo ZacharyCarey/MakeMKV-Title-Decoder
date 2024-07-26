@@ -131,20 +131,24 @@ namespace MakeMKV_Title_Decoder {
             ScrollTo(title, 0);
         }
 
-        private void ScrollTo(Title title, int trackIndex) {
-            ScrollTo(title.Index, trackIndex);
+        private void ScrollTo(Title title, int trackIndex, bool forceTrack = false) {
+            ScrollTo(title.Index, trackIndex, forceTrack);
         }
 
-        private void ScrollTo(int titleIndex) {
-            ScrollTo(titleIndex, 0);
+        private void ScrollTo(int titleIndex, bool forceTrack = false) {
+            ScrollTo(titleIndex, 0, forceTrack);
         }
 
-        private void ScrollTo(int titleIndex, int trackIndex) {
+        private void ScrollTo(int titleIndex, int trackIndex, bool forceTrack = false) {
             int index;
             if (this.Collapsed)
             {
                 // Note: we have to ignore trackIndex since it is not viewable
                 index = titleIndex;
+                if (forceTrack)
+                {
+                    index += trackIndex;
+                }
             } else
             {
                 index = quickLookup[titleIndex] + trackIndex;
@@ -169,15 +173,19 @@ namespace MakeMKV_Title_Decoder {
         public void ToggleAttachment(Title titleInfo) {
             int trackIndex = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index + 1; // The +1 is to reach the first track
 
-            Debug.Assert(this.Collapsed == false, "Expected the tracks to be expanded, can't toggle attachment.");
-            //OpenDropdown();
-            ScrollTo(titleInfo, trackIndex); 
-            Space();
-            //ScrollUp(dist + 1);
-            //CloseDropdown();
-
-            // Sanity check
-            //Debug.Assert(CurrentIndex == titleInfo.Index, "Index matching failed.");
+            if (this.Collapsed)
+            {
+                ScrollTo(titleInfo);
+                OpenDropdown();
+                ScrollTo(titleInfo, trackIndex, true);
+                Space();
+                ScrollTo(titleInfo);
+                CloseDropdown();
+            } else
+            {
+                ScrollTo(titleInfo, trackIndex);
+                Space();
+            }
         }
 
         public void ToggleTitleSelection(Title title) {

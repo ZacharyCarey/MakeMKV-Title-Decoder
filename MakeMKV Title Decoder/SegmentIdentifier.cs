@@ -523,7 +523,7 @@ namespace MakeMKV_Title_Decoder {
             int deltaSeconds = (int)(larger - smaller).TotalSeconds;
             int onePercentSeconds = (int)(larger.TotalSeconds * 0.01);
             int maxDelta = Math.Max(onePercentSeconds, 1); // Minimum 1 second
-            return deltaSeconds >= maxDelta;
+            return deltaSeconds <= maxDelta;
         }
     }
 
