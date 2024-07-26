@@ -38,4 +38,8 @@
     <Folder Include="Resources\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="JsonSerializable" Version="1.2.4" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JsonSerializable;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace MakeMKV_Title_Decoder {
         Other
     }
 
-    internal struct Title {
+    internal struct Title : IJsonSerializable {
         public string Name;
         public string SourceFileName;
         public TimeSpan Duration;
@@ -83,9 +84,94 @@ namespace MakeMKV_Title_Decoder {
         public static bool operator !=(Title left, Title right) {
             return !(left == right);
         }
+
+        public override string ToString() {
+            StringBuilder sb = new();
+            sb.AppendLine("Title information:");
+            if (this.Name != null) sb.AppendLine($"\tName: {this.Name}");
+            if (this.SourceFileName != null) sb.AppendLine($"\tSource file name: {this.SourceFileName}");
+            sb.AppendLine($"\tDuration: {this.Duration}");
+            sb.AppendLine($"\tChapters count: {this.ChaptersCount}");
+            sb.AppendLine($"\t Size: {this.Size} GB");
+            sb.AppendLine($"\tSegment map: [{string.Join(", ", this.Segments)}]");
+            sb.AppendLine($"\tTracks: [{string.Join(", ", this.Tracks.Select(x => x.ToString()))}]");
+            sb.Append($"\tFile name: {this.FileName}");
+            return sb.ToString();
+        }
+
+        public JsonData SaveToJson() {
+            JsonObject data = new();
+            data["Name"] = new JsonString(this.Name);
+            data["Source File Name"] = new JsonString(this.SourceFileName);
+            data["Duration"] = new JsonString(Duration.ToString());
+            data["Chapters Count"] = new JsonInteger(ChaptersCount);
+            data["Segments"] = new JsonArray(this.Segments.Select(x => (JsonData)new JsonInteger(x)).ToList());
+            data["Size"] = new JsonDecimal(this.Size);
+            data["File Name"] = new JsonString(this.FileName);
+            data["Index"] = new JsonInteger(this.Index);
+            data["Tracks"] = new JsonArray(this.Tracks.Select(x => (JsonData)new SerializableTrack(x).SaveToJson()).ToList());
+            return data;
+        }
+
+        public void LoadFromJson(JsonData Data) {
+            JsonObject data = (JsonObject)Data;
+            this.Name = (JsonString)data["Name"];
+            this.SourceFileName = (JsonString)data["Source File Name"];
+            this.Duration = TimeSpan.Parse((JsonString)data["Duration"]);
+            this.ChaptersCount = (int)(JsonInteger)data["Chapters Count"];
+            this.Segments = ((JsonArray)data["Segments"]).Select(x => (int)(JsonInteger)x).ToList();
+            this.Size = (JsonDecimal)data["Size"];
+            this.FileName = (JsonString)data["File Name"];
+            this.Index = (int)(JsonInteger)data["Index"];
+            this.Tracks = ((JsonArray)data["Tracks"]).Select(x =>
+            {
+                var track = new SerializableTrack();
+                track.LoadFromJson(x);
+                return track.Value;
+            }).ToList();
+        }
+
+        private struct SerializableTrack : IJsonSerializable {
+            public TrackType Value;
+
+            public SerializableTrack() {
+                this.Value = TrackType.Other;
+            }
+            public SerializableTrack(TrackType type) {
+                this.Value = type;
+            }
+
+            public JsonData SaveToJson() {
+                return new JsonString(this.Value.ToString());
+            }
+
+            public void LoadFromJson(JsonData Data) {
+                JsonString str = (JsonString)Data;
+                switch(str.Value)
+                {
+                    case "Video":
+                        this.Value = TrackType.Video;
+                        break;
+                    case "Audio":
+                        this.Value = TrackType.Audio;
+                        break;
+                    case "Subtitle":
+                        this.Value = TrackType.Subtitle;
+                        break;
+                    case "Attachment":
+                        this.Value = TrackType.Attachment;
+                        break;
+                    case "Other":
+                        this.Value = TrackType.Other;
+                        break;
+                    default:
+                        throw new Exception("Unknown track type.");
+                }
+            }
+        }
     }
 
-    internal class MakeMKVScraper {
+    internal class MakeMKVScraper : IJsonSerializable {
 
         const bool verbose = true;
         public List<Title> Titles = new();
@@ -184,7 +270,7 @@ namespace MakeMKV_Title_Decoder {
                 lastTitle = ParseTitle(Titles.Count, lastData);
             }
 
-            input.SetTitles(Titles);
+            input.SetTitles(Titles, false);
             Console.WriteLine("Finished scraping.");
         }
 
@@ -277,6 +363,19 @@ namespace MakeMKV_Title_Decoder {
             }
 
             return title;
+        }
+
+        public JsonData SaveToJson() {
+            return new JsonArray(Titles.Select(x => x.SaveToJson()).ToList());
+        }
+
+        public void LoadFromJson(JsonData Data) {
+            this.Titles = ((JsonArray)Data).Select(x =>
+            {
+                Title title = new();
+                title.LoadFromJson(x);
+                return title;
+            }).ToList();
         }
 
     }

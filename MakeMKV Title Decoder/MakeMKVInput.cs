@@ -40,11 +40,18 @@ namespace MakeMKV_Title_Decoder {
         const int TitleDeltaY = 17;
         const int TitleCheckBoxX = 50;
         const int DropdownX = 29;
+        public IEnumerable<int> CheckedTitles => checkedTitles;
+        public bool Collapsed { get; private set; } = true;
 
         Dictionary<int, int> quickLookup = new();
         int maxIndex = -1;
+        HashSet<int> checkedTitles = new();
 
         public int CurrentIndex { get; private set; } = 0;
+
+        public MakeMKVInput(bool isCollapsed) {
+            this.Collapsed = isCollapsed;
+        }
 
         public string ReadOutputFolder() {
             MoveMouse(OutputFolderLocation);
@@ -82,7 +89,7 @@ namespace MakeMKV_Title_Decoder {
         }*/
 
         // Special function called by the scraper to get into a known state
-        public void SetTitles(List<Title> allTitles) {
+        public void SetTitles(List<Title> allTitles, bool isCollapsed) {
             quickLookup.Clear();
             int index = -1;
             for (int i = 0; i < allTitles.Count; i++)
@@ -93,6 +100,7 @@ namespace MakeMKV_Title_Decoder {
             }
             maxIndex = index;
             this.CurrentIndex = maxIndex;
+            this.Collapsed = isCollapsed;
         }
 
         // NOTE: Forces scroll and breaks known state
@@ -123,12 +131,25 @@ namespace MakeMKV_Title_Decoder {
             ScrollTo(title, 0);
         }
 
-        private void ScrollTo(Title title, int offset) {
-            ScrollTo(title.Index, offset);
+        private void ScrollTo(Title title, int trackIndex) {
+            ScrollTo(title.Index, trackIndex);
         }
 
-        private void ScrollTo(int titleIndex, int offset) {
-            int index = quickLookup[titleIndex] + offset;
+        private void ScrollTo(int titleIndex) {
+            ScrollTo(titleIndex, 0);
+        }
+
+        private void ScrollTo(int titleIndex, int trackIndex) {
+            int index;
+            if (this.Collapsed)
+            {
+                // Note: we have to ignore trackIndex since it is not viewable
+                index = titleIndex;
+            } else
+            {
+                index = quickLookup[titleIndex] + trackIndex;
+            }
+
             if (verbose) Console.WriteLine($"Input: scroll from current={CurrentIndex} to target={index}");
             int delta = index - CurrentIndex;
             if (delta >= 0)
@@ -146,10 +167,11 @@ namespace MakeMKV_Title_Decoder {
 
         // Will auto scroll to desired title
         public void ToggleAttachment(Title titleInfo) {
-            int offset = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index + 1; // The +1 is to reach the first track
+            int trackIndex = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index + 1; // The +1 is to reach the first track
 
+            Debug.Assert(this.Collapsed == false, "Expected the tracks to be expanded, can't toggle attachment.");
             //OpenDropdown();
-            ScrollTo(titleInfo, offset); 
+            ScrollTo(titleInfo, trackIndex); 
             Space();
             //ScrollUp(dist + 1);
             //CloseDropdown();
@@ -161,6 +183,13 @@ namespace MakeMKV_Title_Decoder {
         public void ToggleTitleSelection(Title title) {
             ScrollTo(title);
             Space();
+            if (checkedTitles.Contains(title.Index))
+            {
+                checkedTitles.Remove(title.Index);
+            } else
+            {
+                checkedTitles.Add(title.Index);
+            }
         }
 
         public void OpenDropdown() {
@@ -184,12 +213,16 @@ namespace MakeMKV_Title_Decoder {
 
         // Note: this leaves the input in a bit of an unknown state when finished
         public void CollapseAll() {
-            ScrollTo(0, 0);
-            CloseDropdown();
-            for (int i = 1; i < quickLookup.Count; i++)
+            if (this.Collapsed == false)
             {
-                DownArrow();
+                ScrollTo(0, 0);
                 CloseDropdown();
+                for (int i = 1; i < quickLookup.Count; i++)
+                {
+                    DownArrow();
+                    CloseDropdown();
+                }
+                this.Collapsed = true;
             }
         }
 
