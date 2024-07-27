@@ -28,8 +28,6 @@ namespace MakeMKV_Title_Decoder {
     }
 
     internal class MakeMKVInput {
-        // TODO until I can add support for scrolling
-        const int MaxTitles = 56;
         const int KeyTimingInMilliseconds = 50;
         const bool verbose = false;
 
@@ -51,6 +49,15 @@ namespace MakeMKV_Title_Decoder {
 
         public MakeMKVInput(bool isCollapsed) {
             this.Collapsed = isCollapsed;
+        }
+
+        // Called when new scraping begins to reset internal state
+        public void Reset() {
+            Collapsed = true;
+            quickLookup.Clear();
+            maxIndex = -1;
+            checkedTitles.Clear();
+            CurrentIndex = 0;
         }
 
         public string ReadOutputFolder() {

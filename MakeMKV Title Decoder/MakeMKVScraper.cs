@@ -184,7 +184,7 @@ namespace MakeMKV_Title_Decoder {
         public void Scrape(int maxScrapesDebug = -1) {
             Console.WriteLine("Scraping...");
 
-            //input.ResetCursor();
+            input.Reset();
             Title lastTitle = ParseTitle(0);
             while (true)
             {
