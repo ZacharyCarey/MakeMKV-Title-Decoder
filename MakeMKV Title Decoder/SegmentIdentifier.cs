@@ -47,7 +47,7 @@ namespace MakeMKV_Title_Decoder {
         private List<Title> AllTitles; // The master list of all titles, in order, as scraped.
         private HashSet<int> RemainingTitles; // A working set of indices (referencing AllTitles) of which titles have not been processed
 
-        public SegmentIdentifier(List<Title> allTitles, DvdType type) {
+        public SegmentIdentifier(List<Title> allTitles, DvdType type, bool ignoreIncomplete) {
             this.AllTitles = allTitles;
             this.RemainingTitles = new(allTitles.Select(x => x.Index)); // Create a copy so we can edit
 
@@ -145,6 +145,48 @@ namespace MakeMKV_Title_Decoder {
                     break;
                 }
             }*/
+
+            // Do a final pass on all titles and make some adjustments depending on settings
+            foreach (Title title in this.AllTitles)
+            {
+                bool deselect = this.DeselectTitlesIndicies.Contains(title.Index);
+                bool isMainFeature = (title.Index == this.MainFeature.Index);
+                if (!isMainFeature)
+                {
+                    // Loop through main episodes to check if considered a main feature
+                    foreach (Episode episode in this.MainTitleTracks) // TODO rename to identifier.MainEpisodes?
+                    {
+                        if (episode.Indices.Contains(title.Index))
+                        {
+                            isMainFeature = true;
+                            break;
+                        }
+                    }
+                }
+                bool isBonusFeature = this.BonusFeatures.Contains(title.Index);
+
+                // Filter additional titles
+                if ((deselect == false) && (isMainFeature == false) /*&& (isBonusFeature == false)*/ && ignoreIncomplete)
+                {
+                    bool hasAudio = title.Tracks.Contains(TrackType.Audio);
+                    bool hasVideo = title.Tracks.Contains(TrackType.Video);
+                    if (!(hasAudio && hasVideo))
+                    {
+                        Console.WriteLine($"Deselected {title.SimplifiedFileName} did not have both audio and video.");
+                        deselect = true;
+                        this.DeselectTitlesIndicies.Add(title.Index);
+                        this.BonusFeatures.Remove(title.Index);
+                        this.RemainingTitles.Remove(title.Index);
+                    }
+                }
+            }
+
+            if (this.RemainingTitles.Count > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"WARNING: There were {this.RemainingTitles.Count} titles that were not assigned a category.");
+                Console.ResetColor();
+            }
         }
 
         private static bool areAllSegmentsInList(ICollection<int> segments, ICollection<int> checkInList) {
@@ -421,6 +463,9 @@ namespace MakeMKV_Title_Decoder {
                     // We managed to divide this title into smaller bits
                     deselections.AddAll(subtitleResults.Value.Deselections);
                     titles.RemoveAll(subtitleResults.Value.Deselections);
+
+                    deselections.Add(playlistIndex);
+                    titles.Remove(playlistIndex);
 
                     // DO NOT remove the subdisions, they are kept to try and subdivide again
                     //bonusFeatures.AddAll(subtitleResults.Value.BonusFeatures);

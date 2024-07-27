@@ -80,7 +80,7 @@ namespace MakeMKV_Title_Decoder {
                 Console.WriteLine($"Found {scraper.Titles.Count} titles.");
 
                 // identify which to keep
-                identifier = new SegmentIdentifier(scraper.Titles, getDvdType());
+                identifier = new SegmentIdentifier(scraper.Titles, getDvdType(), this.IgnoreIncompleteCheckBox.Checked);
 
                 foreach (Title title in scraper.Titles.Reverse<Title>()) // Reverse since our cursor will be at the bottom
                 {
@@ -100,18 +100,6 @@ namespace MakeMKV_Title_Decoder {
                         }
                     }
                     bool isBonusFeature = identifier.BonusFeatures.Contains(title.Index);
-
-                    // Filter additional titles
-                    if ((deselect == false) && (isMainFeature == false) /*&& (isBonusFeature == false)*/ && this.IgnoreIncompleteCheckBox.Checked)
-                    {
-                        bool hasAudio = title.Tracks.Contains(TrackType.Audio);
-                        bool hasVideo = title.Tracks.Contains(TrackType.Video);
-                        if (!(hasAudio && hasVideo))
-                        {
-                            deselect = true;
-                            Console.WriteLine($"Deselected {title.SimplifiedFileName} did not have both audio and video.");
-                        }
-                    }
 
                     // Do in bottom-up order
                     if ((deselect == false) && isMainFeature && this.IncludeAttachmentsCheckBox.Checked)
@@ -200,6 +188,7 @@ namespace MakeMKV_Title_Decoder {
                 MessageBox.Show("No output folder was found, unable to rename files.", "No output folder", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            Console.WriteLine("Renaming files...");
             string folder = Path.GetFullPath(this.OutputFolder);
             /*using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
