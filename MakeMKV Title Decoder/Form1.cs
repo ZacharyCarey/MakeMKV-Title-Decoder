@@ -63,7 +63,7 @@ namespace MakeMKV_Title_Decoder {
             } catch (Exception err)
             {
                 PlaySound(SadSound);
-                MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("An error occured.", err.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             IdentifyData();
@@ -168,7 +168,7 @@ namespace MakeMKV_Title_Decoder {
                     // Dont play the sound if we loaded from a file
                     PlaySound(SadSound);
                 }
-                MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("An error occured.", err.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -197,6 +197,7 @@ namespace MakeMKV_Title_Decoder {
         private void RenameBtn_Click(object sender, EventArgs e) {
             if (this.OutputFolder == null)
             {
+                MessageBox.Show("No output folder was found, unable to rename files.", "No output folder", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             string folder = Path.GetFullPath(this.OutputFolder);
@@ -281,7 +282,7 @@ namespace MakeMKV_Title_Decoder {
 
                 if (failedRenames.Count > 0)
                 {
-                    MessageBox.Show("Error", "Failed to rename file(s): " + string.Join(", ", failedRenames), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Failed to rename file(s): " + string.Join(", ", failedRenames), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -364,7 +365,7 @@ namespace MakeMKV_Title_Decoder {
                             Json.Read(stream, this);
                         } catch (Exception ex)
                         {
-                            MessageBox.Show("Failed to read file.", "Failed to read file: " + ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("Failed to read file: " + ex.Message, "Failed to read file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
                     }
@@ -410,14 +411,14 @@ namespace MakeMKV_Title_Decoder {
             scraper.LoadFromJson(obj["Titles"]);
 
             // Save output folder for later
-            this.OutputFolder = (JsonString)this.OutputFolder;
+            this.OutputFolder = (JsonString)obj["Output Folder"];
             Console.WriteLine($"Found output path: {this.OutputFolder ?? "null"}");
         }
 
         private void checkAllToolStripMenuItem_Click(object sender, EventArgs e) {
             if (input == null || scraper == null)
             {
-                MessageBox.Show("Error", "No input detected, failed to check all titles.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No input detected, failed to check all titles.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
