@@ -249,7 +249,7 @@ namespace MakeMKV_Title_Decoder {
                             try
                             {
                                 string oldPath = Path.Combine(folder, title.FileName);
-                                string newPath = Path.Combine(folder, $"Episode_{(i + 1):D2}_{title.SimplifiedFileName}.mkv");
+                                string newPath = Path.Combine(folder, $"Episode_{(i + 1):D2}_{title.SimplifiedFileName}");
                                 File.Move(oldPath, newPath);
                                 Console.WriteLine($"Renamed from {oldPath} to {newPath}");
                             } catch (Exception ex)
