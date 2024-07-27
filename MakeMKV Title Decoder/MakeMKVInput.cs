@@ -38,12 +38,12 @@ namespace MakeMKV_Title_Decoder {
         const int TitleDeltaY = 17;
         const int TitleCheckBoxX = 50;
         const int DropdownX = 29;
-        public IEnumerable<int> CheckedTitles => checkedTitles;
+        public IEnumerable<Ref<Title>> CheckedTitles => checkedTitles;
         public bool Collapsed { get; private set; } = true;
 
         Dictionary<int, int> quickLookup = new();
         int maxIndex = -1;
-        HashSet<int> checkedTitles = new();
+        HashSet<Ref<Title>> checkedTitles = new();
 
         public int CurrentIndex { get; private set; } = 0;
 
@@ -101,9 +101,10 @@ namespace MakeMKV_Title_Decoder {
             int index = -1;
             for (int i = 0; i < allTitles.Count; i++)
             {
+                Ref<Title> title = new(allTitles, i);
                 index++;
-                quickLookup[i] = index;
-                index += allTitles[i].Tracks.Count();
+                quickLookup[title.Index] = index;
+                index += title.Value.Tracks.Count;
             }
             maxIndex = index;
             this.CurrentIndex = maxIndex;
@@ -134,11 +135,11 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
-        public void ScrollTo(Title title) {
+        public void ScrollTo(Ref<Title> title) {
             ScrollTo(title, 0);
         }
 
-        private void ScrollTo(Title title, int trackIndex, bool forceTrack = false) {
+        private void ScrollTo(Ref<Title> title, int trackIndex, bool forceTrack = false) {
             ScrollTo(title.Index, trackIndex, forceTrack);
         }
 
@@ -177,33 +178,33 @@ namespace MakeMKV_Title_Decoder {
         }
 
         // Will auto scroll to desired title
-        public void ToggleAttachment(Title titleInfo) {
-            int trackIndex = titleInfo.Tracks.WithIndex().First(x => x.Value == TrackType.Attachment).Index + 1; // The +1 is to reach the first track
+        public void ToggleAttachment(Ref<Title> titleInfo) {
+            int trackOffset = titleInfo.Value.Tracks.WithIndex().First(x => x.Value.Type == TrackType.Attachment).Index + 1; // The +1 is to reach the first track
 
             if (this.Collapsed)
             {
                 ScrollTo(titleInfo);
                 OpenDropdown();
-                ScrollTo(titleInfo, trackIndex, true);
+                ScrollTo(titleInfo, trackOffset, true);
                 Space();
                 ScrollTo(titleInfo);
                 CloseDropdown();
             } else
             {
-                ScrollTo(titleInfo, trackIndex);
+                ScrollTo(titleInfo, trackOffset);
                 Space();
             }
         }
 
-        public void ToggleTitleSelection(Title title) {
+        public void ToggleTitleSelection(Ref<Title> title) {
             ScrollTo(title);
             Space();
-            if (checkedTitles.Contains(title.Index))
+            if (checkedTitles.Contains(title))
             {
-                checkedTitles.Remove(title.Index);
+                checkedTitles.Remove(title);
             } else
             {
-                checkedTitles.Add(title.Index);
+                checkedTitles.Add(title);
             }
         }
 

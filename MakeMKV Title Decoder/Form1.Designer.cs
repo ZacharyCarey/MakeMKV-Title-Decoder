@@ -41,8 +41,9 @@
             identifierToolStripMenuItem = new ToolStripMenuItem();
             saveToolStripMenuItem = new ToolStripMenuItem();
             loadToolStripMenuItem = new ToolStripMenuItem();
-            checkAllToolStripMenuItem = new ToolStripMenuItem();
             loadNoInputToolStripMenuItem = new ToolStripMenuItem();
+            checkAllToolStripMenuItem = new ToolStripMenuItem();
+            scrapeAndSaveToolStripMenuItem = new ToolStripMenuItem();
             panel1.SuspendLayout();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -178,7 +179,7 @@
             // 
             // identifierToolStripMenuItem
             // 
-            identifierToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem, loadToolStripMenuItem, loadNoInputToolStripMenuItem });
+            identifierToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem, scrapeAndSaveToolStripMenuItem, loadToolStripMenuItem, loadNoInputToolStripMenuItem });
             identifierToolStripMenuItem.Name = "identifierToolStripMenuItem";
             identifierToolStripMenuItem.Size = new Size(180, 22);
             identifierToolStripMenuItem.Text = "Scraper";
@@ -187,7 +188,7 @@
             // 
             saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             saveToolStripMenuItem.Size = new Size(180, 22);
-            saveToolStripMenuItem.Text = "Save";
+            saveToolStripMenuItem.Text = "Save Current";
             saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
             // 
             // loadToolStripMenuItem
@@ -197,6 +198,13 @@
             loadToolStripMenuItem.Text = "Load";
             loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
             // 
+            // loadNoInputToolStripMenuItem
+            // 
+            loadNoInputToolStripMenuItem.Name = "loadNoInputToolStripMenuItem";
+            loadNoInputToolStripMenuItem.Size = new Size(180, 22);
+            loadNoInputToolStripMenuItem.Text = "Load - No Input";
+            loadNoInputToolStripMenuItem.Click += loadNoInputToolStripMenuItem_Click;
+            // 
             // checkAllToolStripMenuItem
             // 
             checkAllToolStripMenuItem.Name = "checkAllToolStripMenuItem";
@@ -204,12 +212,12 @@
             checkAllToolStripMenuItem.Text = "Check All Titles";
             checkAllToolStripMenuItem.Click += checkAllToolStripMenuItem_Click;
             // 
-            // loadNoInputToolStripMenuItem
+            // scrapeAndSaveToolStripMenuItem
             // 
-            loadNoInputToolStripMenuItem.Name = "loadNoInputToolStripMenuItem";
-            loadNoInputToolStripMenuItem.Size = new Size(180, 22);
-            loadNoInputToolStripMenuItem.Text = "Load - No Input";
-            loadNoInputToolStripMenuItem.Click += loadNoInputToolStripMenuItem_Click;
+            scrapeAndSaveToolStripMenuItem.Name = "scrapeAndSaveToolStripMenuItem";
+            scrapeAndSaveToolStripMenuItem.Size = new Size(180, 22);
+            scrapeAndSaveToolStripMenuItem.Text = "Scrape and Save";
+            scrapeAndSaveToolStripMenuItem.Click += scrapeAndSaveToolStripMenuItem_Click;
             // 
             // Form1
             // 
@@ -255,5 +263,6 @@
         private ToolStripMenuItem loadToolStripMenuItem;
         private ToolStripMenuItem checkAllToolStripMenuItem;
         private ToolStripMenuItem loadNoInputToolStripMenuItem;
+        private ToolStripMenuItem scrapeAndSaveToolStripMenuItem;
     }
 }

@@ -11,21 +11,21 @@ namespace MakeMKV_Title_Decoder {
     public struct Episode {
         // all indices that could potentially be this episode.
         // USUALLY is just one.
-        public List<int> Indices = new();
+        public List<Ref<Title>> Titles = new();
 
         public Episode() {
         }
 
-        internal string ToString(List<Title> allTitles) {
-            if (Indices.Count == 0)
+        public override string ToString() {
+            if (Titles.Count == 0)
             {
                 return "null";
-            } else if (Indices.Count == 1)
+            } else if (Titles.Count == 1)
             {
-                return allTitles[Indices.First()].SimplifiedFileName;
+                return Titles.First().Value.SimplifiedFileName;
             } else
             {
-                return "{" + string.Join(", ", Indices.Select(index => allTitles[index].SimplifiedFileName)) + "}";
+                return "{" + string.Join(", ", Titles.Select(x => x.Value.SimplifiedFileName)) + "}";
             }
         }
     }
@@ -38,38 +38,37 @@ namespace MakeMKV_Title_Decoder {
             }
         }*/
 
-        public Title MainFeature; // Movies only
+        public Ref<Title> MainFeature; // Movies only
         public List<Episode> MainTitleTracks = new(); // Non-movies only
         public bool IsMovie { get => MainTitleTracks.Count == 0; }
-        public HashSet<int> DeselectTitlesIndicies = new();
-        public HashSet<int> BonusFeatures = new();
+        public HashSet<Ref<Title>> DeselectTitlesIndicies = new();
+        public HashSet<Ref<Title>> BonusFeatures = new();
 
         private List<Title> AllTitles; // The master list of all titles, in order, as scraped.
-        private HashSet<int> RemainingTitles; // A working set of indices (referencing AllTitles) of which titles have not been processed
+        private HashSet<Ref<Title>> RemainingTitles; // A working set of indices (referencing AllTitles) of which titles have not been processed
 
         public SegmentIdentifier(List<Title> allTitles, DvdType type, bool ignoreIncomplete) {
             this.AllTitles = allTitles;
-            this.RemainingTitles = new(allTitles.Select(x => x.Index)); // Create a copy so we can edit
+            this.RemainingTitles = new(allTitles.AsPointers()); // Create a copy so we can edit
 
-            int mainFeatureIndex = this.identifyMainFeature();
-            this.MainFeature = allTitles[mainFeatureIndex];
-            this.RemainingTitles.Remove(mainFeatureIndex); // Dont consider it in any other decisions
+            this.MainFeature = this.identifyMainFeature();
+            this.RemainingTitles.Remove(this.MainFeature); // Dont consider it in any other decisions
 
             // Print some debug info
-            Console.WriteLine($"MainFeature = {MainFeature.SimplifiedFileName}, [{string.Join(", ", MainFeature.Segments)}]");
+            Console.WriteLine($"MainFeature = {MainFeature.Value.SimplifiedFileName}, [{string.Join(", ", MainFeature.Value.Segments)}]");
 
             // TV and bonus features dont actually want the whole disc in a single file.
             // For that, one episode per file is desired
             if (type != DvdType.Movie)
             {
-                DeselectTitlesIndicies.Add(MainFeature.Index);
+                DeselectTitlesIndicies.Add(this.MainFeature);
             }
 
 
             // Deselect any titles that have the exact same runtime.
             // Hopefully removes playlists that are both the same main feature, but slightly different
             // For instance, in 'Into the Spider-verse' the second playlist has a slightly different end credits but are 99% the same.
-            HashSet<int> mainTitleDupes = findTitlesWithMatchingRuntime(this.MainFeature, "Found dupicate main feature = ");
+            HashSet<Ref<Title>> mainTitleDupes = findTitlesWithMatchingRuntime(this.MainFeature, "Found dupicate main feature = ");
             this.DeselectTitlesIndicies.AddAll(mainTitleDupes);
             this.RemainingTitles.RemoveAll(mainTitleDupes);
 
@@ -97,7 +96,7 @@ namespace MakeMKV_Title_Decoder {
                     this.RemainingTitles.RemoveAll(mainFeatureEpisodes.BonusFeatures);
                     foreach(Episode episode in mainFeatureEpisodes.Episodes)
                     {
-                        this.RemainingTitles.RemoveAll(episode.Indices);
+                        this.RemainingTitles.RemoveAll(episode.Titles);
                     }
                 }
             }
@@ -108,7 +107,7 @@ namespace MakeMKV_Title_Decoder {
                 // Sometimes the chapters will all be separate streams that all show up in the list
                 // The main feature will be all those streams stitched together wither chapter info, so we just
                 // can just not download those.
-                var subsetTitles = findSubsetTitles(new HashSet<int>(this.MainFeature.Segments));
+                var subsetTitles = findSubsetTitles(new HashSet<int>(this.MainFeature.Value.Segments));
                 this.DeselectTitlesIndicies.AddAll(subsetTitles);
                 this.RemainingTitles.RemoveAll(subsetTitles);
             }
@@ -147,36 +146,36 @@ namespace MakeMKV_Title_Decoder {
             }*/
 
             // Do a final pass on all titles and make some adjustments depending on settings
-            foreach (Title title in this.AllTitles)
+            foreach (Ref<Title> title in this.AllTitles.AsPointers())
             {
-                bool deselect = this.DeselectTitlesIndicies.Contains(title.Index);
+                bool deselect = this.DeselectTitlesIndicies.Contains(title);
                 bool isMainFeature = (title.Index == this.MainFeature.Index);
                 if (!isMainFeature)
                 {
                     // Loop through main episodes to check if considered a main feature
                     foreach (Episode episode in this.MainTitleTracks) // TODO rename to identifier.MainEpisodes?
                     {
-                        if (episode.Indices.Contains(title.Index))
+                        if (episode.Titles.Contains(title))
                         {
                             isMainFeature = true;
                             break;
                         }
                     }
                 }
-                bool isBonusFeature = this.BonusFeatures.Contains(title.Index);
+                bool isBonusFeature = this.BonusFeatures.Contains(title);
 
                 // Filter additional titles
                 if ((deselect == false) && (isMainFeature == false) /*&& (isBonusFeature == false)*/ && ignoreIncomplete)
                 {
-                    bool hasAudio = title.Tracks.Contains(TrackType.Audio);
-                    bool hasVideo = title.Tracks.Contains(TrackType.Video);
+                    bool hasAudio = title.Value.Tracks.Select(x => x.Type).Where(x => x == TrackType.Audio).Any();
+                    bool hasVideo = title.Value.Tracks.Select(x => x.Type).Where(x => x == TrackType.Video).Any();
                     if (!(hasAudio && hasVideo))
                     {
-                        Console.WriteLine($"Deselected {title.SimplifiedFileName} did not have both audio and video.");
+                        Console.WriteLine($"Deselected {title.Value.SimplifiedFileName} did not have both audio and video.");
                         deselect = true;
-                        this.DeselectTitlesIndicies.Add(title.Index);
-                        this.BonusFeatures.Remove(title.Index);
-                        this.RemainingTitles.Remove(title.Index);
+                        this.DeselectTitlesIndicies.Add(title);
+                        this.BonusFeatures.Remove(title);
+                        this.RemainingTitles.Remove(title);
                     }
                 }
             }
@@ -193,10 +192,10 @@ namespace MakeMKV_Title_Decoder {
             return segments.Where(checkInList.Contains).Count() == segments.Count;
         }
 
-        static (List<Episode> Episodes, HashSet<int> Deselections, HashSet<int> BonusFeatures)? solveEpisodes(Title mainFeature, IEnumerable<Title> titles) {
-            List<Title> sorted = titles.OrderBy(x => x.Segments.Count).ToList();
-            HashSet<int> deselections = new();
-            HashSet<int> bonusFeatures = new();
+        static (List<Episode> Episodes, HashSet<Ref<Title>> Deselections, HashSet<Ref<Title>> BonusFeatures)? solveEpisodes(Ref<Title> mainFeature, IEnumerable<Ref<Title>> titles) {
+            List<Ref<Title>> sorted = titles.OrderBy(x => x.Value.Segments.Count).ToList();
+            HashSet<Ref<Title>> deselections = new();
+            HashSet<Ref<Title>> bonusFeatures = new();
             List<Episode>? episodes = solveEpisodes(mainFeature, sorted, 0, deselections, bonusFeatures);
             if (episodes == null)
             {
@@ -207,29 +206,29 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
-        static List<Episode>? solveEpisodes(Title mainFeature, List<Title> titles, int index, HashSet<int> deselections, HashSet<int> bonusFeatures) {
-            if (index == mainFeature.Segments.Count)
+        static List<Episode>? solveEpisodes(Ref<Title> mainFeature, List<Ref<Title>> titles, int index, HashSet<Ref<Title>> deselections, HashSet<Ref<Title>> bonusFeatures) {
+            if (index == mainFeature.Value.Segments.Count)
             {
                 // Success! Start returning the result
                 return new List<Episode>();
             }
 
-            foreach (Title title in titles)
+            foreach (Ref<Title> title in titles)
             {
-                if (segmentsMatch(title.Segments, mainFeature, index))
+                if (segmentsMatch(title.Value.Segments, mainFeature, index))
                 {
                     // Special case. If they are exactly the same as the main feature, just keep the main feature
-                    if (index == 0 && title.Segments.Count == mainFeature.Segments.Count)
+                    if (index == 0 && title.Value.Segments.Count == mainFeature.Value.Segments.Count)
                     {
-                        Console.WriteLine($"Deselected {title.SimplifiedFileName} because it has the exact same segments as another feature ({mainFeature.SimplifiedFileName}).");
-                        deselections.Add(title.Index);
+                        Console.WriteLine($"Deselected {title.Value.SimplifiedFileName} because it has the exact same segments as another feature ({mainFeature.Value.SimplifiedFileName}).");
+                        deselections.Add(title);
                         continue;
                     }
 
                     // Ok, I know how this looks but it's to prevent the same feature from being used twice and I was too lazy to make it more efficient. It's 1 am on a Friday morning while writing this.
-                    List<Title> newScope = new(titles);
+                    List<Ref<Title>> newScope = new(titles);
                     newScope.Remove(title);
-                    List<Episode>? result = solveEpisodes(mainFeature, newScope, index + title.Segments.Count, deselections, bonusFeatures);
+                    List<Episode>? result = solveEpisodes(mainFeature, newScope, index + title.Value.Segments.Count, deselections, bonusFeatures);
                     if (result == null)
                     {
                         // No successful match found :(
@@ -245,13 +244,13 @@ namespace MakeMKV_Title_Decoder {
                     // So we look for other episodes of similar length and the same segments, and pick the one that better matches in tracks.
                     // It the case of A:TLA, the commentary only has a single audio/video track, whereas the real one had multiple audios, subtitles, and an attachment.
                     // However in the case of a tie, just return both as the same episode and let the user decide.
-                    List<Title> realTitle = new(){ title };// Start by assuming it's this one
+                    List<Ref<Title>> realTitle = new(){ title };// Start by assuming it's this one
                     int realScore = getTrackDifferenceCount(mainFeature, title);
                     bool foundDupes = false;
-                    foreach (Title possibleDupe in titles.Where(x => x.Index != title.Index))
+                    foreach (Ref<Title> possibleDupe in titles.Where(x => x.Index != title.Index))
                     {
                         // NOTE: compare time using original title to prevent incremental drifting
-                        if (DurationsAlmostSimilar(title.Duration, possibleDupe.Duration) && possibleDupe.Segments.SequenceEqual(title.Segments))
+                        if (DurationsAlmostSimilar(title, possibleDupe) && possibleDupe.Value.Segments.SequenceEqual(title.Value.Segments))
                         {
                             foundDupes = true;
                             // Ok these two titles likely match, decide which one is 'real'
@@ -260,10 +259,10 @@ namespace MakeMKV_Title_Decoder {
                             {
                                 // This title has less incorrect tracks, so it's more likely to be the 'real' episode
                                 // What we that to be the 'real' episode is probably just a bonus feature
-                                foreach(Title bonus in realTitle)
+                                foreach(Ref<Title> bonus in realTitle)
                                 {
-                                    bonusFeatures.Add(bonus.Index);
-                                    Console.WriteLine($"Found bonus feature {bonus.SimplifiedFileName} because it has non-matching tracks with the main feature: [{string.Join(", ", bonus.Tracks.Select(x => x.ToString()))}]");
+                                    bonusFeatures.Add(bonus);
+                                    Console.WriteLine($"Found bonus feature {bonus.Value.SimplifiedFileName} because it has non-matching tracks with the main feature: [{string.Join(", ", bonus.Value.Tracks.Select(x => x.ToString()))}]");
                                 }
                                 realTitle.Clear();
                                 realTitle.Add(possibleDupe);
@@ -271,8 +270,8 @@ namespace MakeMKV_Title_Decoder {
                             } else if (trackDifferentCount > realScore)
                             {
                                 // This title has more incorrect tracks, it's definitely a different feature but most likely a bonus feature.
-                                bonusFeatures.Add(possibleDupe.Index);
-                                Console.WriteLine($"Found bonus feature {possibleDupe.SimplifiedFileName} because it has non-matching tracks with the main feature: [{string.Join(", ", possibleDupe.Tracks.Select(x => x.ToString()))}]");
+                                bonusFeatures.Add(possibleDupe);
+                                Console.WriteLine($"Found bonus feature {possibleDupe.Value.SimplifiedFileName} because it has non-matching tracks with the main feature: [{string.Join(", ", possibleDupe.Value.Tracks.Select(x => x.ToString()))}]");
                             } else
                             {
                                 // As far as we can tell, the two titles are the same. Not ideal :(
@@ -284,13 +283,13 @@ namespace MakeMKV_Title_Decoder {
                     {
                         if (realTitle.Count > 1)
                         {
-                            Console.WriteLine($"Found duplicate titles that are too similar: [{string.Join(", ", realTitle.Select(x => x.SimplifiedFileName))}]");
+                            Console.WriteLine($"Found duplicate titles that are too similar: [{string.Join(", ", realTitle.Select(x => x.Value.SimplifiedFileName))}]");
                         } else
                         {
-                            Console.WriteLine($"Found duplicate titles for episode {realTitle[0].SimplifiedFileName}");
+                            Console.WriteLine($"Found duplicate titles for episode {realTitle[0].Value.SimplifiedFileName}");
                         }
                     }
-                    episode.Indices.AddRange(realTitle.Select(x => x.Index));
+                    episode.Titles.AddRange(realTitle);
 
                     // Continue on the return path for remaining episodes
                     // Put at the front of the list so it's in the correct order
@@ -302,12 +301,12 @@ namespace MakeMKV_Title_Decoder {
             return null;
         }
 
-        private static int getTrackDifferenceCount(Title modelTitle, Title compareTitle) {
+        private static int getTrackDifferenceCount(Ref<Title> modelTitle, Ref<Title> compareTitle) {
             // TODO compare metadata as well?
             int count = 0;
-            for(int i = 0; i < modelTitle.Tracks.Count; i++)
+            for(int i = 0; i < modelTitle.Value.Tracks.Count; i++)
             {
-                if (i >= compareTitle.Tracks.Count || modelTitle.Tracks[i] != compareTitle.Tracks[i])
+                if (i >= compareTitle.Value.Tracks.Count || modelTitle.Value.Tracks[i] != compareTitle.Value.Tracks[i])
                 {
                     count++;
                 }
@@ -316,15 +315,15 @@ namespace MakeMKV_Title_Decoder {
             return count;
         }
 
-        static bool segmentsMatch(List<int> segments, Title mainFeature, int index) {
-            if (index + segments.Count - 1 > mainFeature.Segments.Count)
+        static bool segmentsMatch(List<int> segments, Ref<Title> mainFeature, int index) {
+            if (index + segments.Count - 1 > mainFeature.Value.Segments.Count)
             {
                 return false;
             }
 
             for (int i = 0; i < segments.Count; i++)
             {
-                if (segments[i] != mainFeature.Segments[index + i])
+                if (segments[i] != mainFeature.Value.Segments[index + i])
                 {
                     return false;
                 }
@@ -336,43 +335,42 @@ namespace MakeMKV_Title_Decoder {
         /// <summary>
         /// Returns the index to the main feature
         /// </summary>
-        private int identifyMainFeature() {
+        private Ref<Title> identifyMainFeature() {
             // Main feature will have the longest run time. In case of a tie, pick the playlist file that contains chapter info
             // NOTE: this is still done for the non-movie types to weed-out the play-all playlist and help
-            Title mainFeature = this.AllTitles[this.RemainingTitles.First()];
-            foreach (int index in this.RemainingTitles.Skip(1))
+            Ref<Title> mainFeature = this.RemainingTitles.First();
+            foreach (Ref<Title> title in this.RemainingTitles.Skip(1))
             {
-                int compare = this.AllTitles[index].Duration.CompareTo(mainFeature.Duration);
-                if (compare > 0)
+                int compare = title.Value.Duration.CompareTo(mainFeature.Value.Duration);
+                if (DurationsAlmostSimilar(title, mainFeature))
+                {
+                    if (title.Value.SourceFileExtension == "mpls" && mainFeature.Value.SourceFileExtension != "mpls")
+                    {
+                        mainFeature = title;
+                    }
+                } else if (title.Value.Duration > mainFeature.Value.Duration)
                 {
                     // This title is longer, store it
-                    mainFeature = AllTitles[index];
-                } else if (compare == 0)
-                {
-                    // This title is the same length, only store if a playlist and the current one is not
-                    if (AllTitles[index].SourceFileExtension == "mpls" && mainFeature.SourceFileExtension != "mpls")
-                    {
-                        mainFeature = AllTitles[index];
-                    }
+                    mainFeature = title;
                 }
             }
 
-            return mainFeature.Index;
+            return mainFeature;
         }
 
         /// <summary>
         /// Compares remaining titles and find any that have the same runtime as the given title.
         /// </summary>
-        private HashSet<int> findTitlesWithMatchingRuntime(Title title, string? debugMessage = null) {
-            HashSet<int> result = new();
-            foreach (int index in this.RemainingTitles)
+        private HashSet<Ref<Title>> findTitlesWithMatchingRuntime(Ref<Title> title, string? debugMessage = null) {
+            HashSet<Ref<Title>> result = new();
+            foreach (Ref<Title> compare in this.RemainingTitles)
             {
-                if (this.AllTitles[index].Duration == title.Duration)
+                if (compare.Value.Duration == title.Value.Duration)
                 {
-                    result.Add(index);
+                    result.Add(compare);
                     if (debugMessage != null)
                     {
-                        Console.WriteLine($"{debugMessage}{this.AllTitles[index].SimplifiedFileName}");
+                        Console.WriteLine($"{debugMessage}{compare.Value.SimplifiedFileName}");
                     }
                 }
             }
@@ -381,8 +379,8 @@ namespace MakeMKV_Title_Decoder {
         }
 
 
-        private (List<Episode>? Episodes, HashSet<int> Dupes, HashSet<int> BonusFeatures) findMainFeatureEpisodes() {
-            IEnumerable<Title> titles = this.RemainingTitles.Select(index => this.AllTitles[index]);
+        private (List<Episode>? Episodes, HashSet<Ref<Title>> Dupes, HashSet<Ref<Title>> BonusFeatures) findMainFeatureEpisodes() {
+            IEnumerable<Ref<Title>> titles = this.RemainingTitles;
             var result = solveEpisodes(MainFeature, titles);
             if (result == null)
             {
@@ -391,32 +389,32 @@ namespace MakeMKV_Title_Decoder {
             }
 
             List<Episode> results = result.Value.Episodes;
-            HashSet<int> deselections = result.Value.Deselections;
-            HashSet<int> bonus = result.Value.BonusFeatures;
+            HashSet<Ref<Title>> deselections = result.Value.Deselections;
+            HashSet<Ref<Title>> bonus = result.Value.BonusFeatures;
 
             // Print some debug info
             Console.WriteLine("Found solution for episode layout.");
             foreach (Episode episode in results)
             {
-                Title title = this.AllTitles[episode.Indices[0]];
-                Console.WriteLine($"\t[{string.Join(", ", title.Segments)}] @ {episode.ToString(this.AllTitles)}");
+                Ref<Title> title = episode.Titles[0];
+                Console.WriteLine($"\t[{string.Join(", ", title.Value.Segments)}] @ {episode}");
             }
 
-            HashSet<int> remainingTitles = new(this.RemainingTitles);
+            HashSet<Ref<Title>> remainingTitles = new(this.RemainingTitles);
             remainingTitles.RemoveAll(deselections);
             remainingTitles.RemoveAll(bonus);
             foreach (Episode episode in results)
             {
-                remainingTitles.RemoveAll(episode.Indices);
+                remainingTitles.RemoveAll(episode.Titles);
             }
 
             // Try and remove any duplicate playlists
-            foreach (Title title in remainingTitles.Select(index => this.AllTitles[index]))
+            foreach (Ref<Title> title in remainingTitles)
             {
-                if (areAllSegmentsInList(title.Segments, this.MainFeature.Segments))
+                if (areAllSegmentsInList(title.Value.Segments, this.MainFeature.Value.Segments))
                 {
-                    Console.WriteLine($"Segments [{string.Join(", ", title.Segments)}] found in main feature, deselting {title.SimplifiedFileName}");
-                    deselections.Add(title.Index);
+                    Console.WriteLine($"Segments [{string.Join(", ", title.Value.Segments)}] found in main feature, deselting {title.Value.SimplifiedFileName}");
+                    deselections.Add(title);
                 }
             }
 
@@ -426,15 +424,15 @@ namespace MakeMKV_Title_Decoder {
         /// <summary>
         /// Finds any titles whose segments are fully contained in the given list of segments, and returns them in a list
         /// </summary>
-        private HashSet<int> findSubsetTitles(HashSet<int> segments) {
-            HashSet<int> result = new();
-            foreach (int index in this.RemainingTitles)
+        private HashSet<Ref<Title>> findSubsetTitles(HashSet<int> segments) {
+            HashSet<Ref<Title>> result = new();
+            foreach (var title in this.RemainingTitles)
             {
                 // If all segments are contained within the list...
-                if (areAllSegmentsInList(this.AllTitles[index].Segments, segments))
+                if (areAllSegmentsInList(title.Value.Segments, segments))
                 {
                     // This title must be a subset
-                    result.Add(index);
+                    result.Add(title);
                 }
             }
 
@@ -448,38 +446,38 @@ namespace MakeMKV_Title_Decoder {
         /// 
         /// This function is usually called multiple times to get the desired effect
         /// </summary>
-        private (HashSet<int> BonusFeatures, HashSet<int> Deselects) breakdownTitles() {
-            HashSet<int> bonusFeatures = new();
-            HashSet<int> deselections = new();
+        private (HashSet<Ref<Title>> BonusFeatures, HashSet<Ref<Title>> Deselects) breakdownTitles() {
+            HashSet<Ref<Title>> bonusFeatures = new();
+            HashSet<Ref<Title>> deselections = new();
 
-            HashSet<int> titles = new(this.RemainingTitles);
+            HashSet<Ref<Title>> titles = new(this.RemainingTitles);
             while (titles.Count > 0)
             {
-                int playlistIndex = titles.First();
-                IEnumerable<Title> remainingTitles = titles.Where(index => index != playlistIndex).Select(index => this.AllTitles[index]);
-                var subtitleResults = solveEpisodes(this.AllTitles[playlistIndex], remainingTitles); // Subtitles as in titles that make up the larger main title
+                Ref<Title> playlist = titles.First();
+                IEnumerable<Ref<Title>> remainingTitles = titles.Where(title => title != playlist);
+                var subtitleResults = solveEpisodes(playlist, remainingTitles); // Subtitles as in titles that make up the larger main title
                 if (subtitleResults != null)
                 {
                     // We managed to divide this title into smaller bits
                     deselections.AddAll(subtitleResults.Value.Deselections);
                     titles.RemoveAll(subtitleResults.Value.Deselections);
 
-                    deselections.Add(playlistIndex);
-                    titles.Remove(playlistIndex);
+                    deselections.Add(playlist);
+                    titles.Remove(playlist);
 
                     // DO NOT remove the subdisions, they are kept to try and subdivide again
                     //bonusFeatures.AddAll(subtitleResults.Value.BonusFeatures);
                     //titles.RemoveAll(bonusFeatures);
-                    Console.WriteLine($"Title {this.AllTitles[playlistIndex].SimplifiedFileName} was subdivided into smaller videos: [{string.Join(", ", this.AllTitles[playlistIndex].Segments)}]");
+                    Console.WriteLine($"Title {playlist.Value.SimplifiedFileName} was subdivided into smaller videos: [{string.Join(", ", playlist.Value.Segments)}]");
                     foreach(Episode episode in subtitleResults.Value.Episodes)
                     {
-                        Console.WriteLine($"\t[{string.Join(", ", this.AllTitles[episode.Indices.First()].Segments)}] @ {episode.ToString(this.AllTitles)}");
+                        Console.WriteLine($"\t[{string.Join(", ", episode.Titles.First().Value.Segments)}] @ {episode}");
                     }
                 } else
                 {
                     // This title can't be subdivided anymore than it already is, so it must be a bonus feature
-                    bonusFeatures.Add(playlistIndex);
-                    titles.Remove(playlistIndex);
+                    bonusFeatures.Add(playlist);
+                    titles.Remove(playlist);
                 }
             }
 
@@ -492,7 +490,7 @@ namespace MakeMKV_Title_Decoder {
                 Console.ResetColor();
             }
 
-            HashSet<int> check = new(this.RemainingTitles);
+            HashSet<Ref<Title>> check = new(this.RemainingTitles);
             check.RemoveAll(deselections);
             check.RemoveAll(bonusFeatures);
             if (check.Count > 0)
@@ -551,18 +549,18 @@ namespace MakeMKV_Title_Decoder {
             }
         }*/
 
-        private static bool DurationsAlmostSimilar(TimeSpan left, TimeSpan right) {
+        private static bool DurationsAlmostSimilar(Ref<Title> left, Ref<Title> right) {
             // If within 1% of the larger runtime, or 1 second minimum, then considered almost the same
             TimeSpan larger;
             TimeSpan smaller;
-            if (left >= right)
+            if (left.Value.Duration >= right.Value.Duration)
             {
-                larger = left;
-                smaller = right;
+                larger = left.Value.Duration;
+                smaller = right.Value.Duration;
             } else
             {
-                larger = right;
-                smaller = left;
+                larger = right.Value.Duration;
+                smaller = left.Value.Duration;
             }
 
             int deltaSeconds = (int)(larger - smaller).TotalSeconds;

@@ -39,34 +39,10 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void ScrapeBtn_Click(object sender, EventArgs e) {
-            Console.Clear();
-
-            try
+            if (runScrape())
             {
-                // Give time for mouse to stop moving
-                Console.WriteLine("Waiting for mouse to stop moving...");
-                Thread.Sleep(3000);
-
-                if (input == null)
-                {
-                    input = new MakeMKVInput(true);
-                }
-                scraper = new MakeMKVScraper(input);
-
-                // Save output folder for later
-                this.OutputFolder = input.ReadOutputFolder();
-                Console.WriteLine($"Found output path: {this.OutputFolder ?? "null"}");
-
-                // scrape all titles
-                input.FocusMKV();
-                scraper.Scrape();
-            } catch (Exception err)
-            {
-                PlaySound(SadSound);
-                MessageBox.Show("An error occured.", err.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                IdentifyData();
             }
-
-            IdentifyData();
         }
 
         private void IdentifyData() {
@@ -82,24 +58,24 @@ namespace MakeMKV_Title_Decoder {
                 // identify which to keep
                 identifier = new SegmentIdentifier(scraper.Titles, getDvdType(), this.IgnoreIncompleteCheckBox.Checked);
 
-                foreach (Title title in scraper.Titles.Reverse<Title>()) // Reverse since our cursor will be at the bottom
+                foreach (Ref<Title> title in scraper.Titles.AsPointers().Reverse()) // Reverse since our cursor will be at the bottom
                 {
                     // Determined by identifier
-                    bool deselect = identifier.DeselectTitlesIndicies.Contains(title.Index);
+                    bool deselect = identifier.DeselectTitlesIndicies.Contains(title);
                     bool isMainFeature = (title.Index == identifier.MainFeature.Index);
                     if (!isMainFeature)
                     {
                         // Loop through main episodes to check if considered a main feature
                         foreach (Episode episode in identifier.MainTitleTracks) // TODO rename to identifier.MainEpisodes?
                         {
-                            if (episode.Indices.Contains(title.Index))
+                            if (episode.Titles.Contains(title))
                             {
                                 isMainFeature = true;
                                 break;
                             }
                         }
                     }
-                    bool isBonusFeature = identifier.BonusFeatures.Contains(title.Index);
+                    bool isBonusFeature = identifier.BonusFeatures.Contains(title);
 
                     // Do in bottom-up order
                     if ((deselect == false) && isMainFeature && this.IncludeAttachmentsCheckBox.Checked)
@@ -121,20 +97,20 @@ namespace MakeMKV_Title_Decoder {
                 Refocus();
 
                 // Print data
-                Console.WriteLine($"The main feature is {identifier.MainFeature.SimplifiedFileName}");
+                Console.WriteLine($"The main feature is {identifier.MainFeature.Value.SimplifiedFileName}");
                 if (!identifier.IsMovie)
                 {
                     for (int i = 0; i < identifier.MainTitleTracks.Count; i++)
                     {
                         int episode = i + 1;
-                        Console.WriteLine($"\tEpisode {episode:D2} is file {identifier.MainTitleTracks[i].ToString(this.scraper.Titles)}");
+                        Console.WriteLine($"\tEpisode {episode:D2} is file {identifier.MainTitleTracks[i]}");
                     }
                 }
                 Console.WriteLine("Possible bonus features:");
-                IEnumerable<Title> bonusFeatures = identifier.BonusFeatures.Select(i => scraper.Titles[i]);
-                foreach (Title bonus in bonusFeatures.OrderBy(x => x.SimplifiedFileName))
+                IEnumerable<Ref<Title>> bonusFeatures = identifier.BonusFeatures;
+                foreach (Ref<Title> bonus in bonusFeatures.OrderBy(x => x.Value.SimplifiedFileName))
                 {
-                    Console.WriteLine($"\t{bonus.SimplifiedFileName}");
+                    Console.WriteLine($"\t{bonus.Value.SimplifiedFileName}");
                 }
 
                 if (input != null)
@@ -156,7 +132,7 @@ namespace MakeMKV_Title_Decoder {
                     // Dont play the sound if we loaded from a file
                     PlaySound(SadSound);
                 }
-                MessageBox.Show("An error occured.", err.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -217,14 +193,14 @@ namespace MakeMKV_Title_Decoder {
                 {
                     try
                     {
-                        string oldPath = Path.Combine(folder, identifier.MainFeature.FileName);
+                        string oldPath = Path.Combine(folder, identifier.MainFeature.Value.FileName);
                         string newPath = Path.Combine(folder, "MainFeature.mkv");
                         File.Move(oldPath, newPath);
                         Console.WriteLine($"Renamed from {oldPath} to {newPath}");
                     } catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to rename file {identifier.MainFeature.SimplifiedFileName}");
-                        failedRenames.Add(identifier.MainFeature.SimplifiedFileName);
+                        Console.WriteLine($"Failed to rename file {identifier.MainFeature.Value.SimplifiedFileName}");
+                        failedRenames.Add(identifier.MainFeature.Value.SimplifiedFileName);
                     }
                 } else
                 {
@@ -232,19 +208,18 @@ namespace MakeMKV_Title_Decoder {
                     for (int i = 0; i < identifier.MainTitleTracks.Count; i++)
                     {
                         Episode episode = identifier.MainTitleTracks[i];
-                        foreach (int titleIndex in episode.Indices)
+                        foreach (Ref<Title> title in episode.Titles)
                         {
-                            Title title = scraper.Titles[titleIndex];
                             try
                             {
-                                string oldPath = Path.Combine(folder, title.FileName);
-                                string newPath = Path.Combine(folder, $"Episode_{(i + 1):D2}_{title.SimplifiedFileName}");
+                                string oldPath = Path.Combine(folder, title.Value.FileName);
+                                string newPath = Path.Combine(folder, $"Episode_{(i + 1):D2}_{title.Value.SimplifiedFileName}");
                                 File.Move(oldPath, newPath);
                                 Console.WriteLine($"Renamed from {oldPath} to {newPath}");
                             } catch (Exception ex)
                             {
-                                Console.WriteLine($"Failed to rename file {title.SimplifiedFileName}");
-                                failedRenames.Add(title.SimplifiedFileName);
+                                Console.WriteLine($"Failed to rename file {title.Value.SimplifiedFileName}");
+                                failedRenames.Add(title.Value.SimplifiedFileName);
 
                             }
                         }
@@ -254,17 +229,17 @@ namespace MakeMKV_Title_Decoder {
 
                 foreach (var bonusFeatureTitleIndex in identifier.BonusFeatures.WithIndex())
                 {
-                    Title bonusFeature = scraper.Titles[bonusFeatureTitleIndex.Value];
+                    Ref<Title> bonusFeature = bonusFeatureTitleIndex.Value;
                     try
                     {
-                        string oldPath = Path.Combine(folder, bonusFeature.FileName);
+                        string oldPath = Path.Combine(folder, bonusFeature.Value.FileName);
                         string newPath = Path.Combine(folder, $"BonusFeature_{(bonusFeatureTitleIndex.Index + 1):D2}.mkv");
                         File.Move(oldPath, newPath);
                         Console.WriteLine($"Renamed from {oldPath} to {newPath}");
                     } catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to rename file {bonusFeature.SimplifiedFileName}");
-                        failedRenames.Add(bonusFeature.SimplifiedFileName);
+                        Console.WriteLine($"Failed to rename file {bonusFeature.Value.SimplifiedFileName}");
+                        failedRenames.Add(bonusFeature.Value.SimplifiedFileName);
 
                     }
                 }
@@ -380,7 +355,7 @@ namespace MakeMKV_Title_Decoder {
                         this.input = oldInput;
                     }
 
-                    
+
                 }
             }
         }
@@ -417,13 +392,55 @@ namespace MakeMKV_Title_Decoder {
 
             Console.WriteLine("Checking all titles...");
             input.FocusMKV();
-            List<Title> titles = input.CheckedTitles.Order().Select(x => scraper.Titles[x]).ToList();
-            foreach (Title title in titles)
+            List<Ref<Title>> titles = input.CheckedTitles.OrderBy(x => x.Index).ToList();
+            foreach (Ref<Title> title in titles)
             {
                 input.ToggleTitleSelection(title);
             }
             Console.WriteLine("Finished.");
             PlaySound(HappySound);
+        }
+
+        private void scrapeAndSaveToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (runScrape())
+            {
+                if (this.CollapseCheckBox.Checked)
+                {
+                    input?.CollapseAll();
+                }
+                saveToolStripMenuItem_Click(null, null);
+            }
+        }
+
+        private bool runScrape() {
+            Console.Clear();
+
+            try
+            {
+                // Give time for mouse to stop moving
+                Console.WriteLine("Waiting for mouse to stop moving...");
+                Thread.Sleep(3000);
+
+                if (input == null)
+                {
+                    input = new MakeMKVInput(true);
+                }
+                scraper = new MakeMKVScraper(input);
+
+                // Save output folder for later
+                this.OutputFolder = input.ReadOutputFolder();
+                Console.WriteLine($"Found output path: {this.OutputFolder ?? "null"}");
+
+                // scrape all titles
+                input.FocusMKV();
+                scraper.Scrape();
+                return true;
+            } catch (Exception err)
+            {
+                PlaySound(SadSound);
+                MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
         }
     }
 }
