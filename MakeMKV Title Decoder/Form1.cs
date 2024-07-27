@@ -252,13 +252,13 @@ namespace MakeMKV_Title_Decoder {
 
                 }
 
-                for (int i = 0; i < identifier.BonusFeatures.Count; i++)
+                foreach (var bonusFeatureTitleIndex in identifier.BonusFeatures.WithIndex())
                 {
-                    Title bonusFeature = scraper.Titles[i];
+                    Title bonusFeature = scraper.Titles[bonusFeatureTitleIndex.Value];
                     try
                     {
                         string oldPath = Path.Combine(folder, bonusFeature.FileName);
-                        string newPath = Path.Combine(folder, $"BonusFeature_{(i + 1):D2}.mkv");
+                        string newPath = Path.Combine(folder, $"BonusFeature_{(bonusFeatureTitleIndex.Index + 1):D2}.mkv");
                         File.Move(oldPath, newPath);
                         Console.WriteLine($"Renamed from {oldPath} to {newPath}");
                     } catch (Exception ex)
