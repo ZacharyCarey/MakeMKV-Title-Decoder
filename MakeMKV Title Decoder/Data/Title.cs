@@ -16,6 +16,8 @@ namespace MakeMKV_Title_Decoder {
         public DataSize Size; 
         public string FileName;
         public string? Comment = null;
+        public int? SourceTitleID = null;
+        public int? Angle = null;
 
         public SerializableList<Track> Tracks = new();
 
@@ -83,7 +85,9 @@ namespace MakeMKV_Title_Decoder {
                 && left.Segments.SequenceEqual(right.Segments)
                 && left.Size.Near(right.Size)
                 && left.Tracks.Count == right.Tracks.Count
-                && left.Tracks.SequenceEqual(right.Tracks);
+                && left.Tracks.SequenceEqual(right.Tracks)
+                && left.SourceTitleID == right.SourceTitleID
+                && left.Angle == right.Angle;
         }
 
         public static bool operator !=(Title left, Title right) {
@@ -136,6 +140,25 @@ namespace MakeMKV_Title_Decoder {
                 sb.AppendLine("]");
             }
 
+            if (Comment != null)
+            {
+                sb.Append('\t', tabs);
+                sb.AppendLine($"Comment: {Comment}");
+            }
+
+            if (SourceTitleID.HasValue)
+            {
+                sb.Append('\t', tabs);
+                sb.AppendLine($"Source title ID: {this.SourceTitleID.Value}");
+            }
+
+            if (Angle.HasValue)
+            {
+                sb.Append('\t', tabs);
+                sb.AppendLine($"Angle: {this.Angle}");
+            }
+
+
             sb.Append('\t', tabs);
             sb.Append('}');
 
@@ -153,6 +176,8 @@ namespace MakeMKV_Title_Decoder {
             data["File Name"] = new JsonString(this.FileName);
             data["Tracks"] = this.Tracks.SaveToJson();
             if (this.Comment != null) data["Comment"] = new JsonString(this.Comment);
+            if (this.SourceTitleID.HasValue) data["Source Title ID"] = new JsonInteger(this.SourceTitleID.Value);
+            if (this.Angle.HasValue) data["Angle"] = new JsonInteger(this.Angle.Value);
             return data;
         }
 
@@ -170,6 +195,14 @@ namespace MakeMKV_Title_Decoder {
             JsonData commentData = data["Comment"];
             if (commentData == null) this.Comment = null;
             else this.Comment = (JsonString)commentData;
+
+            JsonData sourceTitleIdData = data["Source Title ID"];
+            if (sourceTitleIdData == null) this.SourceTitleID = null;
+            else this.SourceTitleID = (int)(JsonInteger)sourceTitleIdData;
+
+            JsonData angleData = data["Angle"];
+            if (angleData == null) this.Angle = null;
+            else this.Angle = (int)(JsonInteger)angleData;
         }
 
         public static Title Parse(string data) {
@@ -232,6 +265,12 @@ namespace MakeMKV_Title_Decoder {
                             break;
                         case "Comment":
                             title.Comment = value;
+                            break;
+                        case "Source title ID":
+                            title.SourceTitleID = int.Parse(value);
+                            break;
+                        case "Angle":
+                            title.Angle = int.Parse(value);
                             break;
                         case "Segment count":
                             // Ignored

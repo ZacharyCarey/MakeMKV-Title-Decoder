@@ -433,7 +433,7 @@ namespace MakeMKV_Title_Decoder {
                 {
                     scraper.Scrape();
                 }
-                Console.WriteLine($"Total size: {scraper.Titles.Select(x => x.Size).Aggregate((x,  y) => x + y)}");
+                Console.WriteLine($"Total size: {scraper.Titles.Select(x => x.Size).Aggregate((x, y) => x + y)}");
 
                 return true;
             } catch (Exception err)
@@ -445,9 +445,39 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void ManualScrapeCountCheckBox_CheckedChanged(object sender, EventArgs e) {
-            foreach(Control control in ManualScraperPanel.Controls)
+            foreach (Control control in ManualScraperPanel.Controls)
             {
                 control.Enabled = ManualScrapeCountCheckBox.Checked;
+            }
+        }
+
+        private void enableAllAttachmentsToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (this.scraper == null)
+            {
+                MessageBox.Show("No scraper found.");
+                return;
+            }
+
+            try
+            {
+                // Give time for mouse to stop moving
+                Console.WriteLine("Waiting for mouse to stop moving...");
+                Thread.Sleep(3000);
+
+                if (input == null)
+                {
+                    input = new MakeMKVInput(true);
+                }
+
+                foreach(Ref<Title> title in scraper.Titles.AsPointers().Reverse())
+                {
+                    input.ToggleAttachment(title);
+                }
+                PlaySound(HappySound);
+            } catch (Exception err)
+            {
+                PlaySound(SadSound);
+                MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

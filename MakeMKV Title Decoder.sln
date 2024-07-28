@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35004.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakeMKV Title Decoder", "MakeMKV Title Decoder\MakeMKV Title Decoder.csproj", "{BD5DB650-8BD3-43A4-A8A6-B5C0A170DC27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MakeMKV Title Decoder", "MakeMKV Title Decoder\MakeMKV Title Decoder.csproj", "{BD5DB650-8BD3-43A4-A8A6-B5C0A170DC27}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentificationTests", "IdentificationTests\IdentificationTests.csproj", "{108ABB95-CF5A-464E-AD29-AE436BB6D21E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{BD5DB650-8BD3-43A4-A8A6-B5C0A170DC27}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD5DB650-8BD3-43A4-A8A6-B5C0A170DC27}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD5DB650-8BD3-43A4-A8A6-B5C0A170DC27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{108ABB95-CF5A-464E-AD29-AE436BB6D21E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{108ABB95-CF5A-464E-AD29-AE436BB6D21E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{108ABB95-CF5A-464E-AD29-AE436BB6D21E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{108ABB95-CF5A-464E-AD29-AE436BB6D21E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

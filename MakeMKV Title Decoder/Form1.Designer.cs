@@ -50,6 +50,7 @@
             FinalTrackCount = new NumericUpDown();
             NumberOfTitlesBox = new NumericUpDown();
             ManualScrapeCountCheckBox = new CheckBox();
+            enableAllAttachmentsToolStripMenuItem = new ToolStripMenuItem();
             panel1.SuspendLayout();
             menuStrip1.SuspendLayout();
             ManualScraperPanel.SuspendLayout();
@@ -174,7 +175,7 @@
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { debugDumpToolStripMenuItem, identifierToolStripMenuItem, checkAllToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { debugDumpToolStripMenuItem, identifierToolStripMenuItem, checkAllToolStripMenuItem, enableAllAttachmentsToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             fileToolStripMenuItem.Size = new Size(54, 20);
             fileToolStripMenuItem.Text = "Debug";
@@ -182,7 +183,7 @@
             // debugDumpToolStripMenuItem
             // 
             debugDumpToolStripMenuItem.Name = "debugDumpToolStripMenuItem";
-            debugDumpToolStripMenuItem.Size = new Size(154, 22);
+            debugDumpToolStripMenuItem.Size = new Size(197, 22);
             debugDumpToolStripMenuItem.Text = "Scraper Dump";
             debugDumpToolStripMenuItem.Click += debugDumpToolStripMenuItem_Click;
             // 
@@ -190,7 +191,7 @@
             // 
             identifierToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem, scrapeAndSaveToolStripMenuItem, loadToolStripMenuItem, loadNoInputToolStripMenuItem });
             identifierToolStripMenuItem.Name = "identifierToolStripMenuItem";
-            identifierToolStripMenuItem.Size = new Size(154, 22);
+            identifierToolStripMenuItem.Size = new Size(197, 22);
             identifierToolStripMenuItem.Text = "Scraper";
             // 
             // saveToolStripMenuItem
@@ -224,7 +225,7 @@
             // checkAllToolStripMenuItem
             // 
             checkAllToolStripMenuItem.Name = "checkAllToolStripMenuItem";
-            checkAllToolStripMenuItem.Size = new Size(154, 22);
+            checkAllToolStripMenuItem.Size = new Size(197, 22);
             checkAllToolStripMenuItem.Text = "Check All Titles";
             checkAllToolStripMenuItem.Click += checkAllToolStripMenuItem_Click;
             // 
@@ -288,6 +289,13 @@
             ManualScrapeCountCheckBox.UseVisualStyleBackColor = true;
             ManualScrapeCountCheckBox.CheckedChanged += ManualScrapeCountCheckBox_CheckedChanged;
             // 
+            // enableAllAttachmentsToolStripMenuItem
+            // 
+            enableAllAttachmentsToolStripMenuItem.Name = "enableAllAttachmentsToolStripMenuItem";
+            enableAllAttachmentsToolStripMenuItem.Size = new Size(197, 22);
+            enableAllAttachmentsToolStripMenuItem.Text = "Enable All Attachments";
+            enableAllAttachmentsToolStripMenuItem.Click += enableAllAttachmentsToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -345,5 +353,6 @@
         private NumericUpDown FinalTrackCount;
         private NumericUpDown NumberOfTitlesBox;
         private CheckBox ManualScrapeCountCheckBox;
+        private ToolStripMenuItem enableAllAttachmentsToolStripMenuItem;
     }
 }
