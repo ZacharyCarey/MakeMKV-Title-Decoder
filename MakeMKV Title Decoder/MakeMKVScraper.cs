@@ -19,7 +19,7 @@ namespace MakeMKV_Title_Decoder {
             this.input = input;
         }
 
-        public void Scrape(int maxScrapesDebug = -1) {
+        public void Scrape(int maxScrapes = -1, int finalTitleTrackCount = -1) {
             Console.WriteLine("Scraping...");
 
             input.Reset();
@@ -35,7 +35,7 @@ namespace MakeMKV_Title_Decoder {
                 {
                     input.ScrollDown(1);
                     string data = input.CopyTitleInformation();
-                    if (data == lastData)
+                    if ((maxScrapes < 0 || finalTitleTrackCount < 0) && (data == lastData))
                     {
                         // Found the end of the list while searching tracks
                         //if (verbose) Console.WriteLine($"\tFound end-of-list while searching tracks for {lastTitle.SimplifiedFileName}.");
@@ -57,6 +57,11 @@ namespace MakeMKV_Title_Decoder {
                         Track track = Track.Parse(data);
                         lastTitle.Tracks.Add(track);
                     }
+
+                    if (Titles.Count + 1 == maxScrapes && lastTitle.Tracks.Count == finalTitleTrackCount)
+                    {
+                        break;
+                    }
                 }
 
                 if (lastData == null)
@@ -72,7 +77,7 @@ namespace MakeMKV_Title_Decoder {
                 Titles.Add(lastTitle);
                 Console.WriteLine($"Found title: {lastTitle}");
 
-                if (Titles.Count == maxScrapesDebug)
+                if (Titles.Count == maxScrapes)
                 {
                     break;
                 }

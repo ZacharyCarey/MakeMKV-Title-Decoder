@@ -21,6 +21,7 @@ namespace MakeMKV_Title_Decoder {
 
         private void Form1_Load(object sender, EventArgs e) {
             ConsoleLog.CreateLogger("Log.txt");
+            ManualScrapeCountCheckBox_CheckedChanged(null, null);
         }
 
         private DvdType getDvdType() {
@@ -256,36 +257,26 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void debugDumpToolStripMenuItem_Click(object sender, EventArgs e) {
-            // Give time for mouse to stop moving
-            Console.WriteLine("Waiting for mouse to stop moving...");
-            Thread.Sleep(3000);
-
-            if (input == null)
+            if (runScrape())
             {
-                input = new MakeMKVInput(true);
-            }
-            scraper = new MakeMKVScraper(input);
 
-            // scrape all titles
-            input.FocusMKV();
-            scraper.Scrape();
-
-            // Save data to file
-            using (FileStream stream = File.OpenWrite("DataDump.txt"))
-            using (StreamWriter writer = new StreamWriter(stream))
-            {
-                foreach (Title title in scraper.Titles)
+                // Save data to file
+                using (FileStream stream = File.OpenWrite("DataDump.txt"))
+                using (StreamWriter writer = new StreamWriter(stream))
                 {
-                    writer.WriteLine(title.ToString());
+                    foreach (Title title in scraper.Titles)
+                    {
+                        writer.WriteLine(title.ToString());
+                    }
                 }
-            }
 
-            if (this.CollapseCheckBox.Checked)
-            {
-                input.CollapseAll();
-            }
+                if (this.CollapseCheckBox.Checked)
+                {
+                    input.CollapseAll();
+                }
 
-            Refocus();
+                Refocus();
+            }
         }
 
         private void saveToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -408,6 +399,7 @@ namespace MakeMKV_Title_Decoder {
                 {
                     input?.CollapseAll();
                 }
+                PlaySound(HappySound);
                 saveToolStripMenuItem_Click(null, null);
             }
         }
@@ -433,13 +425,29 @@ namespace MakeMKV_Title_Decoder {
 
                 // scrape all titles
                 input.FocusMKV();
-                scraper.Scrape();
+
+                if (this.ManualScrapeCountCheckBox.Checked)
+                {
+                    scraper.Scrape((int)this.NumberOfTitlesBox.Value, (int)this.FinalTrackCount.Value);
+                } else
+                {
+                    scraper.Scrape();
+                }
+                Console.WriteLine($"Total size: {scraper.Titles.Select(x => x.Size).Aggregate((x,  y) => x + y)}");
+
                 return true;
             } catch (Exception err)
             {
                 PlaySound(SadSound);
                 MessageBox.Show(err.Message, "An error occured.", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
+            }
+        }
+
+        private void ManualScrapeCountCheckBox_CheckedChanged(object sender, EventArgs e) {
+            foreach(Control control in ManualScraperPanel.Controls)
+            {
+                control.Enabled = ManualScrapeCountCheckBox.Checked;
             }
         }
     }

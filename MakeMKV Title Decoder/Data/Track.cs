@@ -28,6 +28,8 @@ namespace MakeMKV_Title_Decoder {
         public string? Flags = null; // Audio
         public string? SourceFileName = null; // Attachment
         public DataSize? Size = null; // Attachment
+        public string? OutputFormat = null; // Audio
+        public string? OutputDescription = null; // Audio
 
         public Track() {
 
@@ -116,6 +118,12 @@ namespace MakeMKV_Title_Decoder {
                     case "Flags":
                         result.Flags = value;
                         break;
+                    case "Output format":
+                        result.OutputFormat = value;
+                        break;
+                    case "Output description":
+                        result.OutputDescription = value;
+                        break;
                     default:
                         throw new FormatException("Unknown track data: " + key);
                 }
@@ -150,8 +158,9 @@ namespace MakeMKV_Title_Decoder {
                 && (left.BitsPerSample == right.BitsPerSample)
                 && (left.Flags == right.Flags)
                 && (left.SourceFileName == right.SourceFileName)
-                && (left.Size.HasValue && right.Size.HasValue && left.Size.Value.Near(right.Size.Value));
-
+                && (left.Size.HasValue && right.Size.HasValue && left.Size.Value.Near(right.Size.Value))
+                && (left.OutputFormat == right.OutputFormat)
+                && (left.OutputDescription == right.OutputDescription);
         }
 
         public static bool operator !=(Track left, Track right) => !(left == right);
@@ -177,6 +186,8 @@ namespace MakeMKV_Title_Decoder {
             if (this.Flags != null) obj["Flags"] = new JsonString(this.Flags);
             if (this.SourceFileName != null) obj["Source File Name"] = new JsonString(this.SourceFileName);
             if (this.Size.HasValue) obj["Size"] = this.Size.Value.SaveToJson();
+            if (this.OutputFormat != null) obj["Output Format"] = new JsonString(this.OutputFormat);
+            if (this.OutputDescription != null) obj["Output Description"] = new JsonString(this.OutputDescription);
 
             return obj;
         }
@@ -198,6 +209,8 @@ namespace MakeMKV_Title_Decoder {
             this.Flags = LoadStringFromJson(obj["Flags"]);
             this.SourceFileName = LoadStringFromJson(obj["Source File Name"]);
             this.Size = LoadDataSizeFromJson(obj["Size"]);
+            this.OutputFormat = LoadStringFromJson(obj["Output Format"]);
+            this.OutputDescription = LoadStringFromJson(obj["Output Description"]);
         }
 
         private static TrackType LoadTrackFromJson(JsonData data) {

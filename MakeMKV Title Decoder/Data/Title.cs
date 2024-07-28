@@ -152,7 +152,7 @@ namespace MakeMKV_Title_Decoder {
             data["Size"] = this.Size.SaveToJson();
             data["File Name"] = new JsonString(this.FileName);
             data["Tracks"] = this.Tracks.SaveToJson();
-            data["Comment"] = new JsonString(this.Comment);
+            if (this.Comment != null) data["Comment"] = new JsonString(this.Comment);
             return data;
         }
 
@@ -166,7 +166,10 @@ namespace MakeMKV_Title_Decoder {
             this.Size.LoadFromJson(data["Size"]);
             this.FileName = (JsonString)data["File Name"];
             this.Tracks.LoadFromJson(data["Tracks"]);
-            this.Comment = (JsonString)data["Comment"];
+
+            JsonData commentData = data["Comment"];
+            if (commentData == null) this.Comment = null;
+            else this.Comment = (JsonString)commentData;
         }
 
         public static Title Parse(string data) {
