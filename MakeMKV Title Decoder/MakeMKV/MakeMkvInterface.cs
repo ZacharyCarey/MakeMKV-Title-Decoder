@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.MakeMKV
 {
+    /// <summary>
+    /// https://www.makemkv.com/developers/usage.txt
+    /// </summary>
     internal class MakeMkvInterface
     {
         string exePath;

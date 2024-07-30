@@ -65,14 +65,14 @@
             // saveDiscToolStripMenuItem
             // 
             saveDiscToolStripMenuItem.Name = "saveDiscToolStripMenuItem";
-            saveDiscToolStripMenuItem.Size = new Size(180, 22);
+            saveDiscToolStripMenuItem.Size = new Size(100, 22);
             saveDiscToolStripMenuItem.Text = "Save";
             saveDiscToolStripMenuItem.Click += saveDiscToolStripMenuItem_Click;
             // 
             // loadDiscToolStripMenuItem
             // 
             loadDiscToolStripMenuItem.Name = "loadDiscToolStripMenuItem";
-            loadDiscToolStripMenuItem.Size = new Size(180, 22);
+            loadDiscToolStripMenuItem.Size = new Size(100, 22);
             loadDiscToolStripMenuItem.Text = "Load";
             loadDiscToolStripMenuItem.Click += loadDiscToolStripMenuItem_Click;
             // 
@@ -167,6 +167,7 @@
             // 
             DriveBtnPanel.Controls.Add(ReadBtn);
             DriveBtnPanel.Controls.Add(DownloadBtn);
+            DriveBtnPanel.Enabled = false;
             DriveBtnPanel.Location = new Point(429, 27);
             DriveBtnPanel.Name = "DriveBtnPanel";
             DriveBtnPanel.Size = new Size(101, 56);
@@ -175,7 +176,7 @@
             // RenameVideosBtn
             // 
             RenameVideosBtn.Enabled = false;
-            RenameVideosBtn.Location = new Point(411, 167);
+            RenameVideosBtn.Location = new Point(429, 167);
             RenameVideosBtn.Name = "RenameVideosBtn";
             RenameVideosBtn.Size = new Size(96, 23);
             RenameVideosBtn.TabIndex = 13;

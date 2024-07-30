@@ -33,7 +33,7 @@ namespace MakeMKV_Title_Decoder.Data {
             return this == other;
         }
 
-        public static bool operator ==(Disc? left, Disc? right) {
+        /*public static bool operator ==(Disc? left, Disc? right) {
             if(left is null)
             {
                 if (right is null)
@@ -77,7 +77,7 @@ namespace MakeMKV_Title_Decoder.Data {
         }
 
         public static bool operator !=(Disc? left, Disc? right) => !(left == right);
-
+        */
         public override string ToString() {
             return this.ToString(0);
         }

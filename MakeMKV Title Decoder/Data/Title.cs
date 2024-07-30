@@ -25,6 +25,9 @@ namespace MakeMKV_Title_Decoder.Data {
 
         public SerializableList<Track> Tracks = new();
 
+        // Used by FileRenamer, not an actual data point to be saved
+        public string? UserName = null;
+
         public string SourceFileExtension {
             get
             {
@@ -81,7 +84,7 @@ namespace MakeMKV_Title_Decoder.Data {
             return this == other;
         }
 
-        public static bool operator ==(Title left, Title right) {
+        /*public static bool operator ==(Title left, Title right) {
             if (left is null)
             {
                 if (right is null)
@@ -130,7 +133,7 @@ namespace MakeMKV_Title_Decoder.Data {
 
         public static bool operator !=(Title left, Title right) {
             return !(left == right);
-        }
+        }*/
 
         public override string ToString() {
             return ToString(0);
@@ -295,6 +298,10 @@ namespace MakeMKV_Title_Decoder.Data {
                     Console.ResetColor();
                     break;
             }
+        }
+
+        public override int GetHashCode() {
+            return (this.SourceFileName ?? "").GetHashCode();
         }
     }
 }

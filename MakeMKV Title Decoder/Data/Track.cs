@@ -167,7 +167,7 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
-        public static bool operator ==(Track left, Track right) {
+        /*public static bool operator ==(Track left, Track right) {
             if (left is null)
             {
                 if (right is null)
@@ -222,7 +222,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public static bool operator !=(Track left, Track right) => !(left == right);
-
+        */
         public bool Equals(Track other) {
             return this == other;
         }
