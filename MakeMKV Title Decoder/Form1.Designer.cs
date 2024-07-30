@@ -25,334 +25,202 @@
         /// </summary>
         private void InitializeComponent() {
             components = new System.ComponentModel.Container();
-            panel1 = new Panel();
-            BonusFeaturesRadioBtn = new RadioButton();
-            TvRadioBtn = new RadioButton();
-            MovieRadioBtn = new RadioButton();
             toolTip1 = new ToolTip(components);
-            IgnoreIncompleteCheckBox = new CheckBox();
-            CollapseCheckBox = new CheckBox();
-            ScrapeBtn = new Button();
-            IncludeAttachmentsCheckBox = new CheckBox();
-            RenameBtn = new Button();
             menuStrip1 = new MenuStrip();
-            fileToolStripMenuItem = new ToolStripMenuItem();
-            debugDumpToolStripMenuItem = new ToolStripMenuItem();
-            identifierToolStripMenuItem = new ToolStripMenuItem();
-            saveToolStripMenuItem = new ToolStripMenuItem();
-            scrapeAndSaveToolStripMenuItem = new ToolStripMenuItem();
-            loadToolStripMenuItem = new ToolStripMenuItem();
-            loadNoInputToolStripMenuItem = new ToolStripMenuItem();
-            checkAllToolStripMenuItem = new ToolStripMenuItem();
-            ManualScraperPanel = new Panel();
-            label2 = new Label();
-            label1 = new Label();
-            FinalTrackCount = new NumericUpDown();
-            NumberOfTitlesBox = new NumericUpDown();
-            ManualScrapeCountCheckBox = new CheckBox();
-            enableAllAttachmentsToolStripMenuItem = new ToolStripMenuItem();
-            panel1.SuspendLayout();
+            discToolStripMenuItem = new ToolStripMenuItem();
+            saveDiscToolStripMenuItem = new ToolStripMenuItem();
+            loadDiscToolStripMenuItem = new ToolStripMenuItem();
+            DriveSelectionPanel = new Panel();
+            TotalProgressBar = new ProgressBar();
+            CurrentProgressBar = new ProgressBar();
+            DiscNameLabel = new Label();
+            label3 = new Label();
+            DrivesComboBox = new ComboBox();
+            RefreshDrivesBtn = new Button();
+            ReadBtn = new Button();
+            DownloadBtn = new Button();
+            DriveBtnPanel = new Panel();
+            RenameVideosBtn = new Button();
             menuStrip1.SuspendLayout();
-            ManualScraperPanel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)FinalTrackCount).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)NumberOfTitlesBox).BeginInit();
+            DriveSelectionPanel.SuspendLayout();
+            DriveBtnPanel.SuspendLayout();
             SuspendLayout();
-            // 
-            // panel1
-            // 
-            panel1.Controls.Add(BonusFeaturesRadioBtn);
-            panel1.Controls.Add(TvRadioBtn);
-            panel1.Controls.Add(MovieRadioBtn);
-            panel1.Location = new Point(12, 40);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(186, 75);
-            panel1.TabIndex = 0;
-            // 
-            // BonusFeaturesRadioBtn
-            // 
-            BonusFeaturesRadioBtn.AutoSize = true;
-            BonusFeaturesRadioBtn.Location = new Point(3, 53);
-            BonusFeaturesRadioBtn.Name = "BonusFeaturesRadioBtn";
-            BonusFeaturesRadioBtn.Size = new Size(105, 19);
-            BonusFeaturesRadioBtn.TabIndex = 2;
-            BonusFeaturesRadioBtn.Text = "Bonus Features";
-            toolTip1.SetToolTip(BonusFeaturesRadioBtn, "Dedicated bonus features disc. Will separate all tracks instead of looking for a main feature.");
-            BonusFeaturesRadioBtn.UseVisualStyleBackColor = true;
-            // 
-            // TvRadioBtn
-            // 
-            TvRadioBtn.AutoSize = true;
-            TvRadioBtn.Location = new Point(3, 28);
-            TvRadioBtn.Name = "TvRadioBtn";
-            TvRadioBtn.Size = new Size(38, 19);
-            TvRadioBtn.TabIndex = 1;
-            TvRadioBtn.Text = "TV";
-            toolTip1.SetToolTip(TvRadioBtn, "TV prefers individual episodes for the main feature");
-            TvRadioBtn.UseVisualStyleBackColor = true;
-            // 
-            // MovieRadioBtn
-            // 
-            MovieRadioBtn.AutoSize = true;
-            MovieRadioBtn.Checked = true;
-            MovieRadioBtn.Location = new Point(3, 3);
-            MovieRadioBtn.Name = "MovieRadioBtn";
-            MovieRadioBtn.Size = new Size(58, 19);
-            MovieRadioBtn.TabIndex = 0;
-            MovieRadioBtn.TabStop = true;
-            MovieRadioBtn.Text = "Movie";
-            toolTip1.SetToolTip(MovieRadioBtn, "Movies prefer the single playlist for the main feature");
-            MovieRadioBtn.UseVisualStyleBackColor = true;
-            // 
-            // IgnoreIncompleteCheckBox
-            // 
-            IgnoreIncompleteCheckBox.AutoSize = true;
-            IgnoreIncompleteCheckBox.Checked = true;
-            IgnoreIncompleteCheckBox.CheckState = CheckState.Checked;
-            IgnoreIncompleteCheckBox.Location = new Point(15, 146);
-            IgnoreIncompleteCheckBox.Name = "IgnoreIncompleteCheckBox";
-            IgnoreIncompleteCheckBox.Size = new Size(155, 19);
-            IgnoreIncompleteCheckBox.TabIndex = 4;
-            IgnoreIncompleteCheckBox.Text = "Ignore incomplete video";
-            toolTip1.SetToolTip(IgnoreIncompleteCheckBox, "If a stream contains only video or only audio it will be ignored");
-            IgnoreIncompleteCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // CollapseCheckBox
-            // 
-            CollapseCheckBox.AutoSize = true;
-            CollapseCheckBox.Checked = true;
-            CollapseCheckBox.CheckState = CheckState.Checked;
-            CollapseCheckBox.Location = new Point(15, 171);
-            CollapseCheckBox.Name = "CollapseCheckBox";
-            CollapseCheckBox.Size = new Size(163, 19);
-            CollapseCheckBox.TabIndex = 5;
-            CollapseCheckBox.Text = "Collapse all when finished";
-            toolTip1.SetToolTip(CollapseCheckBox, "When finished scraping, will collapse all titles.");
-            CollapseCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // ScrapeBtn
-            // 
-            ScrapeBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ScrapeBtn.Location = new Point(12, 211);
-            ScrapeBtn.Name = "ScrapeBtn";
-            ScrapeBtn.Size = new Size(75, 23);
-            ScrapeBtn.TabIndex = 1;
-            ScrapeBtn.Text = "Scrape";
-            ScrapeBtn.UseVisualStyleBackColor = true;
-            ScrapeBtn.Click += ScrapeBtn_Click;
-            // 
-            // IncludeAttachmentsCheckBox
-            // 
-            IncludeAttachmentsCheckBox.AutoSize = true;
-            IncludeAttachmentsCheckBox.Checked = true;
-            IncludeAttachmentsCheckBox.CheckState = CheckState.Checked;
-            IncludeAttachmentsCheckBox.Location = new Point(15, 121);
-            IncludeAttachmentsCheckBox.Name = "IncludeAttachmentsCheckBox";
-            IncludeAttachmentsCheckBox.Size = new Size(136, 19);
-            IncludeAttachmentsCheckBox.TabIndex = 2;
-            IncludeAttachmentsCheckBox.Text = "Include Attachments";
-            IncludeAttachmentsCheckBox.UseVisualStyleBackColor = true;
-            IncludeAttachmentsCheckBox.CheckedChanged += IncludeAttachmentsCheckBox_CheckedChanged;
-            // 
-            // RenameBtn
-            // 
-            RenameBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            RenameBtn.Location = new Point(123, 211);
-            RenameBtn.Name = "RenameBtn";
-            RenameBtn.Size = new Size(75, 23);
-            RenameBtn.TabIndex = 3;
-            RenameBtn.Text = "Rename";
-            RenameBtn.UseVisualStyleBackColor = true;
-            RenameBtn.Click += RenameBtn_Click;
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(502, 24);
+            menuStrip1.Size = new Size(556, 24);
             menuStrip1.TabIndex = 6;
             menuStrip1.Text = "menuStrip1";
             // 
-            // fileToolStripMenuItem
+            // discToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { debugDumpToolStripMenuItem, identifierToolStripMenuItem, checkAllToolStripMenuItem, enableAllAttachmentsToolStripMenuItem });
-            fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new Size(54, 20);
-            fileToolStripMenuItem.Text = "Debug";
+            discToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveDiscToolStripMenuItem, loadDiscToolStripMenuItem });
+            discToolStripMenuItem.Name = "discToolStripMenuItem";
+            discToolStripMenuItem.Size = new Size(41, 20);
+            discToolStripMenuItem.Text = "Disc";
             // 
-            // debugDumpToolStripMenuItem
+            // saveDiscToolStripMenuItem
             // 
-            debugDumpToolStripMenuItem.Name = "debugDumpToolStripMenuItem";
-            debugDumpToolStripMenuItem.Size = new Size(197, 22);
-            debugDumpToolStripMenuItem.Text = "Scraper Dump";
-            debugDumpToolStripMenuItem.Click += debugDumpToolStripMenuItem_Click;
+            saveDiscToolStripMenuItem.Name = "saveDiscToolStripMenuItem";
+            saveDiscToolStripMenuItem.Size = new Size(180, 22);
+            saveDiscToolStripMenuItem.Text = "Save";
+            saveDiscToolStripMenuItem.Click += saveDiscToolStripMenuItem_Click;
             // 
-            // identifierToolStripMenuItem
+            // loadDiscToolStripMenuItem
             // 
-            identifierToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem, scrapeAndSaveToolStripMenuItem, loadToolStripMenuItem, loadNoInputToolStripMenuItem });
-            identifierToolStripMenuItem.Name = "identifierToolStripMenuItem";
-            identifierToolStripMenuItem.Size = new Size(197, 22);
-            identifierToolStripMenuItem.Text = "Scraper";
+            loadDiscToolStripMenuItem.Name = "loadDiscToolStripMenuItem";
+            loadDiscToolStripMenuItem.Size = new Size(180, 22);
+            loadDiscToolStripMenuItem.Text = "Load";
+            loadDiscToolStripMenuItem.Click += loadDiscToolStripMenuItem_Click;
             // 
-            // saveToolStripMenuItem
+            // DriveSelectionPanel
             // 
-            saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(159, 22);
-            saveToolStripMenuItem.Text = "Save Current";
-            saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
+            DriveSelectionPanel.Controls.Add(TotalProgressBar);
+            DriveSelectionPanel.Controls.Add(CurrentProgressBar);
+            DriveSelectionPanel.Controls.Add(DiscNameLabel);
+            DriveSelectionPanel.Controls.Add(label3);
+            DriveSelectionPanel.Controls.Add(DrivesComboBox);
+            DriveSelectionPanel.Controls.Add(RefreshDrivesBtn);
+            DriveSelectionPanel.Location = new Point(12, 27);
+            DriveSelectionPanel.Name = "DriveSelectionPanel";
+            DriveSelectionPanel.Size = new Size(525, 121);
+            DriveSelectionPanel.TabIndex = 12;
             // 
-            // scrapeAndSaveToolStripMenuItem
+            // TotalProgressBar
             // 
-            scrapeAndSaveToolStripMenuItem.Name = "scrapeAndSaveToolStripMenuItem";
-            scrapeAndSaveToolStripMenuItem.Size = new Size(159, 22);
-            scrapeAndSaveToolStripMenuItem.Text = "Scrape and Save";
-            scrapeAndSaveToolStripMenuItem.Click += scrapeAndSaveToolStripMenuItem_Click;
+            TotalProgressBar.Location = new Point(3, 91);
+            TotalProgressBar.Maximum = 65536;
+            TotalProgressBar.Name = "TotalProgressBar";
+            TotalProgressBar.Size = new Size(515, 23);
+            TotalProgressBar.TabIndex = 6;
             // 
-            // loadToolStripMenuItem
+            // CurrentProgressBar
             // 
-            loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-            loadToolStripMenuItem.Size = new Size(159, 22);
-            loadToolStripMenuItem.Text = "Load";
-            loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
+            CurrentProgressBar.Location = new Point(3, 62);
+            CurrentProgressBar.Maximum = 65536;
+            CurrentProgressBar.Name = "CurrentProgressBar";
+            CurrentProgressBar.Size = new Size(515, 23);
+            CurrentProgressBar.TabIndex = 4;
             // 
-            // loadNoInputToolStripMenuItem
+            // DiscNameLabel
             // 
-            loadNoInputToolStripMenuItem.Name = "loadNoInputToolStripMenuItem";
-            loadNoInputToolStripMenuItem.Size = new Size(159, 22);
-            loadNoInputToolStripMenuItem.Text = "Load - No Input";
-            loadNoInputToolStripMenuItem.Click += loadNoInputToolStripMenuItem_Click;
+            DiscNameLabel.AutoSize = true;
+            DiscNameLabel.Location = new Point(158, 30);
+            DiscNameLabel.Name = "DiscNameLabel";
+            DiscNameLabel.Size = new Size(29, 15);
+            DiscNameLabel.TabIndex = 3;
+            DiscNameLabel.Text = "N/A";
             // 
-            // checkAllToolStripMenuItem
+            // label3
             // 
-            checkAllToolStripMenuItem.Name = "checkAllToolStripMenuItem";
-            checkAllToolStripMenuItem.Size = new Size(197, 22);
-            checkAllToolStripMenuItem.Text = "Check All Titles";
-            checkAllToolStripMenuItem.Click += checkAllToolStripMenuItem_Click;
+            label3.AutoSize = true;
+            label3.Location = new Point(84, 30);
+            label3.Name = "label3";
+            label3.Size = new Size(68, 15);
+            label3.TabIndex = 2;
+            label3.Text = "Disc name: ";
             // 
-            // ManualScraperPanel
+            // DrivesComboBox
             // 
-            ManualScraperPanel.Controls.Add(label2);
-            ManualScraperPanel.Controls.Add(label1);
-            ManualScraperPanel.Controls.Add(FinalTrackCount);
-            ManualScraperPanel.Controls.Add(NumberOfTitlesBox);
-            ManualScraperPanel.Location = new Point(204, 65);
-            ManualScraperPanel.Name = "ManualScraperPanel";
-            ManualScraperPanel.Size = new Size(298, 64);
-            ManualScraperPanel.TabIndex = 7;
+            DrivesComboBox.FormattingEnabled = true;
+            DrivesComboBox.Location = new Point(84, 4);
+            DrivesComboBox.Name = "DrivesComboBox";
+            DrivesComboBox.Size = new Size(309, 23);
+            DrivesComboBox.TabIndex = 1;
+            DrivesComboBox.SelectedIndexChanged += DrivesComboBox_SelectedIndexChanged;
             // 
-            // label2
+            // RefreshDrivesBtn
             // 
-            label2.AutoSize = true;
-            label2.Location = new Point(3, 32);
-            label2.Name = "label2";
-            label2.Size = new Size(119, 15);
-            label2.TabIndex = 3;
-            label2.Text = "Last Title track count:";
+            RefreshDrivesBtn.Location = new Point(3, 4);
+            RefreshDrivesBtn.Name = "RefreshDrivesBtn";
+            RefreshDrivesBtn.Size = new Size(75, 23);
+            RefreshDrivesBtn.TabIndex = 0;
+            RefreshDrivesBtn.Text = "Refresh";
+            RefreshDrivesBtn.UseVisualStyleBackColor = true;
+            RefreshDrivesBtn.Click += RefreshDrivesBtn_Click;
             // 
-            // label1
+            // ReadBtn
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(3, 7);
-            label1.Name = "label1";
-            label1.Size = new Size(96, 15);
-            label1.TabIndex = 2;
-            label1.Text = "Number of titles:";
+            ReadBtn.Location = new Point(3, 4);
+            ReadBtn.Name = "ReadBtn";
+            ReadBtn.Size = new Size(75, 23);
+            ReadBtn.TabIndex = 7;
+            ReadBtn.Text = "Read";
+            ReadBtn.UseVisualStyleBackColor = true;
+            ReadBtn.Click += ReadBtn_Click;
             // 
-            // FinalTrackCount
+            // DownloadBtn
             // 
-            FinalTrackCount.Location = new Point(128, 28);
-            FinalTrackCount.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
-            FinalTrackCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            FinalTrackCount.Name = "FinalTrackCount";
-            FinalTrackCount.Size = new Size(120, 23);
-            FinalTrackCount.TabIndex = 1;
-            FinalTrackCount.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            DownloadBtn.Enabled = false;
+            DownloadBtn.Location = new Point(3, 33);
+            DownloadBtn.Name = "DownloadBtn";
+            DownloadBtn.Size = new Size(75, 23);
+            DownloadBtn.TabIndex = 5;
+            DownloadBtn.Text = "Rip";
+            DownloadBtn.UseVisualStyleBackColor = true;
+            DownloadBtn.Click += DownloadBtn_Click;
             // 
-            // NumberOfTitlesBox
+            // DriveBtnPanel
             // 
-            NumberOfTitlesBox.Location = new Point(128, 3);
-            NumberOfTitlesBox.Maximum = new decimal(new int[] { 999999, 0, 0, 0 });
-            NumberOfTitlesBox.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            NumberOfTitlesBox.Name = "NumberOfTitlesBox";
-            NumberOfTitlesBox.Size = new Size(120, 23);
-            NumberOfTitlesBox.TabIndex = 0;
-            NumberOfTitlesBox.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            DriveBtnPanel.Controls.Add(ReadBtn);
+            DriveBtnPanel.Controls.Add(DownloadBtn);
+            DriveBtnPanel.Location = new Point(429, 27);
+            DriveBtnPanel.Name = "DriveBtnPanel";
+            DriveBtnPanel.Size = new Size(101, 56);
+            DriveBtnPanel.TabIndex = 8;
             // 
-            // ManualScrapeCountCheckBox
+            // RenameVideosBtn
             // 
-            ManualScrapeCountCheckBox.AutoSize = true;
-            ManualScrapeCountCheckBox.Location = new Point(204, 43);
-            ManualScrapeCountCheckBox.Name = "ManualScrapeCountCheckBox";
-            ManualScrapeCountCheckBox.Size = new Size(144, 19);
-            ManualScrapeCountCheckBox.TabIndex = 8;
-            ManualScrapeCountCheckBox.Text = "Manual Scraper Count";
-            ManualScrapeCountCheckBox.UseVisualStyleBackColor = true;
-            ManualScrapeCountCheckBox.CheckedChanged += ManualScrapeCountCheckBox_CheckedChanged;
-            // 
-            // enableAllAttachmentsToolStripMenuItem
-            // 
-            enableAllAttachmentsToolStripMenuItem.Name = "enableAllAttachmentsToolStripMenuItem";
-            enableAllAttachmentsToolStripMenuItem.Size = new Size(197, 22);
-            enableAllAttachmentsToolStripMenuItem.Text = "Enable All Attachments";
-            enableAllAttachmentsToolStripMenuItem.Click += enableAllAttachmentsToolStripMenuItem_Click;
+            RenameVideosBtn.Enabled = false;
+            RenameVideosBtn.Location = new Point(411, 167);
+            RenameVideosBtn.Name = "RenameVideosBtn";
+            RenameVideosBtn.Size = new Size(96, 23);
+            RenameVideosBtn.TabIndex = 13;
+            RenameVideosBtn.Text = "Rename Videos";
+            RenameVideosBtn.UseVisualStyleBackColor = true;
+            RenameVideosBtn.Click += RenameVideosBtn_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(502, 246);
-            Controls.Add(ManualScrapeCountCheckBox);
-            Controls.Add(ManualScraperPanel);
-            Controls.Add(CollapseCheckBox);
-            Controls.Add(IgnoreIncompleteCheckBox);
-            Controls.Add(RenameBtn);
-            Controls.Add(IncludeAttachmentsCheckBox);
-            Controls.Add(ScrapeBtn);
-            Controls.Add(panel1);
+            ClientSize = new Size(556, 202);
+            Controls.Add(RenameVideosBtn);
+            Controls.Add(DriveBtnPanel);
+            Controls.Add(DriveSelectionPanel);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
-            ManualScraperPanel.ResumeLayout(false);
-            ManualScraperPanel.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)FinalTrackCount).EndInit();
-            ((System.ComponentModel.ISupportInitialize)NumberOfTitlesBox).EndInit();
+            DriveSelectionPanel.ResumeLayout(false);
+            DriveSelectionPanel.PerformLayout();
+            DriveBtnPanel.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private Panel panel1;
-        private RadioButton TvRadioBtn;
-        private RadioButton MovieRadioBtn;
         private ToolTip toolTip1;
-        private Button ScrapeBtn;
-        private RadioButton BonusFeaturesRadioBtn;
-        private CheckBox IncludeAttachmentsCheckBox;
-        private Button RenameBtn;
-        private CheckBox IgnoreIncompleteCheckBox;
-        private CheckBox CollapseCheckBox;
         private MenuStrip menuStrip1;
-        private ToolStripMenuItem fileToolStripMenuItem;
-        private ToolStripMenuItem debugDumpToolStripMenuItem;
-        private ToolStripMenuItem identifierToolStripMenuItem;
-        private ToolStripMenuItem saveToolStripMenuItem;
-        private ToolStripMenuItem loadToolStripMenuItem;
-        private ToolStripMenuItem checkAllToolStripMenuItem;
-        private ToolStripMenuItem loadNoInputToolStripMenuItem;
-        private ToolStripMenuItem scrapeAndSaveToolStripMenuItem;
-        private Panel ManualScraperPanel;
-        private Label label2;
-        private Label label1;
-        private NumericUpDown FinalTrackCount;
-        private NumericUpDown NumberOfTitlesBox;
-        private CheckBox ManualScrapeCountCheckBox;
-        private ToolStripMenuItem enableAllAttachmentsToolStripMenuItem;
+        private Panel DriveSelectionPanel;
+        private Button RefreshDrivesBtn;
+        private ComboBox DrivesComboBox;
+        private Label DiscNameLabel;
+        private Label label3;
+        private ProgressBar CurrentProgressBar;
+        private Button DownloadBtn;
+        private ProgressBar TotalProgressBar;
+        private Button ReadBtn;
+        private Panel DriveBtnPanel;
+        private ToolStripMenuItem discToolStripMenuItem;
+        private ToolStripMenuItem saveDiscToolStripMenuItem;
+        private ToolStripMenuItem loadDiscToolStripMenuItem;
+        private Button RenameVideosBtn;
     }
 }

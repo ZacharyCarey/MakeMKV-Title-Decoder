@@ -1,9 +1,12 @@
 ﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.MakeMKV;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MakeMKV_Title_Decoder {
     public enum TrackType {
@@ -13,8 +16,8 @@ namespace MakeMKV_Title_Decoder {
         Attachment
     }
 
-    public struct Track : IJsonSerializable, IEquatable<Track> {
-        public TrackType Type;
+    public class Track : IJsonSerializable, IEquatable<Track> {
+        public TrackType? Type;
         public string? Codec = null; // Video, Audio, Subtitles, Attachment
         public Size? Resolution = null; // Video, Attachment
         public SizeF? AspectRatio = null; // Video
@@ -31,121 +34,161 @@ namespace MakeMKV_Title_Decoder {
         public string? OutputFormat = null; // Audio
         public string? OutputDescription = null; // Audio
 
+        // Hold any extra data that isn't explicitly stored in it's own variable
+        public SerializableDictionary<JsonString> Data = new();
+
         public Track() {
 
         }
 
-        public static bool TryParse(string info, out Track result) {
-            try
+        /// <exception cref="FormatException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        /// <exception cref="InvalidCastException"></exception>
+        public static void ParseMakeMkv(Disc disc, MakeMkvMessage info) {
+            if (info.Type != MakeMkvMessageType.StreamInfo || info.Arguments.Count != 5)
             {
-                result = Parse(info);
-                return true;
-            } catch(Exception ex)
-            {
-                result = new();
-                return false;
+                throw new FormatException("Incorrect message type.");
             }
+
+            int titleIndex = (int)(long)info[0];
+            int trackIndex = (int)(long)info[1];
+            ApItemAttributeId id = (ApItemAttributeId)(long)info[2];
+            int code = (int)(long)info[3];
+            string value = (string)info[4];
+
+            // We expect to have the title already. If not just throw an exception
+            Title title = disc.Titles[titleIndex];
+
+            if (trackIndex >= title.Tracks.Count)
+            {
+                title.Tracks.Add(new Track());
+            }
+            title.Tracks[trackIndex].ParseMakeMkv(id, code, value);
         }
 
-        public static Track Parse(string info) {
-            using (StringReader sr = new StringReader(info))
+        /// <exception cref="FormatException"></exception>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="OverflowException"></exception>
+        /// <exception cref="InvalidCastException"></exception>
+        private void ParseMakeMkv(ApItemAttributeId id, int code, string value) {
+            switch(id)
             {
-                string? line = sr.ReadLine();
-                if (line != "Track information" && line != "Attachment information")
-                {
-                    throw new FormatException("Invalid track info.");
-                }
-                return Parse(sr);
+                case ApItemAttributeId.Type:
+                    this.Type = ParseType(value);
+                    break;
+                case ApItemAttributeId.CodecLong:
+                    this.Codec = value;
+                    break;
+                case ApItemAttributeId.VideoSize:
+                    int x = value.IndexOf('x');
+                    Size resolution = new();
+                    resolution.Width = int.Parse(value.Substring(0, x));
+                    resolution.Height = int.Parse(value.Substring(x + 1));
+                    this.Resolution = resolution;
+                    break;
+                case ApItemAttributeId.VideoAspectRatio:
+                    int divider = value.IndexOf(':');
+                    SizeF aspect = new();
+                    aspect.Width = float.Parse(value.Substring(0, divider));
+                    aspect.Height = float.Parse(value.Substring(divider + 1));
+                    this.AspectRatio = aspect;
+                    break;
+                case ApItemAttributeId.VideoFrameRate:
+                    this.FrameRate = float.Parse(value.Split()[0]);
+                    break;
+                case ApItemAttributeId.MetadataLanguageName:
+                    this.Language = value;
+                    break;
+                case ApItemAttributeId.MkvFlags:
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        this.Flags = value;
+                    }
+                    break;
+                case ApItemAttributeId.Name:
+                    this.Name = value;
+                    break;
+                case ApItemAttributeId.Bitrate:
+                    // Ignored for now
+                    break;
+                case ApItemAttributeId.AudioChannelsCount:
+                    this.Channels = int.Parse(value);
+                    break;
+                case ApItemAttributeId.AudioSampleRate:
+                    this.SampleRate = int.Parse(value);
+                    break;
+                case ApItemAttributeId.AudioChannelLayoutName:
+                    this.ChannelLayout = value;
+                    break;
+                case ApItemAttributeId.AudioSampleSize:
+                    this.BitsPerSample = int.Parse(value);
+                    break;
+                case ApItemAttributeId.OutputFormat:
+                    this.OutputFormat = value;
+                    break;
+                case ApItemAttributeId.OutputFormatDescription:
+                    this.OutputDescription = value;
+                    break;
+                case ApItemAttributeId.LangCode:
+                case ApItemAttributeId.LangName:
+                case ApItemAttributeId.MkvFlagsText:
+                case ApItemAttributeId.CodecId:
+                case ApItemAttributeId.CodecShort:
+                case ApItemAttributeId.StreamFlags:
+                case ApItemAttributeId.MetadataLanguageCode:
+                case ApItemAttributeId.TreeInfo: // MakeMKV gui stuff
+                case ApItemAttributeId.PanelTitle: // MakeMKV gui stuff
+                case ApItemAttributeId.OrderWeight: // MakeMKV gui stuff
+                case ApItemAttributeId.OutputConversionType:
+                    // Ignored
+                    break;
+                default:
+                    this.Data[id.ToString()] = new(value);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"WARNING: Unknown stream attribute: {id.ToString()}={value}");
+                    Console.ResetColor();
+                    break;
+                    // TODO no attachment information???
             }
-        }
-
-        private static Track Parse(StringReader info) {
-            Track result = new();
-            result.Type = ParseType(info.ReadLine());
-
-            string? line;
-            while ((line = info.ReadLine()) != null)
-            {
-                int colon = line.IndexOf(':');
-                string key = line.Substring(0, colon);
-                string value = line.Substring(colon + 2); // +2 to clear the space after the colon
-                switch(key)
-                {
-                    case "Codec":
-                        result.Codec = value;
-                        break;
-                    case "Resolution":
-                        int x = value.IndexOf('x');
-                        Size resolution = new();
-                        resolution.Width = int.Parse(value.Substring(0, x));
-                        resolution.Height = int.Parse(value.Substring(x + 1));
-                        result.Resolution = resolution;
-                        break;
-                    case "Aspect ratio":
-                        int divider = value.IndexOf(':');
-                        SizeF aspect = new();
-                        aspect.Width = float.Parse(value.Substring(0, divider));
-                        aspect.Height = float.Parse(value.Substring(divider + 1));
-                        result.AspectRatio = aspect;
-                        break;
-                    case "Frame rate":
-                        result.FrameRate = float.Parse(value.Split()[0]);
-                        break;
-                    case "Name":
-                        result.Name = value;
-                        break;
-                    case "Language":
-                        result.Language = value;
-                        break;
-                    case "Channels":
-                        result.Channels = int.Parse(value);
-                        break;
-                    case "Channel layout":
-                        result.ChannelLayout = value;
-                        break;
-                    case "Sample rate":
-                        result.SampleRate = int.Parse(value);
-                        break;
-                    case "Bits per sample":
-                        result.BitsPerSample = int.Parse(value);
-                        break;
-                    case "Source file name":
-                        result.SourceFileName = value;
-                        break;
-                    case "Size":
-                        result.Size = DataSize.Parse(value);
-                        break;
-                    case "Flags":
-                        result.Flags = value;
-                        break;
-                    case "Output format":
-                        result.OutputFormat = value;
-                        break;
-                    case "Output description":
-                        result.OutputDescription = value;
-                        break;
-                    default:
-                        throw new FormatException("Unknown track data: " + key);
-                }
-            }
-
-            return result;
         }
 
         private static TrackType ParseType(string? typeInfo) {
             switch(typeInfo)
             {
-                case "Type: Subtitles": return TrackType.Subtitle;
-                case "Type: Video": return TrackType.Video;
-                case "Type: Audio": return TrackType.Audio;
-                case "Type: Attachment": return TrackType.Attachment;
+                case "Subtitles": return TrackType.Subtitle;
+                case "Video": return TrackType.Video;
+                case "Audio": return TrackType.Audio;
+                case "Attachment": return TrackType.Attachment;
                 default:
                     throw new FormatException("Unknown track type: " + typeInfo);
             }
         }
 
         public static bool operator ==(Track left, Track right) {
-            return (left.Type == right.Type)
+            if (left is null)
+            {
+                if (right is null)
+                {
+                    return true;
+                } else
+                {
+                    return false;
+                }
+            } else
+            {
+                if (right is null)
+                {
+                    return false;
+                } else
+                {
+                    // Check data below
+                }
+            }
+
+            bool result = (left.Type == right.Type)
                 && (left.Codec == right.Codec)
                 && (left.Resolution == right.Resolution)
                 && (left.AspectRatio == right.AspectRatio)
@@ -160,7 +203,22 @@ namespace MakeMKV_Title_Decoder {
                 && (left.SourceFileName == right.SourceFileName)
                 && (left.Size.HasValue && right.Size.HasValue && left.Size.Value.Near(right.Size.Value))
                 && (left.OutputFormat == right.OutputFormat)
-                && (left.OutputDescription == right.OutputDescription);
+                && (left.OutputDescription == right.OutputDescription)
+                && left.Data.Count == right.Data.Count;
+            if (!result) return false;
+            foreach(var pair in left.Data)
+            {
+                JsonString? value;
+                if (!right.Data.TryGetValue(pair.Key, out value))
+                {
+                    return false;
+                }
+                if (pair.Value != value)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public static bool operator !=(Track left, Track right) => !(left == right);
@@ -172,22 +230,24 @@ namespace MakeMKV_Title_Decoder {
         public JsonData SaveToJson() {
             JsonObject obj = new();
 
-            obj["Type"] = new JsonString(this.Type.ToString());
-            if (this.Codec != null) obj["Codec"] = new JsonString(this.Codec);
-            if (this.Resolution.HasValue) obj["Resolution"] = SaveToJson(this.Resolution.Value);
-            if (this.AspectRatio.HasValue) obj["Aspect Ratio"] = SaveToJson(this.AspectRatio.Value);
-            if (this.FrameRate.HasValue) obj["Frame Rate"] = new JsonDecimal(this.FrameRate.Value);
-            if (this.Name != null) obj["Name"] = new JsonString(this.Name);
-            if (this.Language != null) obj["Language"] = new JsonString(this.Language);
-            if (this.Channels.HasValue) obj["Channels"] = new JsonInteger(this.Channels.Value);
-            if (this.ChannelLayout != null) obj["Channel Layout"] = new JsonString(this.ChannelLayout);
-            if (this.SampleRate.HasValue) obj["Sample Rate"] = new JsonInteger(this.SampleRate.Value);
-            if (this.BitsPerSample.HasValue) obj["Bits per Sample"] = new JsonInteger(this.BitsPerSample.Value);
-            if (this.Flags != null) obj["Flags"] = new JsonString(this.Flags);
-            if (this.SourceFileName != null) obj["Source File Name"] = new JsonString(this.SourceFileName);
-            if (this.Size.HasValue) obj["Size"] = this.Size.Value.SaveToJson();
-            if (this.OutputFormat != null) obj["Output Format"] = new JsonString(this.OutputFormat);
-            if (this.OutputDescription != null) obj["Output Description"] = new JsonString(this.OutputDescription);
+            obj.SaveToJson("Type", this.Type);
+            obj.SaveToJson("Codec", this.Codec);
+            obj.SaveToJson("Resolution", this.Resolution, SaveToJson);
+            obj.SaveToJson("Aspect Ratio", this.AspectRatio, SaveToJson);
+            obj.SaveToJson("Frame Rate", this.FrameRate, (double v) => new JsonDecimal(v));
+            obj.SaveToJson("Name", this.Name);
+            obj.SaveToJson("Language", this.Language);
+            obj.SaveToJson("Channels", this.Channels);
+            obj.SaveToJson("Channel Layout", this.ChannelLayout);
+            obj.SaveToJson("Sample Rate", this.SampleRate);
+            obj.SaveToJson("Bits per Sample", this.BitsPerSample);
+            obj.SaveToJson("Flags", this.Flags);
+            obj.SaveToJson("Source File Name", this.SourceFileName);
+            obj.SaveToJson("Size", (IJsonSerializable?)this.Size);
+            obj.SaveToJson("Output Format", this.OutputFormat);
+            obj.SaveToJson("Output Description", this.OutputDescription);
+
+            obj["Data"] = this.Data.SaveToJson();
 
             return obj;
         }
@@ -195,22 +255,24 @@ namespace MakeMKV_Title_Decoder {
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Type = LoadTrackFromJson(obj["Type"]);
-            this.Codec = LoadStringFromJson(obj["Codec"]);
-            this.Resolution = LoadSizeFromJson(obj["Resolution"]);
-            this.AspectRatio = LoadSizeFFromJson(obj["Aspect Ratio"]);
-            this.FrameRate = LoadDoubleFromJson(obj["Frame Rate"]);
-            this.Name = LoadStringFromJson(obj["Name"]);
-            this.Language = LoadStringFromJson(obj["Language"]);
-            this.Channels = LoadIntFromJson(obj["Channels"]);
-            this.ChannelLayout = LoadStringFromJson(obj["Channel Layout"]);
-            this.SampleRate = LoadIntFromJson(obj["Sample Rate"]);
-            this.BitsPerSample = LoadIntFromJson(obj["Bits per Sampe"]);
-            this.Flags = LoadStringFromJson(obj["Flags"]);
-            this.SourceFileName = LoadStringFromJson(obj["Source File Name"]);
-            this.Size = LoadDataSizeFromJson(obj["Size"]);
-            this.OutputFormat = LoadStringFromJson(obj["Output Format"]);
-            this.OutputDescription = LoadStringFromJson(obj["Output Description"]);
+            obj["Type"].LoadFromJson(out this.Type, LoadTrackFromJson);
+            obj["Codec"].LoadFromJson(out this.Codec);
+            obj["Resolution"].LoadFromJson(out this.Resolution, LoadSizeFromJson);
+            obj["Aspect Ratio"].LoadFromJson(out this.AspectRatio, LoadSizeFFromJson);
+            obj["Frame Rate"].LoadFromJson(out this.FrameRate, x => (double)(JsonDecimal)x);
+            obj["Name"].LoadFromJson(out this.Name);
+            obj["Language"].LoadFromJson(out this.Language);
+            obj["Channels"].LoadFromJson(out this.Channels, x => (int)(JsonInteger)x);
+            obj["Channel Layout"].LoadFromJson(out this.ChannelLayout);
+            obj["Sample Rate"].LoadFromJson(out this.SampleRate, x => (int)(JsonInteger)x);
+            obj["Bits per Sample"].LoadFromJson(out this.BitsPerSample, x => (int)(JsonInteger)x);
+            obj["Flags"].LoadFromJson(out this.Flags);
+            obj["Source File Name"].LoadFromJson(out this.SourceFileName);
+            obj["Size"].LoadSerializableFromJson(out this.Size);
+            obj["Output Format"].LoadFromJson(out this.OutputFormat);
+            obj["Output Description"].LoadFromJson(out this.OutputDescription);
+
+            this.Data.LoadFromJson(obj["Data"]);
         }
 
         private static TrackType LoadTrackFromJson(JsonData data) {
@@ -233,8 +295,7 @@ namespace MakeMKV_Title_Decoder {
             return obj;
         }
 
-        private static Size? LoadSizeFromJson(JsonData data) {
-            if (data == null) return null;
+        private static Size LoadSizeFromJson(JsonData data) {
             JsonObject obj = (JsonObject)data;
             return new Size(
                 (int)(JsonInteger)obj["Width"],
@@ -249,43 +310,12 @@ namespace MakeMKV_Title_Decoder {
             return obj;
         }
 
-        private static SizeF? LoadSizeFFromJson(JsonData data) {
-            if (data == null) return null;
+        private static SizeF LoadSizeFFromJson(JsonData data) {
             JsonObject obj = (JsonObject)data;
             return new SizeF(
                 (float)(JsonDecimal)obj["Width"],
                 (float)(JsonDecimal)obj["Height"]
             );
-        }
-
-        private static double? LoadDoubleFromJson(JsonData data) {
-            if (data == null)
-            {
-                return null;
-            } else
-            {
-                return (double)(JsonDecimal)data;
-            }
-        }
-
-        private static int? LoadIntFromJson(JsonData data) {
-            if (data == null)
-            {
-                return null;
-            } else
-            {
-                return (int)(JsonInteger)data;
-            }
-        }
-
-        private static string? LoadStringFromJson(JsonData data) {
-            if (data == null)
-            {
-                return null;
-            } else
-            {
-                return (JsonString)data;
-            }
         }
 
         private static DataSize? LoadDataSizeFromJson(JsonData data) {
@@ -309,82 +339,35 @@ namespace MakeMKV_Title_Decoder {
             sb.Append('\t', tabs);
             sb.AppendLine($"{this.Type.ToString()}: {{");
 
-            if (this.Codec != null)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Codec: {this.Codec}");
-            }
+            sb.Append(tabs + 1, "Codec: ", this.Codec);
+            sb.Append(tabs + 1, "Resolution: ", this.Resolution, x => $"{x.Width}x{x.Height}");
+            sb.Append(tabs + 1, "Aspect Ratio: ", this.AspectRatio, x => $"{x.Width}:{x.Height}");
+            sb.Append(tabs + 1, "Frame Rate: ", this.FrameRate);
+            sb.Append(tabs + 1, "Name: ", this.Name);
+            sb.Append(tabs + 1, "Language: ", this.Language);
+            sb.Append(tabs + 1, "Channels: ", this.Channels);
+            sb.Append(tabs + 1, "Channel Layout: ", this.ChannelLayout);
+            sb.Append(tabs + 1, "Sample Rate: ", this.SampleRate);
+            sb.Append(tabs + 1, "Bits per Sample: ", this.BitsPerSample);
+            sb.Append(tabs + 1, "Flags", this.Flags);
+            sb.Append(tabs + 1, "Source File Name: ", this.SourceFileName);
+            sb.Append(tabs + 1, "Size: ", this.Size);
 
-            if (this.Resolution.HasValue)
+            sb.Append('\t', tabs + 1);
+            sb.Append("Data: ");
+            if (this.Data.Count == 0)
             {
+                sb.AppendLine("{}");
+            } else
+            {
+                sb.AppendLine();
                 sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Resolution: {this.Resolution.Value.Width}x{this.Resolution.Value.Height}");
-            }
+                sb.AppendLine("{");
 
-            if (this.AspectRatio.HasValue)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Aspect Ratio: {this.AspectRatio.Value.Width}:{this.AspectRatio.Value.Height}");
-            }
+                sb.AppendLine(string.Join(",\r\n", this.Data.Select(x => $"{new string('\t', tabs + 2)}{x.Key}={x.Value}")));
 
-            if (this.FrameRate.HasValue)
-            {
                 sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Frame Rate: {this.FrameRate.Value}");
-            }
-
-            if (this.Name != null)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Name: {this.Name}");
-            }
-
-            if (this.Language != null)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Language: {this.Language}");
-            }
-
-            if (this.Channels.HasValue)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Channels: {this.Channels.Value}");
-            }
-
-            if (this.ChannelLayout != null)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Channel Layout: {this.ChannelLayout}");
-            }
-
-            if (this.SampleRate.HasValue)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Sample Rate: {this.SampleRate.Value}");
-            }
-
-            if (this.BitsPerSample.HasValue)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Bits per Sample: {this.BitsPerSample.Value}");
-            }
-
-            if (this.Flags != null)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Flags: {this.Flags}");
-            }
-
-            if(this.SourceFileName != null)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Source File Name: {this.SourceFileName}");
-            }
-
-            if (this.Size.HasValue)
-            {
-                sb.Append('\t', tabs + 1);
-                sb.AppendLine($"Size: {this.Size}");
+                sb.AppendLine("}");
             }
 
             sb.Append('\t', tabs);
