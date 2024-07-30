@@ -41,6 +41,7 @@
             DownloadBtn = new Button();
             DriveBtnPanel = new Panel();
             RenameVideosBtn = new Button();
+            checkBox1 = new CheckBox();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
@@ -78,6 +79,8 @@
             // 
             // DriveSelectionPanel
             // 
+            DriveSelectionPanel.Controls.Add(checkBox1);
+            DriveSelectionPanel.Controls.Add(RenameVideosBtn);
             DriveSelectionPanel.Controls.Add(TotalProgressBar);
             DriveSelectionPanel.Controls.Add(CurrentProgressBar);
             DriveSelectionPanel.Controls.Add(DiscNameLabel);
@@ -86,7 +89,7 @@
             DriveSelectionPanel.Controls.Add(RefreshDrivesBtn);
             DriveSelectionPanel.Location = new Point(12, 27);
             DriveSelectionPanel.Name = "DriveSelectionPanel";
-            DriveSelectionPanel.Size = new Size(525, 121);
+            DriveSelectionPanel.Size = new Size(525, 184);
             DriveSelectionPanel.TabIndex = 12;
             // 
             // TotalProgressBar
@@ -176,7 +179,7 @@
             // RenameVideosBtn
             // 
             RenameVideosBtn.Enabled = false;
-            RenameVideosBtn.Location = new Point(429, 167);
+            RenameVideosBtn.Location = new Point(3, 153);
             RenameVideosBtn.Name = "RenameVideosBtn";
             RenameVideosBtn.Size = new Size(96, 23);
             RenameVideosBtn.TabIndex = 13;
@@ -184,12 +187,21 @@
             RenameVideosBtn.UseVisualStyleBackColor = true;
             RenameVideosBtn.Click += RenameVideosBtn_Click;
             // 
+            // checkBox1
+            // 
+            checkBox1.AutoSize = true;
+            checkBox1.Location = new Point(3, 128);
+            checkBox1.Name = "checkBox1";
+            checkBox1.Size = new Size(83, 19);
+            checkBox1.TabIndex = 14;
+            checkBox1.Text = "checkBox1";
+            checkBox1.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(556, 202);
-            Controls.Add(RenameVideosBtn);
+            ClientSize = new Size(556, 215);
             Controls.Add(DriveBtnPanel);
             Controls.Add(DriveSelectionPanel);
             Controls.Add(menuStrip1);
@@ -223,5 +235,6 @@
         private ToolStripMenuItem saveDiscToolStripMenuItem;
         private ToolStripMenuItem loadDiscToolStripMenuItem;
         private Button RenameVideosBtn;
+        private CheckBox checkBox1;
     }
 }

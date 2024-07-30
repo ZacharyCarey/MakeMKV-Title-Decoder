@@ -17,22 +17,20 @@ namespace MakeMKV_Title_Decoder {
         Disc disc;
         string folder;
         LibVLC vlc;
-        SegmentIdentifier identifier;
-        Queue<Title> titlesToRename = new();
-        List<EpisodeSolution> episodes = new();
+        VideoRenamerStateMachine state;
+        Title? currentTitle;
 
         public FileRenamer(Disc data, string folder) {
             this.disc = data;
             this.folder = folder;
-            vlc = new LibVLC(enableDebugLogs: false);
+            vlc = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
             InitializeComponent();
 
-            identifier = new(data);
-            titlesToRename.Enqueue(identifier.FindMainFeature());
+            state = new(data);
         }
 
         private void FileRenamer_Load(object sender, EventArgs e) {
-
+            ResetUserInputPanel();
         }
 
         private void FileRenamer_FormClosing(object sender, FormClosingEventArgs e) {
@@ -49,11 +47,11 @@ namespace MakeMKV_Title_Decoder {
             }
 
             bool en = (path != null);
-            this.VideoSrubTrackBar.Enabled = en;
+            this.VideoScrubTrackBar.Enabled = en;
             this.PlayBtn.Enabled = en;
             this.PauseBtn.Enabled = en;
 
-            this.VideoSrubTrackBar.Value = 0;
+            this.VideoScrubTrackBar.Value = 0;
 
             if (path != null)
             {
@@ -87,42 +85,51 @@ namespace MakeMKV_Title_Decoder {
             DeleteThisFile.Checked = true;
             DeleteEpisodesCheckBox.Checked = false;
             NameTextBox.Text = "";
-        }
-
-        private void LoadNextTitle() {
-            UserInputPanel.Enabled = true;
-            this.NameTextBox.Text = titlesToRename.Peek().Name ?? "";
-            episodes = identifier.FindEpisodes(titlesToRename.Peek());
+            this.EpisodeComboBox.SelectedIndex = -1;
         }
 
         private void NextBtn_Click(object sender, EventArgs e) {
             loadVideo(this.VideoViewVLC1, null);
             UserInputPanel.Enabled = false;
-            if (titlesToRename.Count > 0)
+            submitUserChoice();
+            ResetUserInputPanel();
+
+            currentTitle = state.NextTitle();
+            this.titleInfo1.LoadTitle(currentTitle);
+            this.NameTextBox.Text = "";
+            UserInputPanel.Enabled = (currentTitle != null);
+            this.BreakApartRadioBtn.Enabled = state.HasEpisodes;
+            if (currentTitle?.OutputFileName != null)
             {
-                HandleVideoLogic();
-                titlesToRename.Dequeue();
-                ResetUserInputPanel();
-                if (titlesToRename.Count > 0)
+                loadVideo(this.VideoViewVLC1, Path.Combine(this.folder, currentTitle.OutputFileName));
+                PlayBtn_Click(null, null);
+            }
+
+            if (currentTitle == null)
+            {
+                // TODO rename all files!
+                foreach (Title title in disc.Titles)
                 {
-                    LoadNextTitle();
-                    this.titleInfo1.LoadTitle(titlesToRename.Peek());
-                    string? file = titlesToRename.Peek().OutputFileName;
-                    if (file != null)
+                    if (state.RenamedTitles.Contains(title))
                     {
-                        loadVideo(this.VideoViewVLC1, Path.Combine(this.folder, file));
-                        PlayBtn_Click(null, null);
+                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {title.UserName}");
+                    } else if (state.DeletedTitles.Contains(title))
+                    {
+                        Console.WriteLine($"Deleted {title.SimplifiedFileName}");
+                    } else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Could not find {title.SimplifiedFileName}");
+                        Console.ResetColor();
                     }
-                } else
-                {
-                    // TODO rename all files
                 }
+                this.Close();
             }
         }
 
         private void VideoSrubTrackBar_Scroll(object sender, EventArgs e) {
             //Console.WriteLine("Scroll");
-            scrub((float)VideoSrubTrackBar.Value / VideoSrubTrackBar.Maximum);
+            scrub((float)VideoScrubTrackBar.Value / VideoScrubTrackBar.Maximum);
         }
 
         private void VolumeTrackBar_Scroll(object sender, EventArgs e) {
@@ -141,15 +148,11 @@ namespace MakeMKV_Title_Decoder {
 
         private void ReloadBtn_Click(object sender, EventArgs e) {
             loadVideo(this.VideoViewVLC1, null);
-            if (titlesToRename.Count > 0)
+            if (this.currentTitle?.OutputFileName != null)
             {
-                this.titleInfo1.LoadTitle(titlesToRename.Peek());
-                string? file = titlesToRename.Peek().OutputFileName;
-                if (file != null)
-                {
-                    loadVideo(this.VideoViewVLC1, Path.Combine(this.folder, file));
-                    PlayBtn_Click(null, null);
-                }
+                this.titleInfo1.LoadTitle(this.currentTitle);
+                loadVideo(this.VideoViewVLC1, Path.Combine(this.folder, this.currentTitle.OutputFileName));
+                PlayBtn_Click(null, null);
             }
         }
 
@@ -160,11 +163,11 @@ namespace MakeMKV_Title_Decoder {
         private void timer1_Tick(object sender, EventArgs e) {
             //Console.WriteLine($"Captured: {VideoSrubTrackBar.Capture}");
             MediaPlayer? player = this.VideoViewVLC1.MediaPlayer;
-            if (player != null && !VideoSrubTrackBar.Capture)
+            if (player != null && !VideoScrubTrackBar.Capture)
             {
-                this.VideoSrubTrackBar.Invoke(() =>
+                this.VideoScrubTrackBar.Invoke(() =>
                 {
-                    this.VideoSrubTrackBar.Value = (int)(player.Position * this.VideoSrubTrackBar.Maximum);
+                    this.VideoScrubTrackBar.Value = (int)(player.Position * this.VideoScrubTrackBar.Maximum);
                 });
             }
         }
@@ -177,20 +180,41 @@ namespace MakeMKV_Title_Decoder {
             this.KeepOptionsPanel.Enabled = KeepRadioBtn.Checked;
         }
 
-        private void HandleVideoLogic() {
-
+        private void SameAsRadioBtn_CheckedChanged(object sender, EventArgs e) {
+            EpisodeComboBox.Enabled = SameAsRadioBtn.Checked;
         }
 
-        private void HandleVideoLogicKeep() {
+        private void submitUserChoice() {
+            if (currentTitle == null)
+            {
+                return;
+            }
 
-        }
+            NamedTitle? newTitle;
+            if (KeepRadioBtn.Checked)
+            {
+                newTitle = state.ApplyChoice(this.NameTextBox.Text, this.BonusFeatureRadioBtn.Checked, this.DeleteEpisodesCheckBox.Checked);
+            } else if (DeleteRadioBtn.Checked)
+            {
+                newTitle = state.ApplyChoice(this.DeleteAllChapters.Checked);
+            } else if (BreakApartRadioBtn.Checked)
+            {
+                newTitle = state.ApplyChoice();
+            } else /*if (SameAsRadioBtn.Checked)*/
+            {
+                NamedTitle? title = (NamedTitle?)EpisodeComboBox.SelectedItem;
+                if (title == null)
+                {
+                    MessageBox.Show("Please select an episode to match to.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                newTitle = state.ApplyChoice(title);
+            }
 
-        private void HandleVideoLogicDelete() {
-
-        }
-
-        private void HandleVideoLogicBreakApart() {
-
+            if (newTitle != null)
+            {
+                this.EpisodeComboBox.Items.Add(newTitle);
+            }
         }
     }
 }

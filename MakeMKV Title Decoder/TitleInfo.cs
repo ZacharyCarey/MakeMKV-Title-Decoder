@@ -19,7 +19,7 @@ namespace MakeMKV_Title_Decoder {
 
         }
 
-        public void LoadTitle(Title title) {
+        public void LoadTitle(Title? title) {
             this.NameLabel.Text = title?.Name ?? "N/A";
             this.SourceFileNameLabel.Text = title?.SourceFileName ?? "";
             this.DurationLabel.Text = title?.Duration?.ToString() ?? "";

@@ -27,7 +27,7 @@
             components = new System.ComponentModel.Container();
             VideoViewVLC1 = new LibVLCSharp.WinForms.VideoView();
             NextBtn = new Button();
-            VideoSrubTrackBar = new TrackBar();
+            VideoScrubTrackBar = new TrackBar();
             VolumeTrackBar = new TrackBar();
             label1 = new Label();
             PlayBtn = new Button();
@@ -37,6 +37,7 @@
             timer1 = new System.Windows.Forms.Timer(components);
             UserInputPanel = new Panel();
             KeepOptionsPanel = new Panel();
+            DeleteEpisodesCheckBox = new CheckBox();
             BonusFeatureRadioBtn = new RadioButton();
             EpisodeRadioRadioBtn = new RadioButton();
             NameTextBox = new TextBox();
@@ -45,12 +46,13 @@
             DeleteAllChapters = new RadioButton();
             DeleteThisFile = new RadioButton();
             panel2 = new Panel();
+            SameAsRadioBtn = new RadioButton();
+            EpisodeComboBox = new ComboBox();
             KeepRadioBtn = new RadioButton();
             DeleteRadioBtn = new RadioButton();
             BreakApartRadioBtn = new RadioButton();
-            DeleteEpisodesCheckBox = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)VideoSrubTrackBar).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).BeginInit();
             UserInputPanel.SuspendLayout();
             KeepOptionsPanel.SuspendLayout();
@@ -65,7 +67,7 @@
             VideoViewVLC1.Location = new Point(12, 12);
             VideoViewVLC1.MediaPlayer = null;
             VideoViewVLC1.Name = "VideoViewVLC1";
-            VideoViewVLC1.Size = new Size(625, 285);
+            VideoViewVLC1.Size = new Size(508, 285);
             VideoViewVLC1.TabIndex = 10;
             VideoViewVLC1.Text = "videoView1";
             // 
@@ -80,18 +82,18 @@
             NextBtn.UseVisualStyleBackColor = true;
             NextBtn.Click += NextBtn_Click;
             // 
-            // VideoSrubTrackBar
+            // VideoScrubTrackBar
             // 
-            VideoSrubTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            VideoSrubTrackBar.Enabled = false;
-            VideoSrubTrackBar.Location = new Point(12, 303);
-            VideoSrubTrackBar.Maximum = 1000;
-            VideoSrubTrackBar.Name = "VideoSrubTrackBar";
-            VideoSrubTrackBar.Size = new Size(810, 45);
-            VideoSrubTrackBar.TabIndex = 13;
-            VideoSrubTrackBar.TickStyle = TickStyle.None;
-            VideoSrubTrackBar.Scroll += VideoSrubTrackBar_Scroll;
-            VideoSrubTrackBar.MouseCaptureChanged += VideoSrubTrackBar_MouseCaptureChanged;
+            VideoScrubTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            VideoScrubTrackBar.Enabled = false;
+            VideoScrubTrackBar.Location = new Point(12, 303);
+            VideoScrubTrackBar.Maximum = 1000;
+            VideoScrubTrackBar.Name = "VideoScrubTrackBar";
+            VideoScrubTrackBar.Size = new Size(810, 45);
+            VideoScrubTrackBar.TabIndex = 13;
+            VideoScrubTrackBar.TickStyle = TickStyle.None;
+            VideoScrubTrackBar.Scroll += VideoSrubTrackBar_Scroll;
+            VideoScrubTrackBar.MouseCaptureChanged += VideoSrubTrackBar_MouseCaptureChanged;
             // 
             // VolumeTrackBar
             // 
@@ -170,9 +172,9 @@
             UserInputPanel.Controls.Add(KeepOptionsPanel);
             UserInputPanel.Controls.Add(DeleteOptionsPanel);
             UserInputPanel.Controls.Add(panel2);
-            UserInputPanel.Location = new Point(643, 12);
+            UserInputPanel.Location = new Point(526, 12);
             UserInputPanel.Name = "UserInputPanel";
-            UserInputPanel.Size = new Size(179, 285);
+            UserInputPanel.Size = new Size(296, 285);
             UserInputPanel.TabIndex = 20;
             // 
             // KeepOptionsPanel
@@ -182,10 +184,20 @@
             KeepOptionsPanel.Controls.Add(EpisodeRadioRadioBtn);
             KeepOptionsPanel.Controls.Add(NameTextBox);
             KeepOptionsPanel.Controls.Add(label2);
-            KeepOptionsPanel.Location = new Point(3, 88);
+            KeepOptionsPanel.Location = new Point(3, 117);
             KeepOptionsPanel.Name = "KeepOptionsPanel";
-            KeepOptionsPanel.Size = new Size(167, 103);
+            KeepOptionsPanel.Size = new Size(290, 103);
             KeepOptionsPanel.TabIndex = 7;
+            // 
+            // DeleteEpisodesCheckBox
+            // 
+            DeleteEpisodesCheckBox.AutoSize = true;
+            DeleteEpisodesCheckBox.Location = new Point(3, 82);
+            DeleteEpisodesCheckBox.Name = "DeleteEpisodesCheckBox";
+            DeleteEpisodesCheckBox.Size = new Size(108, 19);
+            DeleteEpisodesCheckBox.TabIndex = 5;
+            DeleteEpisodesCheckBox.Text = "Delete Episodes";
+            DeleteEpisodesCheckBox.UseVisualStyleBackColor = true;
             // 
             // BonusFeatureRadioBtn
             // 
@@ -214,7 +226,7 @@
             // 
             NameTextBox.Location = new Point(54, 3);
             NameTextBox.Name = "NameTextBox";
-            NameTextBox.Size = new Size(110, 23);
+            NameTextBox.Size = new Size(233, 23);
             NameTextBox.TabIndex = 4;
             // 
             // label2
@@ -231,9 +243,9 @@
             DeleteOptionsPanel.Controls.Add(DeleteAllChapters);
             DeleteOptionsPanel.Controls.Add(DeleteThisFile);
             DeleteOptionsPanel.Enabled = false;
-            DeleteOptionsPanel.Location = new Point(3, 197);
+            DeleteOptionsPanel.Location = new Point(3, 226);
             DeleteOptionsPanel.Name = "DeleteOptionsPanel";
-            DeleteOptionsPanel.Size = new Size(112, 56);
+            DeleteOptionsPanel.Size = new Size(290, 56);
             DeleteOptionsPanel.TabIndex = 6;
             // 
             // DeleteAllChapters
@@ -261,13 +273,35 @@
             // 
             // panel2
             // 
+            panel2.Controls.Add(SameAsRadioBtn);
+            panel2.Controls.Add(EpisodeComboBox);
             panel2.Controls.Add(KeepRadioBtn);
             panel2.Controls.Add(DeleteRadioBtn);
             panel2.Controls.Add(BreakApartRadioBtn);
             panel2.Location = new Point(3, 3);
             panel2.Name = "panel2";
-            panel2.Size = new Size(93, 79);
+            panel2.Size = new Size(290, 108);
             panel2.TabIndex = 5;
+            // 
+            // SameAsRadioBtn
+            // 
+            SameAsRadioBtn.AutoSize = true;
+            SameAsRadioBtn.Location = new Point(3, 78);
+            SameAsRadioBtn.Name = "SameAsRadioBtn";
+            SameAsRadioBtn.Size = new Size(71, 19);
+            SameAsRadioBtn.TabIndex = 4;
+            SameAsRadioBtn.Text = "Same as:";
+            SameAsRadioBtn.UseVisualStyleBackColor = true;
+            SameAsRadioBtn.CheckedChanged += SameAsRadioBtn_CheckedChanged;
+            // 
+            // EpisodeComboBox
+            // 
+            EpisodeComboBox.Enabled = false;
+            EpisodeComboBox.FormattingEnabled = true;
+            EpisodeComboBox.Location = new Point(80, 77);
+            EpisodeComboBox.Name = "EpisodeComboBox";
+            EpisodeComboBox.Size = new Size(207, 23);
+            EpisodeComboBox.TabIndex = 3;
             // 
             // KeepRadioBtn
             // 
@@ -300,19 +334,8 @@
             BreakApartRadioBtn.Name = "BreakApartRadioBtn";
             BreakApartRadioBtn.Size = new Size(84, 19);
             BreakApartRadioBtn.TabIndex = 2;
-            BreakApartRadioBtn.TabStop = true;
             BreakApartRadioBtn.Text = "Break apart";
             BreakApartRadioBtn.UseVisualStyleBackColor = true;
-            // 
-            // DeleteEpisodesCheckBox
-            // 
-            DeleteEpisodesCheckBox.AutoSize = true;
-            DeleteEpisodesCheckBox.Location = new Point(3, 82);
-            DeleteEpisodesCheckBox.Name = "DeleteEpisodesCheckBox";
-            DeleteEpisodesCheckBox.Size = new Size(108, 19);
-            DeleteEpisodesCheckBox.TabIndex = 5;
-            DeleteEpisodesCheckBox.Text = "Delete Episodes";
-            DeleteEpisodesCheckBox.UseVisualStyleBackColor = true;
             // 
             // FileRenamer
             // 
@@ -326,7 +349,7 @@
             Controls.Add(PlayBtn);
             Controls.Add(label1);
             Controls.Add(VolumeTrackBar);
-            Controls.Add(VideoSrubTrackBar);
+            Controls.Add(VideoScrubTrackBar);
             Controls.Add(NextBtn);
             Controls.Add(VideoViewVLC1);
             Name = "FileRenamer";
@@ -334,7 +357,7 @@
             FormClosing += FileRenamer_FormClosing;
             Load += FileRenamer_Load;
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)VideoSrubTrackBar).EndInit();
+            ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).EndInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).EndInit();
             UserInputPanel.ResumeLayout(false);
             KeepOptionsPanel.ResumeLayout(false);
@@ -351,7 +374,7 @@
 
         private LibVLCSharp.WinForms.VideoView VideoViewVLC1;
         private Button NextBtn;
-        private TrackBar VideoSrubTrackBar;
+        private TrackBar VideoScrubTrackBar;
         private TrackBar VolumeTrackBar;
         private Label label1;
         private Button PlayBtn;
@@ -373,5 +396,7 @@
         private RadioButton BonusFeatureRadioBtn;
         private RadioButton EpisodeRadioRadioBtn;
         private CheckBox DeleteEpisodesCheckBox;
+        private RadioButton SameAsRadioBtn;
+        private ComboBox EpisodeComboBox;
     }
 }
