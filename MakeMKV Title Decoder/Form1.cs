@@ -295,7 +295,10 @@ namespace MakeMKV_Title_Decoder {
                         try
                         {
                             Json.Read(stream, this);
-                            this.OutputFolder = Path.GetDirectoryName(Path.GetFullPath(dialog.FileName));
+                            if (this.OutputFolder == null)
+                            {
+                                this.OutputFolder = Path.GetDirectoryName(Path.GetFullPath(dialog.FileName));
+                            }
                             Console.WriteLine("Loaded JSON file.");
                         } catch (Exception ex)
                         {

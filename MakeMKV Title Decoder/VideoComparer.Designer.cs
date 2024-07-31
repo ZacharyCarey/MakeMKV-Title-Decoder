@@ -75,7 +75,6 @@
             // 
             // VideoScrubTrackBar
             // 
-            VideoScrubTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoScrubTrackBar.Location = new Point(15, 315);
             VideoScrubTrackBar.Maximum = 1000;
             VideoScrubTrackBar.Name = "VideoScrubTrackBar";

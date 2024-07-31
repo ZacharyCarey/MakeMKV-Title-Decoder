@@ -124,6 +124,7 @@
             // 
             // PlayBtn
             // 
+            PlayBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             PlayBtn.Enabled = false;
             PlayBtn.Location = new Point(190, 325);
             PlayBtn.Name = "PlayBtn";
@@ -135,6 +136,7 @@
             // 
             // PauseBtn
             // 
+            PauseBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             PauseBtn.Enabled = false;
             PauseBtn.Location = new Point(273, 325);
             PauseBtn.Name = "PauseBtn";
@@ -356,6 +358,7 @@
             // 
             // CurrentTimeLabel
             // 
+            CurrentTimeLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             CurrentTimeLabel.AutoSize = true;
             CurrentTimeLabel.Location = new Point(12, 325);
             CurrentTimeLabel.Name = "CurrentTimeLabel";
@@ -365,6 +368,7 @@
             // 
             // TotalTimeLabel
             // 
+            TotalTimeLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             TotalTimeLabel.AutoSize = true;
             TotalTimeLabel.Location = new Point(773, 325);
             TotalTimeLabel.Name = "TotalTimeLabel";

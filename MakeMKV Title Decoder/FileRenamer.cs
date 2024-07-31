@@ -122,21 +122,36 @@ namespace MakeMKV_Title_Decoder {
 
             if (currentTitle == null)
             {
-                // TODO rename all files!
+                List<string> failedFiles = new();
                 foreach (Title title in disc.Titles)
                 {
-                    if (state.RenamedTitles.Contains(title))
+                    try
                     {
-                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {title.UserName}");
-                    } else if (state.DeletedTitles.Contains(title))
-                    {
-                        Console.WriteLine($"Deleted {title.SimplifiedFileName}");
-                    } else
+                        if (state.RenamedTitles.Contains(title))
+                        {
+                            Console.WriteLine($"Renamed {title.SimplifiedFileName} => {title.UserName}");
+                            File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(this.folder, title.UserName + ".mkv"));
+                        } else if (state.DeletedTitles.Contains(title))
+                        {
+                            Console.WriteLine($"Deleted {title.SimplifiedFileName}");
+                            File.Delete(Path.Combine(this.folder, title.OutputFileName));
+                        } else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Could not find {title.SimplifiedFileName}");
+                            Console.ResetColor();
+                        }
+                    }catch(Exception ex)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Could not find {title.SimplifiedFileName}");
+                        Console.WriteLine($"Failed to rename file {title.SimplifiedFileName}: " + ex.Message);
                         Console.ResetColor();
+                        failedFiles.Add(title.SimplifiedFileName);
                     }
+                }
+                if (failedFiles.Count > 0)
+                {
+                    MessageBox.Show($"Failed to rename files: {string.Join(", ", failedFiles)}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 this.Close();
             }
