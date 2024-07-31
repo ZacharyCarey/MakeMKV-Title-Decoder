@@ -31,13 +31,15 @@ namespace MakeMKV_Title_Decoder {
         Title? currentTitle = null;
         List<EpisodeSolution> currentEpisodes = new();
         public bool HasEpisodes { get => currentEpisodes.Count > 0; }
+        bool ignoreIncomplete;
 
         public HashSet<Title> RenamedTitles = new();
         public HashSet<Title> DeletedTitles = new();
 
-        public VideoRenamerStateMachine(Disc disc) {
+        public VideoRenamerStateMachine(Disc disc, bool ignoreIncompleteVideos) {
             this.disc = disc;
             this.remainingTitles = new(disc.Titles);
+            this.ignoreIncomplete = ignoreIncompleteVideos;
 
             Title mainFeature = SegmentIdentifier.FindMainFeature(this.remainingTitles);
             print($"Found main feature={mainFeature.SimplifiedFileName}");
@@ -71,16 +73,22 @@ namespace MakeMKV_Title_Decoder {
                     message = $"Got the next title from the queue: {currentTitle.SimplifiedFileName}";
                 }
 
+                this.remainingTitles.Remove(currentTitle);
                 if (RenamedTitles.Contains(this.currentTitle) || DeletedTitles.Contains(this.currentTitle))
                 {
-
                     print($"Skipped {this.currentTitle.SimplifiedFileName} because it was already processed.");
+                    this.currentTitle = null;
+                    continue;
+                }
+                if (this.ignoreIncomplete && SegmentIdentifier.IsIncomplete(this.currentTitle))
+                {
+                    print($"Deleted {this.currentTitle.SimplifiedFileName} because it was incomplete (missing audio or video).");
+                    this.DeletedTitles.Add(this.currentTitle);
                     this.currentTitle = null;
                     continue;
                 }
                 print(message);
 
-                this.remainingTitles.Remove(currentTitle);
                 this.currentEpisodes = SegmentIdentifier.FindEpisodes(currentTitle, this.remainingTitles);
                 if (this.currentEpisodes.Count == 0)
                 {
@@ -219,17 +227,17 @@ namespace MakeMKV_Title_Decoder {
         /// This function will set this title as the same as a different title
         /// Returns an object to add to the "SameAs" list.
         /// </summary>
-        public NamedTitle? ApplyChoice(NamedTitle sameAsTitle) {
+        public NamedTitle? ApplyChoice(NamedTitle sameAsTitle, string rootFolder) {
             Debug.Assert(currentTitle != null, "No video is selected. Please call 'NextTitle' first.");
 
-            VideoComparer form = new(sameAsTitle, this.currentTitle);
+            VideoComparer form = new(rootFolder, sameAsTitle, this.currentTitle);
             form.ShowDialog();
 
             if (form.PreferVideo1)
             {
                 // Keep the old title, delete the new one
                 this.DeletedTitles.Add(this.currentTitle);
-                print($"Marked {this.currentTitle} for deletion.");
+                print($"Marked {this.currentTitle.SimplifiedFileName} for deletion.");
             } else
             {
                 // Replace the old title with the new title
@@ -240,7 +248,7 @@ namespace MakeMKV_Title_Decoder {
 
                 this.currentTitle.UserName = sameAsTitle.Name;
                 this.RenamedTitles.Add(this.currentTitle);
-                print($"Marked {this.currentTitle} to keep name={this.currentTitle.UserName}");
+                print($"Marked {this.currentTitle.SimplifiedFileName} to keep name={this.currentTitle.UserName}");
             }
 
             verboseCurrentState();

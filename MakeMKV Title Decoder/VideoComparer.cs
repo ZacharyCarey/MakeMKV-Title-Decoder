@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,13 +19,16 @@ namespace MakeMKV_Title_Decoder {
         Title vid2;
         VideoView shorterVideo;
         VideoView longerVideo;
+        string rootFolder;
+        const string TimeSpanFormat = "hh':'mm':'ss";
 
         public bool PreferVideo1 = false;
 
 
-        public VideoComparer(NamedTitle vid1, Title vid2) {
+        public VideoComparer(string rootFolder, NamedTitle vid1, Title vid2) {
             this.vid1 = vid1.Title;
             this.vid2 = vid2;
+            this.rootFolder = rootFolder;
             vlc = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
             InitializeComponent();
             shorterVideo = this.VideoViewVLC1;
@@ -38,6 +42,11 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void VideoComparer_FormClosing(object sender, FormClosingEventArgs e) {
+            // Attempt to prevent VLC freezing issue
+            PlayBtn_Click(null, null);
+            Thread.Sleep(500);
+            Application.DoEvents();
+
             loadVideo(this.VideoViewVLC1, null, null);
             loadVideo(this.VideoViewVLC2, null, null);
         }
@@ -84,6 +93,8 @@ namespace MakeMKV_Title_Decoder {
 
                 longerVideo.MediaPlayer.Position = (float)percent;
                 shorterVideo.MediaPlayer.Position = (float)shortPercent;
+
+                setTimeLabels();
             }
         }
 
@@ -95,7 +106,7 @@ namespace MakeMKV_Title_Decoder {
             setVolume(VideoViewVLC2, VolumeTrackBar2.Value);
         }
 
-        private void loadVideo(VideoView viewer, TrackBar volume, string? path) {
+        private void loadVideo(VideoView viewer, TrackBar volume, string? file) {
             if (viewer.MediaPlayer != null)
             {
                 var mp = viewer.MediaPlayer;
@@ -106,9 +117,9 @@ namespace MakeMKV_Title_Decoder {
 
             this.VideoScrubTrackBar.Value = 0;
 
-            if (path != null)
+            if (file != null)
             {
-                Media media = new Media(vlc, Path.GetFullPath(path));
+                Media media = new Media(vlc, Path.GetFullPath(Path.Combine(this.rootFolder, file)));
                 var player = new MediaPlayer(media);
                 viewer.MediaPlayer = player;
                 player.Volume = volume.Value;
@@ -128,10 +139,13 @@ namespace MakeMKV_Title_Decoder {
             //MediaPlayer? player2 = this.VideoViewVLC2.MediaPlayer;
             if (!VideoScrubTrackBar.Capture && longerVideo.MediaPlayer != null)
             {
+
+
                 double pos = longerVideo.MediaPlayer.Position;
                 this.VideoScrubTrackBar.Invoke(() =>
                 {
                     this.VideoScrubTrackBar.Value = (int)(pos * this.VideoScrubTrackBar.Maximum);
+                    setTimeLabels();
                 });
             }
         }
@@ -144,6 +158,20 @@ namespace MakeMKV_Title_Decoder {
         private void RightBtn_Click(object sender, EventArgs e) {
             PreferVideo1 = false;
             this.Close();
+        }
+
+        private void setTimeLabels() {
+            MediaPlayer? left = this.VideoViewVLC1.MediaPlayer;
+            float positionLeft = left?.Position ?? 0f;
+            long lengthLeft = left?.Length ?? 0;
+            this.CurrentTimeLabelLeft.Text = TimeSpan.FromMilliseconds(positionLeft * lengthLeft).ToString(TimeSpanFormat);
+            this.TotalTimeLabelLeft.Text = TimeSpan.FromMilliseconds(lengthLeft).ToString(TimeSpanFormat);
+
+            MediaPlayer? right = this.VideoViewVLC2.MediaPlayer;
+            float positionRight = right?.Position ?? 0f;
+            long lengthRight = right?.Length ?? 0;
+            this.CurrentTimeLabelRight.Text = TimeSpan.FromMilliseconds(positionRight * lengthRight).ToString(TimeSpanFormat);
+            this.TotalTimeLabelRight.Text = TimeSpan.FromMilliseconds(lengthRight).ToString(TimeSpanFormat);
         }
     }
 }

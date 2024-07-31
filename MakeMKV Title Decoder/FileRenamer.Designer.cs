@@ -37,6 +37,7 @@
             timer1 = new System.Windows.Forms.Timer(components);
             UserInputPanel = new Panel();
             KeepOptionsPanel = new Panel();
+            UniqueNameLabel = new Label();
             DeleteEpisodesCheckBox = new CheckBox();
             BonusFeatureRadioBtn = new RadioButton();
             EpisodeRadioRadioBtn = new RadioButton();
@@ -51,6 +52,8 @@
             KeepRadioBtn = new RadioButton();
             DeleteRadioBtn = new RadioButton();
             BreakApartRadioBtn = new RadioButton();
+            CurrentTimeLabel = new Label();
+            TotalTimeLabel = new Label();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).BeginInit();
@@ -179,6 +182,7 @@
             // 
             // KeepOptionsPanel
             // 
+            KeepOptionsPanel.Controls.Add(UniqueNameLabel);
             KeepOptionsPanel.Controls.Add(DeleteEpisodesCheckBox);
             KeepOptionsPanel.Controls.Add(BonusFeatureRadioBtn);
             KeepOptionsPanel.Controls.Add(EpisodeRadioRadioBtn);
@@ -188,6 +192,18 @@
             KeepOptionsPanel.Name = "KeepOptionsPanel";
             KeepOptionsPanel.Size = new Size(290, 103);
             KeepOptionsPanel.TabIndex = 7;
+            // 
+            // UniqueNameLabel
+            // 
+            UniqueNameLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            UniqueNameLabel.AutoSize = true;
+            UniqueNameLabel.ForeColor = Color.Red;
+            UniqueNameLabel.Location = new Point(159, 32);
+            UniqueNameLabel.Name = "UniqueNameLabel";
+            UniqueNameLabel.Size = new Size(128, 15);
+            UniqueNameLabel.TabIndex = 6;
+            UniqueNameLabel.Text = "Name must be unique!";
+            UniqueNameLabel.Visible = false;
             // 
             // DeleteEpisodesCheckBox
             // 
@@ -228,6 +244,7 @@
             NameTextBox.Name = "NameTextBox";
             NameTextBox.Size = new Size(233, 23);
             NameTextBox.TabIndex = 4;
+            NameTextBox.TextChanged += NameTextBox_TextChanged;
             // 
             // label2
             // 
@@ -337,11 +354,31 @@
             BreakApartRadioBtn.Text = "Break apart";
             BreakApartRadioBtn.UseVisualStyleBackColor = true;
             // 
+            // CurrentTimeLabel
+            // 
+            CurrentTimeLabel.AutoSize = true;
+            CurrentTimeLabel.Location = new Point(12, 325);
+            CurrentTimeLabel.Name = "CurrentTimeLabel";
+            CurrentTimeLabel.Size = new Size(49, 15);
+            CurrentTimeLabel.TabIndex = 21;
+            CurrentTimeLabel.Text = "00:00:00";
+            // 
+            // TotalTimeLabel
+            // 
+            TotalTimeLabel.AutoSize = true;
+            TotalTimeLabel.Location = new Point(773, 325);
+            TotalTimeLabel.Name = "TotalTimeLabel";
+            TotalTimeLabel.Size = new Size(49, 15);
+            TotalTimeLabel.TabIndex = 22;
+            TotalTimeLabel.Text = "00:00:00";
+            // 
             // FileRenamer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(834, 513);
+            Controls.Add(TotalTimeLabel);
+            Controls.Add(CurrentTimeLabel);
             Controls.Add(UserInputPanel);
             Controls.Add(ReloadBtn);
             Controls.Add(titleInfo1);
@@ -398,5 +435,8 @@
         private CheckBox DeleteEpisodesCheckBox;
         private RadioButton SameAsRadioBtn;
         private ComboBox EpisodeComboBox;
+        private Label UniqueNameLabel;
+        private Label CurrentTimeLabel;
+        private Label TotalTimeLabel;
     }
 }

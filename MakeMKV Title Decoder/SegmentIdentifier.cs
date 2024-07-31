@@ -105,5 +105,26 @@ namespace MakeMKV_Title_Decoder {
             int maxDelta = Math.Max(onePercentSeconds, 1); // Minimum 1 second
             return deltaSeconds <= maxDelta;
         }
+
+        public static bool IsIncomplete(Title title) {
+            bool hasAudio = false;
+            bool hasVideo = false;
+            foreach(Track track in title.Tracks)
+            {
+                if (track.Type == TrackType.Video)
+                {
+                    hasVideo = true;
+                } else if (track.Type == TrackType.Audio)
+                {
+                    hasAudio = true;
+                }
+                if (hasAudio && hasVideo)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

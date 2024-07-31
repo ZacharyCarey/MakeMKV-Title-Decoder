@@ -10,7 +10,15 @@ using System.Reflection;
 
 namespace MakeMKV_Title_Decoder {
     public partial class Form1 : Form, IJsonSerializable {
-        string? OutputFolder = null;
+        string? _outputFolder = null;
+        string? OutputFolder {
+            get => _outputFolder;
+            set
+            {
+                _outputFolder = value;
+                this.LoadedFileLabel.Text = value ?? "N/A";
+            }
+        }
 
         MakeMkvInterface? MakeMkv = null;
 
@@ -301,34 +309,20 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void RenameVideosBtn_Click(object sender, EventArgs e) {
-            string outputPath = this.OutputFolder;
-            if (outputPath != null)
+            if (OutputFolder == null)
             {
-                outputPath = Path.GetFullPath(outputPath);
-            } else
-            {
-                outputPath = "C:\\";
-            }
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
-            {
-                Console.WriteLine($"Using initial path: {outputPath}");
-                openFileDialog.InitialDirectory = outputPath;
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                SelectFolderBtn_Click(null, null);
+                if (OutputFolder == null)
                 {
-                    outputPath = openFileDialog.SelectedPath;
-                } else
-                {
-                    this.DriveSelectionPanel.Enabled = true;
                     return;
                 }
             }
 
             // Sanity check
-            if (!Directory.Exists(outputPath))
+            if (!Directory.Exists(OutputFolder))
             {
                 PlaySound(SadSound);
-                MessageBox.Show("Failed to find directory: " + outputPath, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Failed to find directory: " + OutputFolder, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             if (this.loadedDisc == null)
@@ -338,8 +332,24 @@ namespace MakeMKV_Title_Decoder {
                 return;
             }
 
-            FileRenamer form = new(this.loadedDisc, outputPath);
+            FileRenamer form = new(this.loadedDisc, OutputFolder, IgnoreIncompleteCheckBox.Checked);
             form.Show();
+        }
+
+        private void SelectFolderBtn_Click(object sender, EventArgs e) {
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            {
+                if (OutputFolder != null)
+                {
+                    Console.WriteLine($"Using initial path: {OutputFolder}");
+                    openFileDialog.InitialDirectory = OutputFolder;
+                }
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    OutputFolder = openFileDialog.SelectedPath;
+                }
+            }
         }
     }
 }

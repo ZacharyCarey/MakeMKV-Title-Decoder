@@ -26,26 +26,42 @@
         private void InitializeComponent() {
             components = new System.ComponentModel.Container();
             toolTip1 = new ToolTip(components);
+            IgnoreIncompleteCheckBox = new CheckBox();
             menuStrip1 = new MenuStrip();
             discToolStripMenuItem = new ToolStripMenuItem();
             saveDiscToolStripMenuItem = new ToolStripMenuItem();
             loadDiscToolStripMenuItem = new ToolStripMenuItem();
             DriveSelectionPanel = new Panel();
+            SelectFolderBtn = new Button();
+            LoadedFileLabel = new Label();
+            label1 = new Label();
+            DriveBtnPanel = new Panel();
+            ReadBtn = new Button();
+            DownloadBtn = new Button();
+            RenameVideosBtn = new Button();
             TotalProgressBar = new ProgressBar();
             CurrentProgressBar = new ProgressBar();
             DiscNameLabel = new Label();
             label3 = new Label();
             DrivesComboBox = new ComboBox();
             RefreshDrivesBtn = new Button();
-            ReadBtn = new Button();
-            DownloadBtn = new Button();
-            DriveBtnPanel = new Panel();
-            RenameVideosBtn = new Button();
-            checkBox1 = new CheckBox();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
             SuspendLayout();
+            // 
+            // IgnoreIncompleteCheckBox
+            // 
+            IgnoreIncompleteCheckBox.AutoSize = true;
+            IgnoreIncompleteCheckBox.Checked = true;
+            IgnoreIncompleteCheckBox.CheckState = CheckState.Checked;
+            IgnoreIncompleteCheckBox.Location = new Point(3, 128);
+            IgnoreIncompleteCheckBox.Name = "IgnoreIncompleteCheckBox";
+            IgnoreIncompleteCheckBox.Size = new Size(160, 19);
+            IgnoreIncompleteCheckBox.TabIndex = 14;
+            IgnoreIncompleteCheckBox.Text = "Ignore incomplete videos";
+            toolTip1.SetToolTip(IgnoreIncompleteCheckBox, "Ignore any titles that are missing either video or audio. Usually federal warnings.");
+            IgnoreIncompleteCheckBox.UseVisualStyleBackColor = true;
             // 
             // menuStrip1
             // 
@@ -79,7 +95,11 @@
             // 
             // DriveSelectionPanel
             // 
-            DriveSelectionPanel.Controls.Add(checkBox1);
+            DriveSelectionPanel.Controls.Add(SelectFolderBtn);
+            DriveSelectionPanel.Controls.Add(LoadedFileLabel);
+            DriveSelectionPanel.Controls.Add(label1);
+            DriveSelectionPanel.Controls.Add(DriveBtnPanel);
+            DriveSelectionPanel.Controls.Add(IgnoreIncompleteCheckBox);
             DriveSelectionPanel.Controls.Add(RenameVideosBtn);
             DriveSelectionPanel.Controls.Add(TotalProgressBar);
             DriveSelectionPanel.Controls.Add(CurrentProgressBar);
@@ -91,6 +111,76 @@
             DriveSelectionPanel.Name = "DriveSelectionPanel";
             DriveSelectionPanel.Size = new Size(525, 184);
             DriveSelectionPanel.TabIndex = 12;
+            // 
+            // SelectFolderBtn
+            // 
+            SelectFolderBtn.Location = new Point(105, 153);
+            SelectFolderBtn.Name = "SelectFolderBtn";
+            SelectFolderBtn.Size = new Size(96, 23);
+            SelectFolderBtn.TabIndex = 17;
+            SelectFolderBtn.Text = "Select Folder";
+            SelectFolderBtn.UseVisualStyleBackColor = true;
+            SelectFolderBtn.Click += SelectFolderBtn_Click;
+            // 
+            // LoadedFileLabel
+            // 
+            LoadedFileLabel.AutoSize = true;
+            LoadedFileLabel.Location = new Point(281, 157);
+            LoadedFileLabel.Name = "LoadedFileLabel";
+            LoadedFileLabel.Size = new Size(29, 15);
+            LoadedFileLabel.TabIndex = 16;
+            LoadedFileLabel.Text = "N/A";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(207, 157);
+            label1.Name = "label1";
+            label1.Size = new Size(68, 15);
+            label1.TabIndex = 15;
+            label1.Text = "Loaded file:";
+            // 
+            // DriveBtnPanel
+            // 
+            DriveBtnPanel.Controls.Add(ReadBtn);
+            DriveBtnPanel.Controls.Add(DownloadBtn);
+            DriveBtnPanel.Enabled = false;
+            DriveBtnPanel.Location = new Point(417, 3);
+            DriveBtnPanel.Name = "DriveBtnPanel";
+            DriveBtnPanel.Size = new Size(101, 56);
+            DriveBtnPanel.TabIndex = 8;
+            // 
+            // ReadBtn
+            // 
+            ReadBtn.Location = new Point(3, 4);
+            ReadBtn.Name = "ReadBtn";
+            ReadBtn.Size = new Size(75, 23);
+            ReadBtn.TabIndex = 7;
+            ReadBtn.Text = "Read";
+            ReadBtn.UseVisualStyleBackColor = true;
+            ReadBtn.Click += ReadBtn_Click;
+            // 
+            // DownloadBtn
+            // 
+            DownloadBtn.Enabled = false;
+            DownloadBtn.Location = new Point(3, 33);
+            DownloadBtn.Name = "DownloadBtn";
+            DownloadBtn.Size = new Size(75, 23);
+            DownloadBtn.TabIndex = 5;
+            DownloadBtn.Text = "Rip";
+            DownloadBtn.UseVisualStyleBackColor = true;
+            DownloadBtn.Click += DownloadBtn_Click;
+            // 
+            // RenameVideosBtn
+            // 
+            RenameVideosBtn.Enabled = false;
+            RenameVideosBtn.Location = new Point(3, 153);
+            RenameVideosBtn.Name = "RenameVideosBtn";
+            RenameVideosBtn.Size = new Size(96, 23);
+            RenameVideosBtn.TabIndex = 13;
+            RenameVideosBtn.Text = "Rename Videos";
+            RenameVideosBtn.UseVisualStyleBackColor = true;
+            RenameVideosBtn.Click += RenameVideosBtn_Click;
             // 
             // TotalProgressBar
             // 
@@ -145,64 +235,11 @@
             RefreshDrivesBtn.UseVisualStyleBackColor = true;
             RefreshDrivesBtn.Click += RefreshDrivesBtn_Click;
             // 
-            // ReadBtn
-            // 
-            ReadBtn.Location = new Point(3, 4);
-            ReadBtn.Name = "ReadBtn";
-            ReadBtn.Size = new Size(75, 23);
-            ReadBtn.TabIndex = 7;
-            ReadBtn.Text = "Read";
-            ReadBtn.UseVisualStyleBackColor = true;
-            ReadBtn.Click += ReadBtn_Click;
-            // 
-            // DownloadBtn
-            // 
-            DownloadBtn.Enabled = false;
-            DownloadBtn.Location = new Point(3, 33);
-            DownloadBtn.Name = "DownloadBtn";
-            DownloadBtn.Size = new Size(75, 23);
-            DownloadBtn.TabIndex = 5;
-            DownloadBtn.Text = "Rip";
-            DownloadBtn.UseVisualStyleBackColor = true;
-            DownloadBtn.Click += DownloadBtn_Click;
-            // 
-            // DriveBtnPanel
-            // 
-            DriveBtnPanel.Controls.Add(ReadBtn);
-            DriveBtnPanel.Controls.Add(DownloadBtn);
-            DriveBtnPanel.Enabled = false;
-            DriveBtnPanel.Location = new Point(429, 27);
-            DriveBtnPanel.Name = "DriveBtnPanel";
-            DriveBtnPanel.Size = new Size(101, 56);
-            DriveBtnPanel.TabIndex = 8;
-            // 
-            // RenameVideosBtn
-            // 
-            RenameVideosBtn.Enabled = false;
-            RenameVideosBtn.Location = new Point(3, 153);
-            RenameVideosBtn.Name = "RenameVideosBtn";
-            RenameVideosBtn.Size = new Size(96, 23);
-            RenameVideosBtn.TabIndex = 13;
-            RenameVideosBtn.Text = "Rename Videos";
-            RenameVideosBtn.UseVisualStyleBackColor = true;
-            RenameVideosBtn.Click += RenameVideosBtn_Click;
-            // 
-            // checkBox1
-            // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(3, 128);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(83, 19);
-            checkBox1.TabIndex = 14;
-            checkBox1.Text = "checkBox1";
-            checkBox1.UseVisualStyleBackColor = true;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(556, 215);
-            Controls.Add(DriveBtnPanel);
             Controls.Add(DriveSelectionPanel);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
@@ -235,6 +272,9 @@
         private ToolStripMenuItem saveDiscToolStripMenuItem;
         private ToolStripMenuItem loadDiscToolStripMenuItem;
         private Button RenameVideosBtn;
-        private CheckBox checkBox1;
+        private CheckBox IgnoreIncompleteCheckBox;
+        private Label LoadedFileLabel;
+        private Label label1;
+        private Button SelectFolderBtn;
     }
 }

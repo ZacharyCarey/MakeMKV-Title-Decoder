@@ -42,6 +42,10 @@
             RightBtn = new Button();
             label3 = new Label();
             EpisodeNameLabel = new Label();
+            CurrentTimeLabelLeft = new Label();
+            TotalTimeLabelLeft = new Label();
+            CurrentTimeLabelRight = new Label();
+            TotalTimeLabelRight = new Label();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
@@ -83,7 +87,7 @@
             // PauseBtn
             // 
             PauseBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            PauseBtn.Location = new Point(434, 337);
+            PauseBtn.Location = new Point(434, 372);
             PauseBtn.Name = "PauseBtn";
             PauseBtn.Size = new Size(75, 23);
             PauseBtn.TabIndex = 19;
@@ -94,7 +98,7 @@
             // PlayBtn
             // 
             PlayBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            PlayBtn.Location = new Point(351, 337);
+            PlayBtn.Location = new Point(351, 372);
             PlayBtn.Name = "PlayBtn";
             PlayBtn.Size = new Size(77, 23);
             PlayBtn.TabIndex = 18;
@@ -106,7 +110,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label1.AutoSize = true;
-            label1.Location = new Point(13, 486);
+            label1.Location = new Point(13, 521);
             label1.Name = "label1";
             label1.Size = new Size(47, 15);
             label1.TabIndex = 21;
@@ -116,7 +120,7 @@
             // 
             VolumeTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             VolumeTrackBar.LargeChange = 10;
-            VolumeTrackBar.Location = new Point(15, 379);
+            VolumeTrackBar.Location = new Point(15, 414);
             VolumeTrackBar.Maximum = 100;
             VolumeTrackBar.Name = "VolumeTrackBar";
             VolumeTrackBar.Orientation = Orientation.Vertical;
@@ -129,23 +133,23 @@
             // titleInfo1
             // 
             titleInfo1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            titleInfo1.Location = new Point(66, 379);
+            titleInfo1.Location = new Point(66, 414);
             titleInfo1.Name = "titleInfo1";
-            titleInfo1.Size = new Size(149, 112);
+            titleInfo1.Size = new Size(360, 112);
             titleInfo1.TabIndex = 22;
             // 
             // titleInfo2
             // 
             titleInfo2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            titleInfo2.Location = new Point(487, 379);
+            titleInfo2.Location = new Point(487, 414);
             titleInfo2.Name = "titleInfo2";
-            titleInfo2.Size = new Size(149, 112);
+            titleInfo2.Size = new Size(371, 112);
             titleInfo2.TabIndex = 23;
             // 
             // ReloadBtn
             // 
             ReloadBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ReloadBtn.Location = new Point(584, 337);
+            ReloadBtn.Location = new Point(584, 372);
             ReloadBtn.Name = "ReloadBtn";
             ReloadBtn.Size = new Size(75, 23);
             ReloadBtn.TabIndex = 24;
@@ -163,7 +167,7 @@
             // 
             label2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label2.AutoSize = true;
-            label2.Location = new Point(432, 486);
+            label2.Location = new Point(432, 521);
             label2.Name = "label2";
             label2.Size = new Size(47, 15);
             label2.TabIndex = 26;
@@ -173,7 +177,7 @@
             // 
             VolumeTrackBar2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             VolumeTrackBar2.LargeChange = 10;
-            VolumeTrackBar2.Location = new Point(434, 379);
+            VolumeTrackBar2.Location = new Point(434, 414);
             VolumeTrackBar2.Maximum = 100;
             VolumeTrackBar2.Name = "VolumeTrackBar2";
             VolumeTrackBar2.Orientation = Orientation.Vertical;
@@ -186,7 +190,7 @@
             // LeftBtn
             // 
             LeftBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            LeftBtn.Location = new Point(351, 529);
+            LeftBtn.Location = new Point(351, 564);
             LeftBtn.Name = "LeftBtn";
             LeftBtn.Size = new Size(77, 23);
             LeftBtn.TabIndex = 27;
@@ -197,7 +201,7 @@
             // RightBtn
             // 
             RightBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            RightBtn.Location = new Point(434, 529);
+            RightBtn.Location = new Point(434, 564);
             RightBtn.Name = "RightBtn";
             RightBtn.Size = new Size(77, 23);
             RightBtn.TabIndex = 28;
@@ -223,12 +227,52 @@
             EpisodeNameLabel.TabIndex = 30;
             EpisodeNameLabel.Text = "N/A";
             // 
+            // CurrentTimeLabelLeft
+            // 
+            CurrentTimeLabelLeft.AutoSize = true;
+            CurrentTimeLabelLeft.Location = new Point(15, 345);
+            CurrentTimeLabelLeft.Name = "CurrentTimeLabelLeft";
+            CurrentTimeLabelLeft.Size = new Size(49, 15);
+            CurrentTimeLabelLeft.TabIndex = 31;
+            CurrentTimeLabelLeft.Text = "00:00:00";
+            // 
+            // TotalTimeLabelLeft
+            // 
+            TotalTimeLabelLeft.AutoSize = true;
+            TotalTimeLabelLeft.Location = new Point(379, 345);
+            TotalTimeLabelLeft.Name = "TotalTimeLabelLeft";
+            TotalTimeLabelLeft.Size = new Size(49, 15);
+            TotalTimeLabelLeft.TabIndex = 32;
+            TotalTimeLabelLeft.Text = "00:00:00";
+            // 
+            // CurrentTimeLabelRight
+            // 
+            CurrentTimeLabelRight.AutoSize = true;
+            CurrentTimeLabelRight.Location = new Point(434, 345);
+            CurrentTimeLabelRight.Name = "CurrentTimeLabelRight";
+            CurrentTimeLabelRight.Size = new Size(49, 15);
+            CurrentTimeLabelRight.TabIndex = 33;
+            CurrentTimeLabelRight.Text = "00:00:00";
+            // 
+            // TotalTimeLabelRight
+            // 
+            TotalTimeLabelRight.AutoSize = true;
+            TotalTimeLabelRight.Location = new Point(800, 345);
+            TotalTimeLabelRight.Name = "TotalTimeLabelRight";
+            TotalTimeLabelRight.Size = new Size(49, 15);
+            TotalTimeLabelRight.TabIndex = 34;
+            TotalTimeLabelRight.Text = "00:00:00";
+            // 
             // VideoComparer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(870, 564);
+            ClientSize = new Size(870, 599);
             ControlBox = false;
+            Controls.Add(TotalTimeLabelRight);
+            Controls.Add(CurrentTimeLabelRight);
+            Controls.Add(TotalTimeLabelLeft);
+            Controls.Add(CurrentTimeLabelLeft);
             Controls.Add(EpisodeNameLabel);
             Controls.Add(label3);
             Controls.Add(RightBtn);
@@ -277,5 +321,9 @@
         private Button RightBtn;
         private Label label3;
         private Label EpisodeNameLabel;
+        private Label CurrentTimeLabelLeft;
+        private Label TotalTimeLabelLeft;
+        private Label CurrentTimeLabelRight;
+        private Label TotalTimeLabelRight;
     }
 }

@@ -19,14 +19,15 @@ namespace MakeMKV_Title_Decoder {
         LibVLC vlc;
         VideoRenamerStateMachine state;
         Title? currentTitle;
+        const string TimeSpanFormat = "hh':'mm':'ss";
 
-        public FileRenamer(Disc data, string folder) {
+        public FileRenamer(Disc data, string folder, bool ignoreIncompleteVideos) {
             this.disc = data;
             this.folder = folder;
             vlc = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
             InitializeComponent();
 
-            state = new(data);
+            state = new(data, ignoreIncompleteVideos);
         }
 
         private void FileRenamer_Load(object sender, EventArgs e) {
@@ -52,6 +53,8 @@ namespace MakeMKV_Title_Decoder {
             this.PauseBtn.Enabled = en;
 
             this.VideoScrubTrackBar.Value = 0;
+            CurrentTimeLabel.Text = new TimeSpan().ToString(TimeSpanFormat);
+            TotalTimeLabel.Text = new TimeSpan().ToString(TimeSpanFormat);
 
             if (path != null)
             {
@@ -75,6 +78,8 @@ namespace MakeMKV_Title_Decoder {
             if (player != null)
             {
                 player.Position = value;
+                this.CurrentTimeLabel.Text = TimeSpan.FromMilliseconds(player.Position * player.Length).ToString(TimeSpanFormat);
+                this.TotalTimeLabel.Text = TimeSpan.FromMilliseconds(player.Length).ToString(TimeSpanFormat);
             }
         }
 
@@ -84,6 +89,7 @@ namespace MakeMKV_Title_Decoder {
             EpisodeRadioRadioBtn.Checked = true;
             DeleteThisFile.Checked = true;
             DeleteEpisodesCheckBox.Checked = false;
+            this.UniqueNameLabel.Visible = false;
             NameTextBox.Text = "";
             this.EpisodeComboBox.SelectedIndex = -1;
         }
@@ -91,14 +97,23 @@ namespace MakeMKV_Title_Decoder {
         private void NextBtn_Click(object sender, EventArgs e) {
             loadVideo(this.VideoViewVLC1, null);
             UserInputPanel.Enabled = false;
-            submitUserChoice();
+            bool success = submitUserChoice();
+            if (!success)
+            {
+                UserInputPanel.Enabled = true;
+                return;
+            }
             ResetUserInputPanel();
 
             currentTitle = state.NextTitle();
             this.titleInfo1.LoadTitle(currentTitle);
             this.NameTextBox.Text = "";
             UserInputPanel.Enabled = (currentTitle != null);
+
             this.BreakApartRadioBtn.Enabled = state.HasEpisodes;
+            this.DeleteEpisodesCheckBox.Enabled = state.HasEpisodes;
+            this.DeleteAllChapters.Enabled = state.HasEpisodes;
+
             if (currentTitle?.OutputFileName != null)
             {
                 loadVideo(this.VideoViewVLC1, Path.Combine(this.folder, currentTitle.OutputFileName));
@@ -168,6 +183,8 @@ namespace MakeMKV_Title_Decoder {
                 this.VideoScrubTrackBar.Invoke(() =>
                 {
                     this.VideoScrubTrackBar.Value = (int)(player.Position * this.VideoScrubTrackBar.Maximum);
+                    this.CurrentTimeLabel.Text = TimeSpan.FromMilliseconds(player.Position * player.Length).ToString(TimeSpanFormat);
+                    this.TotalTimeLabel.Text = TimeSpan.FromMilliseconds(player.Length).ToString(TimeSpanFormat);
                 });
             }
         }
@@ -184,15 +201,20 @@ namespace MakeMKV_Title_Decoder {
             EpisodeComboBox.Enabled = SameAsRadioBtn.Checked;
         }
 
-        private void submitUserChoice() {
+        private bool submitUserChoice() {
             if (currentTitle == null)
             {
-                return;
+                return true;
             }
 
             NamedTitle? newTitle;
             if (KeepRadioBtn.Checked)
             {
+                if (!uniqueName(this.NameTextBox.Text))
+                {
+                    MessageBox.Show("Please create a unique name, or select a different option.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
                 newTitle = state.ApplyChoice(this.NameTextBox.Text, this.BonusFeatureRadioBtn.Checked, this.DeleteEpisodesCheckBox.Checked);
             } else if (DeleteRadioBtn.Checked)
             {
@@ -206,15 +228,32 @@ namespace MakeMKV_Title_Decoder {
                 if (title == null)
                 {
                     MessageBox.Show("Please select an episode to match to.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
+                    return false;
                 }
-                newTitle = state.ApplyChoice(title);
+                newTitle = state.ApplyChoice(title, this.folder);
             }
 
             if (newTitle != null)
             {
                 this.EpisodeComboBox.Items.Add(newTitle);
             }
+
+            return true;
+        }
+
+        private void NameTextBox_TextChanged(object sender, EventArgs e) {
+            this.UniqueNameLabel.Visible = !uniqueName(NameTextBox.Text);
+        }
+
+        private bool uniqueName(string name) {
+            foreach (var item in this.EpisodeComboBox.Items)
+            {
+                if (((NamedTitle)item).Name == name)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
