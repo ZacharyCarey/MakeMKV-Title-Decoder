@@ -54,6 +54,7 @@
             BreakApartRadioBtn = new RadioButton();
             CurrentTimeLabel = new Label();
             TotalTimeLabel = new Label();
+            InvalidNameLabel = new Label();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).BeginInit();
@@ -184,6 +185,7 @@
             // 
             // KeepOptionsPanel
             // 
+            KeepOptionsPanel.Controls.Add(InvalidNameLabel);
             KeepOptionsPanel.Controls.Add(UniqueNameLabel);
             KeepOptionsPanel.Controls.Add(DeleteEpisodesCheckBox);
             KeepOptionsPanel.Controls.Add(BonusFeatureRadioBtn);
@@ -376,6 +378,18 @@
             TotalTimeLabel.TabIndex = 22;
             TotalTimeLabel.Text = "00:00:00";
             // 
+            // InvalidNameLabel
+            // 
+            InvalidNameLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            InvalidNameLabel.AutoSize = true;
+            InvalidNameLabel.ForeColor = Color.Red;
+            InvalidNameLabel.Location = new Point(190, 47);
+            InvalidNameLabel.Name = "InvalidNameLabel";
+            InvalidNameLabel.Size = new Size(97, 15);
+            InvalidNameLabel.TabIndex = 7;
+            InvalidNameLabel.Text = "Invalid file name!";
+            InvalidNameLabel.Visible = false;
+            // 
             // FileRenamer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -442,5 +456,6 @@
         private Label UniqueNameLabel;
         private Label CurrentTimeLabel;
         private Label TotalTimeLabel;
+        private Label InvalidNameLabel;
     }
 }

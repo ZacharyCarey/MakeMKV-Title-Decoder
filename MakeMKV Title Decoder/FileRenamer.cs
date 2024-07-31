@@ -90,6 +90,7 @@ namespace MakeMKV_Title_Decoder {
             DeleteThisFile.Checked = true;
             DeleteEpisodesCheckBox.Checked = false;
             this.UniqueNameLabel.Visible = false;
+            this.InvalidNameLabel.Visible = false;
             NameTextBox.Text = "";
             this.EpisodeComboBox.SelectedIndex = -1;
         }
@@ -199,6 +200,10 @@ namespace MakeMKV_Title_Decoder {
                 {
                     MessageBox.Show("Please create a unique name, or select a different option.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return false;
+                } else if (!isValidFileName(this.NameTextBox.Text))
+                {
+                    MessageBox.Show("Invalid file name. File probably contains special characters not allowed by the OS.");
+                    return false;
                 }
                 newTitle = state.ApplyChoice(this.NameTextBox.Text, this.BonusFeatureRadioBtn.Checked, this.DeleteEpisodesCheckBox.Checked);
             } else if (DeleteRadioBtn.Checked)
@@ -228,12 +233,26 @@ namespace MakeMKV_Title_Decoder {
 
         private void NameTextBox_TextChanged(object sender, EventArgs e) {
             this.UniqueNameLabel.Visible = !uniqueName(NameTextBox.Text);
+            this.InvalidNameLabel.Visible = !isValidFileName(NameTextBox.Text);
         }
 
         private bool uniqueName(string name) {
             foreach (var item in this.EpisodeComboBox.Items)
             {
                 if (((NamedTitle)item).Name == name)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool isValidFileName(string name) {
+            char[] fileChars = Path.GetInvalidFileNameChars();
+            char[] pathChars = Path.GetInvalidPathChars();
+            foreach(char c in name)
+            {
+                if (fileChars.Contains(c) || pathChars.Contains(c))
                 {
                     return false;
                 }
