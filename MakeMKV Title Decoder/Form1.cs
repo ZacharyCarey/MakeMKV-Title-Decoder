@@ -271,7 +271,7 @@ namespace MakeMKV_Title_Decoder {
                     try
                     {
                         Json.Write(this, path);
-                        this.OutputFolder = Path.GetDirectoryName(path);
+                        //this.OutputFolder = Path.GetDirectoryName(path);
                         Console.WriteLine("Saved JSON file.");
                     } catch (Exception ex)
                     {

@@ -34,6 +34,7 @@ namespace MakeMKV_Title_Decoder {
         bool ignoreIncomplete;
 
         public HashSet<Title> RenamedTitles = new();
+        public HashSet<Title> BonusFeatures = new();
         public HashSet<Title> DeletedTitles = new();
 
         public VideoRenamerStateMachine(Disc disc, bool ignoreIncompleteVideos) {
@@ -74,7 +75,7 @@ namespace MakeMKV_Title_Decoder {
                 }
 
                 this.remainingTitles.Remove(currentTitle);
-                if (RenamedTitles.Contains(this.currentTitle) || DeletedTitles.Contains(this.currentTitle))
+                if (RenamedTitles.Contains(this.currentTitle) || BonusFeatures.Contains(this.currentTitle) || DeletedTitles.Contains(this.currentTitle))
                 {
                     print($"Skipped {this.currentTitle.SimplifiedFileName} because it was already processed.");
                     this.currentTitle = null;
@@ -126,7 +127,13 @@ namespace MakeMKV_Title_Decoder {
 
             NamedTitle namedTitle = new(userName, this.currentTitle);
             this.currentTitle.UserName = userName;
-            this.RenamedTitles.Add(this.currentTitle);
+            if (isBonusFeature)
+            {
+                this.BonusFeatures.Add(this.currentTitle);
+            } else
+            {
+                this.RenamedTitles.Add(this.currentTitle);
+            }
             print($"Marked {this.currentTitle.SimplifiedFileName} to keep. name={this.currentTitle.UserName}");
 
             if (deleteEpisodes)
@@ -136,7 +143,7 @@ namespace MakeMKV_Title_Decoder {
                     foreach(var title in solution.Titles)
                     {
                         // Sanity check to not remove files that have already been marked to keep
-                        if (!this.RenamedTitles.Contains(title))
+                        if (!this.RenamedTitles.Contains(title) && !this.BonusFeatures.Contains(title))
                         {
                             this.DeletedTitles.Add(title);
                             this.remainingTitles.Remove(title);
@@ -173,7 +180,7 @@ namespace MakeMKV_Title_Decoder {
                     foreach(var title in solution.Titles)
                     {
                         // Sanity check to not remove files that have already been marked to keep
-                        if (!this.RenamedTitles.Contains(title))
+                        if (!this.RenamedTitles.Contains(title) && !this.BonusFeatures.Contains(title))
                         {
                             this.DeletedTitles.Add(title);
                             this.remainingTitles.Remove(title);
@@ -244,10 +251,22 @@ namespace MakeMKV_Title_Decoder {
                 print($"Marked {sameAsTitle.Title.SimplifiedFileName} (name={sameAsTitle.Title.UserName}) for deletion.");
                 sameAsTitle.Title.UserName = null;
                 this.DeletedTitles.Add(sameAsTitle.Title);
+                bool isBonusFeature = false;
+                if (this.BonusFeatures.Contains(sameAsTitle.Title))
+                {
+                    isBonusFeature = true;
+                }
                 this.RenamedTitles.Remove(sameAsTitle.Title);
+                this.BonusFeatures.Remove(sameAsTitle.Title);
 
                 this.currentTitle.UserName = sameAsTitle.Name;
-                this.RenamedTitles.Add(this.currentTitle);
+                if (isBonusFeature)
+                {
+                    this.BonusFeatures.Add(this.currentTitle);
+                } else
+                {
+                    this.RenamedTitles.Add(this.currentTitle);
+                }
                 print($"Marked {this.currentTitle.SimplifiedFileName} to keep name={this.currentTitle.UserName}");
             }
 
@@ -270,6 +289,7 @@ namespace MakeMKV_Title_Decoder {
             Console.WriteLine($"\tRemaining: [{string.Join(", ", this.remainingTitles.Select(x => x.SimplifiedFileName))}]");
             Console.WriteLine($"\tProcess queue: [{string.Join(", ", this.titlesToRename.Select(x => x.SimplifiedFileName))}]");
             Console.WriteLine($"\tRenamed: [{string.Join(", ", this.RenamedTitles.Select(x => x.SimplifiedFileName))}]");
+            Console.WriteLine($"\tBonus features: [{string.Join(", ", this.BonusFeatures.Select(x => x.SimplifiedFileName))}]");
             Console.WriteLine($"\tDeleted: [{string.Join(", ", this.DeletedTitles.Select(x => x.SimplifiedFileName))}]");
             Console.ResetColor();
         }
