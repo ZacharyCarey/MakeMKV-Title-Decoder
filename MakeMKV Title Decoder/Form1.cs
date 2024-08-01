@@ -208,8 +208,28 @@ namespace MakeMKV_Title_Decoder {
                 return;
             }
             PlaySound(HappySound);
-
             UpdateProgressBar(MakeMkvProgress.Max);
+
+            // Try and save metadata with the rip
+            string metadataFolder = Path.Combine(outputPath, ".metadata");
+            try
+            {
+                Directory.CreateDirectory(metadataFolder);
+            } catch (Exception)
+            {
+                MessageBox.Show("Failed to create folder.");
+                return;
+            }
+
+            try
+            {
+                Json.Write(this, Path.Combine(metadataFolder, "DiscScrape.json"));
+                Console.WriteLine("Saved 'DiscScrape.json'");
+            } catch (Exception ex)
+            {
+                Console.WriteLine("Failed to save 'DiscScrape.json'");
+                MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
+            }
 
             this.DriveSelectionPanel.Enabled = true;
         }
