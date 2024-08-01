@@ -274,7 +274,7 @@ namespace MakeMKV_Title_Decoder.Data {
                     this.SourceFileName = value;
                     break;
                 case ApItemAttributeId.SegmentsMap:
-                    this.Segments = value.Split(',').Select(int.Parse).ToList();
+                    this.Segments = ParseSegments(value).ToList();
                     break;
                 case ApItemAttributeId.OutputFileName:
                     this.OutputFileName = value;
@@ -302,6 +302,25 @@ namespace MakeMKV_Title_Decoder.Data {
 
         public override int GetHashCode() {
             return (this.SourceFileName ?? "").GetHashCode();
+        }
+
+        private IEnumerable<int> ParseSegments(string value) {
+            foreach(string str in value.Split(','))
+            {
+                int rangeIndex = str.IndexOf('-');
+                if (rangeIndex < 0)
+                {
+                    yield return int.Parse(str);
+                } else
+                {
+                    int min = int.Parse(str.Substring(0, rangeIndex));
+                    int max = int.Parse(str.Substring(rangeIndex + 1));
+                    for(int i = min; i <= max; i++)
+                    {
+                        yield return i;
+                    }
+                }
+            }
         }
     }
 }

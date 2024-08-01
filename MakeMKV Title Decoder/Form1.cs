@@ -245,8 +245,9 @@ namespace MakeMKV_Title_Decoder {
             }
             PlaySound(HappySound);
 
-            Console.WriteLine("All data received:");
-            Console.WriteLine(this.loadedDisc);
+            //Console.WriteLine("All data received:");
+            //Console.WriteLine(this.loadedDisc);
+            Console.WriteLine("Disc read successful.");
 
             this.DriveSelectionPanel.Enabled = true;
         }

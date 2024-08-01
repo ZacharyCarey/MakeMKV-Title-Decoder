@@ -229,7 +229,8 @@ namespace MakeMKV_Title_Decoder.Data {
             {
                 case "Blu-ray disc":
                     return DiscType.BluRay;
-                case nameof(DiscType.DVD):
+                case "DVD disc":
+                    return DiscType.DVD;
                 case nameof(DiscType.HD_DVD):
                 default:
                     throw new FormatException("Unknown disc type: " + value);
