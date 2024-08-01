@@ -65,7 +65,7 @@ namespace MakeMKV_Title_Decoder {
                         return null;
                     }
 
-                    currentTitle = remainingTitles.First();
+                    currentTitle = SegmentIdentifier.FindMainFeature(remainingTitles);
                     message = $"Got next title from remaining titles: {currentTitle.SimplifiedFileName}";
                 } else
                 {
