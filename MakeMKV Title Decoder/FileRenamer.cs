@@ -16,6 +16,7 @@ namespace MakeMKV_Title_Decoder {
     public partial class FileRenamer : Form {
         Disc disc;
         string folder;
+        Folder bonusFolder;
         LibVLC vlc;
         VideoRenamerStateMachine state;
         Title? currentTitle;
@@ -24,6 +25,8 @@ namespace MakeMKV_Title_Decoder {
         public FileRenamer(Disc data, string folder, bool ignoreIncompleteVideos) {
             this.disc = data;
             this.folder = folder;
+            this.bonusFolder = new Folder();
+            bonusFolder.Name = "Bonus Features";
             vlc = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
             InitializeComponent();
 
@@ -93,6 +96,7 @@ namespace MakeMKV_Title_Decoder {
             this.InvalidNameLabel.Visible = false;
             NameTextBox.Text = "";
             this.EpisodeComboBox.SelectedIndex = -1;
+            this.FolderLabel.Text = bonusFolder.ToString();
         }
 
         private void NextBtn_Click(object sender, EventArgs e) {
@@ -205,7 +209,20 @@ namespace MakeMKV_Title_Decoder {
                     MessageBox.Show("Invalid file name. File probably contains special characters not allowed by the OS.");
                     return false;
                 }
-                newTitle = state.ApplyChoice(this.NameTextBox.Text, this.BonusFeatureRadioBtn.Checked, this.DeleteEpisodesCheckBox.Checked);
+
+                bool isBonus = this.BonusFeatureRadioBtn.Checked;
+                if (isBonus)
+                {
+                    if (this.currentTitle.Folder == null)
+                    {
+                        this.currentTitle.Folder = bonusFolder;
+                    }
+                } else
+                {
+                    this.currentTitle.Folder = null;
+                }
+
+                newTitle = state.ApplyChoice(this.NameTextBox.Text, isBonus, this.DeleteEpisodesCheckBox.Checked);
             } else if (DeleteRadioBtn.Checked)
             {
                 newTitle = state.ApplyChoice(this.DeleteAllChapters.Checked);
@@ -239,7 +256,7 @@ namespace MakeMKV_Title_Decoder {
         private bool uniqueName(string name) {
             foreach (var item in this.EpisodeComboBox.Items)
             {
-                if (((NamedTitle)item).Name == name)
+                if (((NamedTitle)item).Name.ToLower() == name.ToLower())
                 {
                     return false;
                 }
@@ -250,7 +267,7 @@ namespace MakeMKV_Title_Decoder {
         private bool isValidFileName(string name) {
             char[] fileChars = Path.GetInvalidFileNameChars();
             char[] pathChars = Path.GetInvalidPathChars();
-            foreach(char c in name)
+            foreach (char c in name)
             {
                 if (fileChars.Contains(c) || pathChars.Contains(c))
                 {
@@ -261,11 +278,6 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void RenameFiles() {
-            if (state.BonusFeatures.Count > 0)
-            {
-                Directory.CreateDirectory(Path.Combine(this.folder, "Bonus Features"));
-            }
-
             List<string> failedFiles = new();
             foreach (Title title in disc.Titles)
             {
@@ -273,11 +285,23 @@ namespace MakeMKV_Title_Decoder {
                 {
                     if (state.RenamedTitles.Contains(title))
                     {
-                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {title.UserName}.mkv");
-                        File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(this.folder, title.UserName + ".mkv"));
-                    } else if (state.BonusFeatures.Contains(title)) {
-                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => Bonus Features/{title.UserName}.mkv");
-                        File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(this.folder, "Bonus Features", title.UserName + ".mkv"));
+                        string folderName = "";
+                        if (title.Folder != null)
+                        {
+                            if (!title.Folder.IsValidFolder)
+                            {
+                                title.Folder = bonusFolder;
+                            }
+                            folderName = title.Folder.ToString();
+                        }
+                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {Path.Combine(folderName, title.UserName)}.mkv");
+
+                        if (!string.IsNullOrWhiteSpace(folderName))
+                        {
+                            folderName = Path.Combine(this.folder, folderName);
+                            Directory.CreateDirectory(folderName);
+                        }
+                        File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(folderName, title.UserName + ".mkv"));
                     } else if (state.DeletedTitles.Contains(title))
                     {
                         Console.WriteLine($"Deleted {title.SimplifiedFileName}");
@@ -300,6 +324,26 @@ namespace MakeMKV_Title_Decoder {
             {
                 MessageBox.Show($"Failed to rename files: {string.Join(", ", failedFiles)}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void NewFolderBtn_Click(object sender, EventArgs e) {
+            if (this.currentTitle == null) return;
+
+            FolderManager folderManager = new FolderManager(bonusFolder);
+            folderManager.ShowDialog();
+            if (folderManager.SelectedFolder != null)
+            {
+                this.currentTitle.Folder = folderManager.SelectedFolder;
+            }
+
+            this.FolderLabel.Text = (this.currentTitle.Folder ?? bonusFolder).ToString();
+        }
+
+        private void BonusFeatureRadioBtn_CheckedChanged(object sender, EventArgs e) {
+            bool state = BonusFeatureRadioBtn.Checked;
+            FolderLabelLabel.Enabled = state;
+            FolderLabel.Enabled = state;
+            NewFolderBtn.Enabled = state;
         }
     }
 }

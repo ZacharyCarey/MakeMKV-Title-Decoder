@@ -37,6 +37,10 @@
             timer1 = new System.Windows.Forms.Timer(components);
             UserInputPanel = new Panel();
             KeepOptionsPanel = new Panel();
+            FolderLabel = new Label();
+            NewFolderBtn = new Button();
+            FolderLabelLabel = new Label();
+            InvalidNameLabel = new Label();
             UniqueNameLabel = new Label();
             DeleteEpisodesCheckBox = new CheckBox();
             BonusFeatureRadioBtn = new RadioButton();
@@ -54,7 +58,6 @@
             BreakApartRadioBtn = new RadioButton();
             CurrentTimeLabel = new Label();
             TotalTimeLabel = new Label();
-            InvalidNameLabel = new Label();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).BeginInit();
@@ -71,14 +74,14 @@
             VideoViewVLC1.Location = new Point(12, 12);
             VideoViewVLC1.MediaPlayer = null;
             VideoViewVLC1.Name = "VideoViewVLC1";
-            VideoViewVLC1.Size = new Size(508, 285);
+            VideoViewVLC1.Size = new Size(508, 340);
             VideoViewVLC1.TabIndex = 10;
             VideoViewVLC1.Text = "videoView1";
             // 
             // NextBtn
             // 
             NextBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            NextBtn.Location = new Point(114, 482);
+            NextBtn.Location = new Point(114, 537);
             NextBtn.Name = "NextBtn";
             NextBtn.Size = new Size(75, 23);
             NextBtn.TabIndex = 12;
@@ -90,7 +93,7 @@
             // 
             VideoScrubTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoScrubTrackBar.Enabled = false;
-            VideoScrubTrackBar.Location = new Point(12, 303);
+            VideoScrubTrackBar.Location = new Point(12, 358);
             VideoScrubTrackBar.Maximum = 1000;
             VideoScrubTrackBar.Name = "VideoScrubTrackBar";
             VideoScrubTrackBar.Size = new Size(810, 45);
@@ -103,7 +106,7 @@
             // 
             VolumeTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             VolumeTrackBar.LargeChange = 10;
-            VolumeTrackBar.Location = new Point(12, 354);
+            VolumeTrackBar.Location = new Point(12, 409);
             VolumeTrackBar.Maximum = 100;
             VolumeTrackBar.Name = "VolumeTrackBar";
             VolumeTrackBar.Orientation = Orientation.Vertical;
@@ -117,7 +120,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label1.AutoSize = true;
-            label1.Location = new Point(10, 461);
+            label1.Location = new Point(10, 516);
             label1.Name = "label1";
             label1.Size = new Size(47, 15);
             label1.TabIndex = 15;
@@ -127,7 +130,7 @@
             // 
             PlayBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             PlayBtn.Enabled = false;
-            PlayBtn.Location = new Point(190, 325);
+            PlayBtn.Location = new Point(190, 380);
             PlayBtn.Name = "PlayBtn";
             PlayBtn.Size = new Size(77, 23);
             PlayBtn.TabIndex = 16;
@@ -139,7 +142,7 @@
             // 
             PauseBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             PauseBtn.Enabled = false;
-            PauseBtn.Location = new Point(273, 325);
+            PauseBtn.Location = new Point(273, 380);
             PauseBtn.Name = "PauseBtn";
             PauseBtn.Size = new Size(75, 23);
             PauseBtn.TabIndex = 17;
@@ -150,7 +153,7 @@
             // titleInfo1
             // 
             titleInfo1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            titleInfo1.Location = new Point(114, 364);
+            titleInfo1.Location = new Point(114, 419);
             titleInfo1.Name = "titleInfo1";
             titleInfo1.Size = new Size(708, 112);
             titleInfo1.TabIndex = 18;
@@ -158,7 +161,7 @@
             // ReloadBtn
             // 
             ReloadBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ReloadBtn.Location = new Point(195, 482);
+            ReloadBtn.Location = new Point(195, 537);
             ReloadBtn.Name = "ReloadBtn";
             ReloadBtn.Size = new Size(75, 23);
             ReloadBtn.TabIndex = 19;
@@ -180,11 +183,14 @@
             UserInputPanel.Controls.Add(panel2);
             UserInputPanel.Location = new Point(526, 12);
             UserInputPanel.Name = "UserInputPanel";
-            UserInputPanel.Size = new Size(296, 285);
+            UserInputPanel.Size = new Size(296, 340);
             UserInputPanel.TabIndex = 20;
             // 
             // KeepOptionsPanel
             // 
+            KeepOptionsPanel.Controls.Add(FolderLabel);
+            KeepOptionsPanel.Controls.Add(NewFolderBtn);
+            KeepOptionsPanel.Controls.Add(FolderLabelLabel);
             KeepOptionsPanel.Controls.Add(InvalidNameLabel);
             KeepOptionsPanel.Controls.Add(UniqueNameLabel);
             KeepOptionsPanel.Controls.Add(DeleteEpisodesCheckBox);
@@ -194,15 +200,58 @@
             KeepOptionsPanel.Controls.Add(label2);
             KeepOptionsPanel.Location = new Point(3, 117);
             KeepOptionsPanel.Name = "KeepOptionsPanel";
-            KeepOptionsPanel.Size = new Size(290, 103);
+            KeepOptionsPanel.Size = new Size(290, 157);
             KeepOptionsPanel.TabIndex = 7;
+            // 
+            // FolderLabel
+            // 
+            FolderLabel.AutoSize = true;
+            FolderLabel.Enabled = false;
+            FolderLabel.Location = new Point(51, 103);
+            FolderLabel.Name = "FolderLabel";
+            FolderLabel.Size = new Size(29, 15);
+            FolderLabel.TabIndex = 11;
+            FolderLabel.Text = "N/A";
+            // 
+            // NewFolderBtn
+            // 
+            NewFolderBtn.Enabled = false;
+            NewFolderBtn.Location = new Point(200, 118);
+            NewFolderBtn.Name = "NewFolderBtn";
+            NewFolderBtn.Size = new Size(84, 23);
+            NewFolderBtn.TabIndex = 10;
+            NewFolderBtn.Text = "Select Folder";
+            NewFolderBtn.UseVisualStyleBackColor = true;
+            NewFolderBtn.Click += NewFolderBtn_Click;
+            // 
+            // FolderLabelLabel
+            // 
+            FolderLabelLabel.AutoSize = true;
+            FolderLabelLabel.Enabled = false;
+            FolderLabelLabel.Location = new Point(3, 103);
+            FolderLabelLabel.Name = "FolderLabelLabel";
+            FolderLabelLabel.Size = new Size(43, 15);
+            FolderLabelLabel.TabIndex = 8;
+            FolderLabelLabel.Text = "Folder:";
+            // 
+            // InvalidNameLabel
+            // 
+            InvalidNameLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            InvalidNameLabel.AutoSize = true;
+            InvalidNameLabel.ForeColor = Color.Red;
+            InvalidNameLabel.Location = new Point(3, 9);
+            InvalidNameLabel.Name = "InvalidNameLabel";
+            InvalidNameLabel.Size = new Size(97, 15);
+            InvalidNameLabel.TabIndex = 7;
+            InvalidNameLabel.Text = "Invalid file name!";
+            InvalidNameLabel.Visible = false;
             // 
             // UniqueNameLabel
             // 
             UniqueNameLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             UniqueNameLabel.AutoSize = true;
             UniqueNameLabel.ForeColor = Color.Red;
-            UniqueNameLabel.Location = new Point(159, 32);
+            UniqueNameLabel.Location = new Point(106, 9);
             UniqueNameLabel.Name = "UniqueNameLabel";
             UniqueNameLabel.Size = new Size(128, 15);
             UniqueNameLabel.TabIndex = 6;
@@ -212,7 +261,7 @@
             // DeleteEpisodesCheckBox
             // 
             DeleteEpisodesCheckBox.AutoSize = true;
-            DeleteEpisodesCheckBox.Location = new Point(3, 82);
+            DeleteEpisodesCheckBox.Location = new Point(3, 121);
             DeleteEpisodesCheckBox.Name = "DeleteEpisodesCheckBox";
             DeleteEpisodesCheckBox.Size = new Size(108, 19);
             DeleteEpisodesCheckBox.TabIndex = 5;
@@ -222,19 +271,20 @@
             // BonusFeatureRadioBtn
             // 
             BonusFeatureRadioBtn.AutoSize = true;
-            BonusFeatureRadioBtn.Location = new Point(3, 57);
+            BonusFeatureRadioBtn.Location = new Point(3, 81);
             BonusFeatureRadioBtn.Name = "BonusFeatureRadioBtn";
             BonusFeatureRadioBtn.Size = new Size(100, 19);
             BonusFeatureRadioBtn.TabIndex = 1;
             BonusFeatureRadioBtn.TabStop = true;
             BonusFeatureRadioBtn.Text = "Bonus Feature";
             BonusFeatureRadioBtn.UseVisualStyleBackColor = true;
+            BonusFeatureRadioBtn.CheckedChanged += BonusFeatureRadioBtn_CheckedChanged;
             // 
             // EpisodeRadioRadioBtn
             // 
             EpisodeRadioRadioBtn.AutoSize = true;
             EpisodeRadioRadioBtn.Checked = true;
-            EpisodeRadioRadioBtn.Location = new Point(3, 32);
+            EpisodeRadioRadioBtn.Location = new Point(3, 56);
             EpisodeRadioRadioBtn.Name = "EpisodeRadioRadioBtn";
             EpisodeRadioRadioBtn.Size = new Size(66, 19);
             EpisodeRadioRadioBtn.TabIndex = 0;
@@ -244,7 +294,7 @@
             // 
             // NameTextBox
             // 
-            NameTextBox.Location = new Point(54, 3);
+            NameTextBox.Location = new Point(51, 27);
             NameTextBox.Name = "NameTextBox";
             NameTextBox.Size = new Size(233, 23);
             NameTextBox.TabIndex = 4;
@@ -253,7 +303,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(6, 6);
+            label2.Location = new Point(3, 30);
             label2.Name = "label2";
             label2.Size = new Size(42, 15);
             label2.TabIndex = 3;
@@ -264,7 +314,7 @@
             DeleteOptionsPanel.Controls.Add(DeleteAllChapters);
             DeleteOptionsPanel.Controls.Add(DeleteThisFile);
             DeleteOptionsPanel.Enabled = false;
-            DeleteOptionsPanel.Location = new Point(3, 226);
+            DeleteOptionsPanel.Location = new Point(3, 280);
             DeleteOptionsPanel.Name = "DeleteOptionsPanel";
             DeleteOptionsPanel.Size = new Size(290, 56);
             DeleteOptionsPanel.TabIndex = 6;
@@ -362,7 +412,7 @@
             // 
             CurrentTimeLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             CurrentTimeLabel.AutoSize = true;
-            CurrentTimeLabel.Location = new Point(12, 325);
+            CurrentTimeLabel.Location = new Point(12, 380);
             CurrentTimeLabel.Name = "CurrentTimeLabel";
             CurrentTimeLabel.Size = new Size(49, 15);
             CurrentTimeLabel.TabIndex = 21;
@@ -372,29 +422,17 @@
             // 
             TotalTimeLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             TotalTimeLabel.AutoSize = true;
-            TotalTimeLabel.Location = new Point(773, 325);
+            TotalTimeLabel.Location = new Point(773, 380);
             TotalTimeLabel.Name = "TotalTimeLabel";
             TotalTimeLabel.Size = new Size(49, 15);
             TotalTimeLabel.TabIndex = 22;
             TotalTimeLabel.Text = "00:00:00";
             // 
-            // InvalidNameLabel
-            // 
-            InvalidNameLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            InvalidNameLabel.AutoSize = true;
-            InvalidNameLabel.ForeColor = Color.Red;
-            InvalidNameLabel.Location = new Point(190, 47);
-            InvalidNameLabel.Name = "InvalidNameLabel";
-            InvalidNameLabel.Size = new Size(97, 15);
-            InvalidNameLabel.TabIndex = 7;
-            InvalidNameLabel.Text = "Invalid file name!";
-            InvalidNameLabel.Visible = false;
-            // 
             // FileRenamer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(834, 513);
+            ClientSize = new Size(834, 568);
             Controls.Add(TotalTimeLabel);
             Controls.Add(CurrentTimeLabel);
             Controls.Add(UserInputPanel);
@@ -457,5 +495,8 @@
         private Label CurrentTimeLabel;
         private Label TotalTimeLabel;
         private Label InvalidNameLabel;
+        private Label FolderLabelLabel;
+        private Button NewFolderBtn;
+        private Label FolderLabel;
     }
 }

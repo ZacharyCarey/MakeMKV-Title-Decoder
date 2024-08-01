@@ -26,6 +26,7 @@ namespace MakeMKV_Title_Decoder.Data {
         public SerializableList<Track> Tracks = new();
 
         // Used by FileRenamer, not an actual data point to be saved
+        public Folder? Folder = null;
         public string? UserName = null;
 
         public string SourceFileExtension {
