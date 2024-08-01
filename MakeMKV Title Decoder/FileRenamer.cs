@@ -22,14 +22,15 @@ namespace MakeMKV_Title_Decoder {
         VideoRenamerStateMachine state;
         Title? currentTitle;
         const string TimeSpanFormat = "hh':'mm':'ss";
-        IJsonSerializable optionalMetadata;
+        JsonData optionalMetadata;
+        RenameData renameData = new();
 
         public FileRenamer(Disc data, string folder, bool ignoreIncompleteVideos, IJsonSerializable optionalMetadata) {
             this.disc = data;
             this.folder = folder;
             this.bonusFolder = new Folder();
             bonusFolder.Name = "Bonus Features";
-            this.optionalMetadata = optionalMetadata;
+            this.optionalMetadata = optionalMetadata.SaveToJson();
             vlc = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
             InitializeComponent();
 
@@ -282,7 +283,7 @@ namespace MakeMKV_Title_Decoder {
 
         private void RenameFiles() {
             List<string> failedFiles = new();
-            RenameData renameData = new();
+            renameData = new();
             foreach (Title title in disc.Titles)
             {
                 try
