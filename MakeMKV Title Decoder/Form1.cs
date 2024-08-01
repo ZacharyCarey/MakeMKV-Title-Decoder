@@ -336,7 +336,7 @@ namespace MakeMKV_Title_Decoder {
                 return;
             }
 
-            FileRenamer form = new(this.loadedDisc, OutputFolder, IgnoreIncompleteCheckBox.Checked);
+            FileRenamer form = new(this.loadedDisc, OutputFolder, IgnoreIncompleteCheckBox.Checked, this);
             form.Show();
         }
 

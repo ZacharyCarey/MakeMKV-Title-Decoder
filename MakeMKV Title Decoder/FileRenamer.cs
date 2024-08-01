@@ -1,4 +1,5 @@
-﻿using LibVLCSharp.Shared;
+﻿using JsonSerializable;
+using LibVLCSharp.Shared;
 using LibVLCSharp.WinForms;
 using MakeMKV_Title_Decoder.Data;
 using System;
@@ -21,12 +22,14 @@ namespace MakeMKV_Title_Decoder {
         VideoRenamerStateMachine state;
         Title? currentTitle;
         const string TimeSpanFormat = "hh':'mm':'ss";
+        IJsonSerializable optionalMetadata;
 
-        public FileRenamer(Disc data, string folder, bool ignoreIncompleteVideos) {
+        public FileRenamer(Disc data, string folder, bool ignoreIncompleteVideos, IJsonSerializable optionalMetadata) {
             this.disc = data;
             this.folder = folder;
             this.bonusFolder = new Folder();
             bonusFolder.Name = "Bonus Features";
+            this.optionalMetadata = optionalMetadata;
             vlc = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
             InitializeComponent();
 
@@ -279,6 +282,7 @@ namespace MakeMKV_Title_Decoder {
 
         private void RenameFiles() {
             List<string> failedFiles = new();
+            RenameData renameData = new();
             foreach (Title title in disc.Titles)
             {
                 try
@@ -294,13 +298,19 @@ namespace MakeMKV_Title_Decoder {
                             }
                             folderName = title.Folder.ToString();
                         }
-                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {Path.Combine(folderName, title.UserName)}.mkv");
+                        string newName = Path.Combine(folderName, title.UserName) + ".mkv";
+                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {newName}");
+                        renameData.Renames[title.OutputFileName] = new JsonString(newName);
 
                         if (!string.IsNullOrWhiteSpace(folderName))
                         {
                             folderName = Path.Combine(this.folder, folderName);
                             Directory.CreateDirectory(folderName);
+                        } else
+                        {
+                            folderName = this.folder;
                         }
+
                         File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(folderName, title.UserName + ".mkv"));
                     } else if (state.DeletedTitles.Contains(title))
                     {
@@ -324,6 +334,39 @@ namespace MakeMKV_Title_Decoder {
             {
                 MessageBox.Show($"Failed to rename files: {string.Join(", ", failedFiles)}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
+            if (MessageBox.Show("Save renamed files metadata?", "Save?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                string metadataFolder = Path.Combine(this.folder, ".metadata");
+                try
+                {
+                    Directory.CreateDirectory(metadataFolder);
+                } catch(Exception)
+                {
+                    MessageBox.Show("Failed to create folder.");
+                    return;
+                }
+
+                try
+                {
+                    Json.Write(renameData, Path.Combine(metadataFolder, "FileRenames.json"));
+                    Console.WriteLine("Saved 'FileRenames.json'");
+                } catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to save 'FileRenames.json'");
+                    MessageBox.Show("Failed to write FileRenames.json: " + ex.Message);
+                }
+
+                try
+                {
+                    Json.Write(optionalMetadata, Path.Combine(metadataFolder, "DiscScrape.json"));
+                    Console.WriteLine("Saved 'DiscScrape.json'");
+                } catch(Exception ex)
+                {
+                    Console.WriteLine("Failed to save 'DiscScrape.json'");
+                    MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
+                }
+            }
         }
 
         private void NewFolderBtn_Click(object sender, EventArgs e) {
@@ -344,6 +387,28 @@ namespace MakeMKV_Title_Decoder {
             FolderLabelLabel.Enabled = state;
             FolderLabel.Enabled = state;
             NewFolderBtn.Enabled = state;
+        }
+
+        private struct RenameData : IJsonSerializable {
+            public const string Version = "1.0";
+            public SerializableDictionary<JsonString> Renames = new();
+
+            public RenameData() {
+
+            }
+
+            public JsonData SaveToJson() {
+                JsonObject obj = new();
+
+                obj["version"] = new JsonString(Version);
+                obj["File Names"] = Renames.SaveToJson();
+
+                return obj;
+            }
+
+            public void LoadFromJson(JsonData data) {
+                throw new NotImplementedException();
+            }
         }
     }
 }
