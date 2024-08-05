@@ -101,6 +101,7 @@ namespace MakeMKV_Title_Decoder {
             NameTextBox.Text = "";
             this.EpisodeComboBox.SelectedIndex = -1;
             this.FolderLabel.Text = bonusFolder.ToString();
+            this.FileNotFoundLabel.Visible = false;
         }
 
         private void NextBtn_Click(object sender, EventArgs e) {
@@ -125,8 +126,15 @@ namespace MakeMKV_Title_Decoder {
 
             if (currentTitle?.OutputFileName != null)
             {
-                loadVideo(this.VideoViewVLC1, Path.Combine(this.folder, currentTitle.OutputFileName));
+                string fullPath = Path.Combine(this.folder, currentTitle.OutputFileName);
+                loadVideo(this.VideoViewVLC1, fullPath);
                 PlayBtn_Click(null, null);
+
+                if (!File.Exists(currentTitle.OutputFileName))
+                {
+                    this.FileNotFoundLabel.Text = $"Could not find file: {fullPath}";
+                    this.FileNotFoundLabel.Visible = true;
+                }
             }
 
             if (currentTitle == null)

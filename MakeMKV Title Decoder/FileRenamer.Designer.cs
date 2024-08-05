@@ -58,6 +58,7 @@
             BreakApartRadioBtn = new RadioButton();
             CurrentTimeLabel = new Label();
             TotalTimeLabel = new Label();
+            FileNotFoundLabel = new Label();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).BeginInit();
@@ -428,11 +429,24 @@
             TotalTimeLabel.TabIndex = 22;
             TotalTimeLabel.Text = "00:00:00";
             // 
+            // FileNotFoundLabel
+            // 
+            FileNotFoundLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            FileNotFoundLabel.AutoSize = true;
+            FileNotFoundLabel.ForeColor = Color.Red;
+            FileNotFoundLabel.Location = new Point(368, 384);
+            FileNotFoundLabel.Name = "FileNotFoundLabel";
+            FileNotFoundLabel.Size = new Size(106, 15);
+            FileNotFoundLabel.TabIndex = 23;
+            FileNotFoundLabel.Text = "Could not find file:";
+            FileNotFoundLabel.Visible = false;
+            // 
             // FileRenamer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(834, 568);
+            Controls.Add(FileNotFoundLabel);
             Controls.Add(TotalTimeLabel);
             Controls.Add(CurrentTimeLabel);
             Controls.Add(UserInputPanel);
@@ -498,5 +512,6 @@
         private Label FolderLabelLabel;
         private Button NewFolderBtn;
         private Label FolderLabel;
+        private Label FileNotFoundLabel;
     }
 }
