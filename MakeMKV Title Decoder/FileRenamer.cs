@@ -323,8 +323,12 @@ namespace MakeMKV_Title_Decoder {
                         File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(folderName, title.UserName + ".mkv"));
                     } else if (state.DeletedTitles.Contains(title))
                     {
-                        Console.WriteLine($"Deleted {title.SimplifiedFileName}");
-                        File.Delete(Path.Combine(this.folder, title.OutputFileName));
+                        string fullPath = Path.Combine(this.folder, title.OutputFileName);
+                        if (File.Exists(fullPath))
+                        {
+                            Console.WriteLine($"Deleted {title.SimplifiedFileName}");
+                            File.Delete(fullPath);
+                        }
                     } else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
