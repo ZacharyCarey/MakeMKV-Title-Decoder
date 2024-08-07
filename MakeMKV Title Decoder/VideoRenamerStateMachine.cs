@@ -230,7 +230,7 @@ namespace MakeMKV_Title_Decoder {
         public NamedTitle? ApplyChoice(NamedTitle sameAsTitle, string rootFolder) {
             Debug.Assert(currentTitle != null, "No video is selected. Please call 'NextTitle' first.");
 
-            Console.WriteLine($"User Choice: The current episode ({this.currentTitle.SimplifiedFileName}) is the same as the previous episode '{sameAsTitle.Name}' ({sameAsTitle.Title.SimplifiedFileName})");
+            print($"User Choice: The current episode ({this.currentTitle.SimplifiedFileName}) is the same as the previous episode '{sameAsTitle.Name}' ({sameAsTitle.Title.SimplifiedFileName})");
             VideoComparer form = new(rootFolder, sameAsTitle, this.currentTitle);
             form.ShowDialog();
 
