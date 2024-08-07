@@ -46,39 +46,48 @@
             TotalTimeLabelLeft = new Label();
             CurrentTimeLabelRight = new Label();
             TotalTimeLabelRight = new Label();
+            splitContainer1 = new SplitContainer();
+            CompareTracksBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoViewVLC2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
             SuspendLayout();
             // 
             // VideoViewVLC1
             // 
+            VideoViewVLC1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoViewVLC1.BackColor = Color.Black;
-            VideoViewVLC1.Location = new Point(15, 43);
+            VideoViewVLC1.Location = new Point(3, 3);
             VideoViewVLC1.MediaPlayer = null;
             VideoViewVLC1.Name = "VideoViewVLC1";
-            VideoViewVLC1.Size = new Size(413, 266);
+            VideoViewVLC1.Size = new Size(436, 238);
             VideoViewVLC1.TabIndex = 0;
             VideoViewVLC1.Text = "videoView1";
             // 
             // VideoViewVLC2
             // 
+            VideoViewVLC2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoViewVLC2.BackColor = Color.Black;
-            VideoViewVLC2.Location = new Point(434, 43);
+            VideoViewVLC2.Location = new Point(3, 3);
             VideoViewVLC2.MediaPlayer = null;
             VideoViewVLC2.Name = "VideoViewVLC2";
-            VideoViewVLC2.Size = new Size(415, 266);
+            VideoViewVLC2.Size = new Size(444, 238);
             VideoViewVLC2.TabIndex = 1;
             VideoViewVLC2.Text = "videoView2";
             // 
             // VideoScrubTrackBar
             // 
-            VideoScrubTrackBar.Location = new Point(15, 315);
+            VideoScrubTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            VideoScrubTrackBar.Location = new Point(12, 426);
             VideoScrubTrackBar.Maximum = 1000;
             VideoScrubTrackBar.Name = "VideoScrubTrackBar";
-            VideoScrubTrackBar.Size = new Size(834, 45);
+            VideoScrubTrackBar.Size = new Size(884, 45);
             VideoScrubTrackBar.TabIndex = 14;
             VideoScrubTrackBar.TickStyle = TickStyle.None;
             VideoScrubTrackBar.Scroll += VideoSrubTrackBar_Scroll;
@@ -86,7 +95,7 @@
             // PauseBtn
             // 
             PauseBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            PauseBtn.Location = new Point(434, 372);
+            PauseBtn.Location = new Point(431, 469);
             PauseBtn.Name = "PauseBtn";
             PauseBtn.Size = new Size(75, 23);
             PauseBtn.TabIndex = 19;
@@ -97,7 +106,7 @@
             // PlayBtn
             // 
             PlayBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            PlayBtn.Location = new Point(351, 372);
+            PlayBtn.Location = new Point(348, 469);
             PlayBtn.Name = "PlayBtn";
             PlayBtn.Size = new Size(77, 23);
             PlayBtn.TabIndex = 18;
@@ -109,7 +118,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label1.AutoSize = true;
-            label1.Location = new Point(13, 521);
+            label1.Location = new Point(3, 369);
             label1.Name = "label1";
             label1.Size = new Size(47, 15);
             label1.TabIndex = 21;
@@ -119,7 +128,7 @@
             // 
             VolumeTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             VolumeTrackBar.LargeChange = 10;
-            VolumeTrackBar.Location = new Point(15, 414);
+            VolumeTrackBar.Location = new Point(3, 262);
             VolumeTrackBar.Maximum = 100;
             VolumeTrackBar.Name = "VolumeTrackBar";
             VolumeTrackBar.Orientation = Orientation.Vertical;
@@ -132,23 +141,23 @@
             // titleInfo1
             // 
             titleInfo1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            titleInfo1.Location = new Point(66, 414);
+            titleInfo1.Location = new Point(54, 272);
             titleInfo1.Name = "titleInfo1";
-            titleInfo1.Size = new Size(360, 112);
+            titleInfo1.Size = new Size(381, 118);
             titleInfo1.TabIndex = 22;
             // 
             // titleInfo2
             // 
             titleInfo2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            titleInfo2.Location = new Point(487, 414);
+            titleInfo2.Location = new Point(54, 272);
             titleInfo2.Name = "titleInfo2";
-            titleInfo2.Size = new Size(371, 112);
+            titleInfo2.Size = new Size(393, 112);
             titleInfo2.TabIndex = 23;
             // 
             // ReloadBtn
             // 
             ReloadBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ReloadBtn.Location = new Point(584, 372);
+            ReloadBtn.Location = new Point(554, 469);
             ReloadBtn.Name = "ReloadBtn";
             ReloadBtn.Size = new Size(75, 23);
             ReloadBtn.TabIndex = 24;
@@ -166,7 +175,7 @@
             // 
             label2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label2.AutoSize = true;
-            label2.Location = new Point(432, 521);
+            label2.Location = new Point(3, 369);
             label2.Name = "label2";
             label2.Size = new Size(47, 15);
             label2.TabIndex = 26;
@@ -176,7 +185,7 @@
             // 
             VolumeTrackBar2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             VolumeTrackBar2.LargeChange = 10;
-            VolumeTrackBar2.Location = new Point(434, 414);
+            VolumeTrackBar2.Location = new Point(3, 262);
             VolumeTrackBar2.Maximum = 100;
             VolumeTrackBar2.Name = "VolumeTrackBar2";
             VolumeTrackBar2.Orientation = Orientation.Vertical;
@@ -189,7 +198,7 @@
             // LeftBtn
             // 
             LeftBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            LeftBtn.Location = new Point(351, 564);
+            LeftBtn.Location = new Point(12, 469);
             LeftBtn.Name = "LeftBtn";
             LeftBtn.Size = new Size(77, 23);
             LeftBtn.TabIndex = 27;
@@ -200,7 +209,7 @@
             // RightBtn
             // 
             RightBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            RightBtn.Location = new Point(434, 564);
+            RightBtn.Location = new Point(95, 469);
             RightBtn.Name = "RightBtn";
             RightBtn.Size = new Size(77, 23);
             RightBtn.TabIndex = 28;
@@ -228,8 +237,9 @@
             // 
             // CurrentTimeLabelLeft
             // 
+            CurrentTimeLabelLeft.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             CurrentTimeLabelLeft.AutoSize = true;
-            CurrentTimeLabelLeft.Location = new Point(15, 345);
+            CurrentTimeLabelLeft.Location = new Point(3, 244);
             CurrentTimeLabelLeft.Name = "CurrentTimeLabelLeft";
             CurrentTimeLabelLeft.Size = new Size(49, 15);
             CurrentTimeLabelLeft.TabIndex = 31;
@@ -237,8 +247,9 @@
             // 
             // TotalTimeLabelLeft
             // 
+            TotalTimeLabelLeft.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             TotalTimeLabelLeft.AutoSize = true;
-            TotalTimeLabelLeft.Location = new Point(379, 345);
+            TotalTimeLabelLeft.Location = new Point(390, 244);
             TotalTimeLabelLeft.Name = "TotalTimeLabelLeft";
             TotalTimeLabelLeft.Size = new Size(49, 15);
             TotalTimeLabelLeft.TabIndex = 32;
@@ -246,8 +257,9 @@
             // 
             // CurrentTimeLabelRight
             // 
+            CurrentTimeLabelRight.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             CurrentTimeLabelRight.AutoSize = true;
-            CurrentTimeLabelRight.Location = new Point(434, 345);
+            CurrentTimeLabelRight.Location = new Point(3, 244);
             CurrentTimeLabelRight.Name = "CurrentTimeLabelRight";
             CurrentTimeLabelRight.Size = new Size(49, 15);
             CurrentTimeLabelRight.TabIndex = 33;
@@ -255,39 +267,68 @@
             // 
             // TotalTimeLabelRight
             // 
+            TotalTimeLabelRight.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             TotalTimeLabelRight.AutoSize = true;
-            TotalTimeLabelRight.Location = new Point(800, 345);
+            TotalTimeLabelRight.Location = new Point(398, 244);
             TotalTimeLabelRight.Name = "TotalTimeLabelRight";
             TotalTimeLabelRight.Size = new Size(49, 15);
             TotalTimeLabelRight.TabIndex = 34;
             TotalTimeLabelRight.Text = "00:00:00";
             // 
+            // splitContainer1
+            // 
+            splitContainer1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            splitContainer1.Location = new Point(12, 27);
+            splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            splitContainer1.Panel1.Controls.Add(VideoViewVLC1);
+            splitContainer1.Panel1.Controls.Add(CurrentTimeLabelLeft);
+            splitContainer1.Panel1.Controls.Add(TotalTimeLabelLeft);
+            splitContainer1.Panel1.Controls.Add(VolumeTrackBar);
+            splitContainer1.Panel1.Controls.Add(label1);
+            splitContainer1.Panel1.Controls.Add(titleInfo1);
+            // 
+            // splitContainer1.Panel2
+            // 
+            splitContainer1.Panel2.Controls.Add(VideoViewVLC2);
+            splitContainer1.Panel2.Controls.Add(TotalTimeLabelRight);
+            splitContainer1.Panel2.Controls.Add(CurrentTimeLabelRight);
+            splitContainer1.Panel2.Controls.Add(VolumeTrackBar2);
+            splitContainer1.Panel2.Controls.Add(label2);
+            splitContainer1.Panel2.Controls.Add(titleInfo2);
+            splitContainer1.Size = new Size(896, 393);
+            splitContainer1.SplitterDistance = 442;
+            splitContainer1.TabIndex = 37;
+            // 
+            // CompareTracksBtn
+            // 
+            CompareTracksBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            CompareTracksBtn.Location = new Point(718, 469);
+            CompareTracksBtn.Name = "CompareTracksBtn";
+            CompareTracksBtn.Size = new Size(108, 23);
+            CompareTracksBtn.TabIndex = 38;
+            CompareTracksBtn.Text = "Compare Tracks";
+            CompareTracksBtn.UseVisualStyleBackColor = true;
+            CompareTracksBtn.Click += CompareTracksBtn_Click;
+            // 
             // VideoComparer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(870, 599);
+            ClientSize = new Size(919, 505);
             ControlBox = false;
-            Controls.Add(TotalTimeLabelRight);
-            Controls.Add(CurrentTimeLabelRight);
-            Controls.Add(TotalTimeLabelLeft);
-            Controls.Add(CurrentTimeLabelLeft);
+            Controls.Add(CompareTracksBtn);
+            Controls.Add(splitContainer1);
             Controls.Add(EpisodeNameLabel);
             Controls.Add(label3);
             Controls.Add(RightBtn);
             Controls.Add(LeftBtn);
-            Controls.Add(label2);
-            Controls.Add(VolumeTrackBar2);
             Controls.Add(ReloadBtn);
-            Controls.Add(titleInfo2);
-            Controls.Add(titleInfo1);
-            Controls.Add(label1);
-            Controls.Add(VolumeTrackBar);
             Controls.Add(PauseBtn);
             Controls.Add(PlayBtn);
             Controls.Add(VideoScrubTrackBar);
-            Controls.Add(VideoViewVLC2);
-            Controls.Add(VideoViewVLC1);
             Name = "VideoComparer";
             Text = "VideoComparer";
             FormClosing += VideoComparer_FormClosing;
@@ -297,6 +338,12 @@
             ((System.ComponentModel.ISupportInitialize)VideoScrubTrackBar).EndInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar).EndInit();
             ((System.ComponentModel.ISupportInitialize)VolumeTrackBar2).EndInit();
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel1.PerformLayout();
+            splitContainer1.Panel2.ResumeLayout(false);
+            splitContainer1.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -324,5 +371,7 @@
         private Label TotalTimeLabelLeft;
         private Label CurrentTimeLabelRight;
         private Label TotalTimeLabelRight;
+        private SplitContainer splitContainer1;
+        private Button CompareTracksBtn;
     }
 }

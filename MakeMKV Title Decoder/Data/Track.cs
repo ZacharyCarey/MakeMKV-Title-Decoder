@@ -375,5 +375,50 @@ namespace MakeMKV_Title_Decoder {
 
             return sb.ToString();
         }
+
+        public IEnumerable<string> GetData() {
+            if (this.Type != null) yield return $"Type: {this.Type.ToString()}";
+            if (this.Codec != null) yield return $"Codec: {this.Codec}";
+            if (this.Resolution != null) yield return $"Resolution: {this.Resolution.Value.Width}x{this.Resolution.Value.Height}";
+            if (this.AspectRatio != null) yield return $"Aspect Ratio: {this.AspectRatio.Value.Width}:{this.AspectRatio.Value.Height}";
+            if (this.FrameRate != null) yield return $"Frame Rate: {this.FrameRate:0.000} fps";
+            if (this.Name != null) yield return $"Name: {this.Name}";
+            if (this.Language != null) yield return $"Language: {this.Language}";
+            if (this.Channels != null) yield return $"Channels: {this.Channels}";
+            if (this.ChannelLayout != null) yield return $"Channel Layout: {this.ChannelLayout}";
+            if (this.SampleRate != null) yield return $"Sample Rate: {this.SampleRate}";
+            if (this.BitsPerSample != null) yield return $"Bits per Sample: {this.BitsPerSample}";
+            if (this.Flags != null) yield return $"Flags: {this.Flags}";
+            if (this.SourceFileName != null) yield return $"Source File Name: {this.SourceFileName}";
+            if (this.Size != null) yield return $"Size: {this.Size.Value.ToString()}";
+            if (this.OutputFormat != null) yield return $"Output Format: {this.OutputFormat}";
+            if (this.OutputDescription != null) yield return $"Output Description: {this.OutputDescription}";
+            foreach (var pair in this.Data)
+            {
+                yield return $"{pair.Key}: {pair.Value.Value}";
+            }
+        }
+
+        public string GetSimplifiedName() {
+            switch(this.Type)
+            {
+                case TrackType.Attachment: return $"Attachment: {this.Codec ?? ""} {ResolutionName()} {this.Name ?? ""}";
+                case TrackType.Audio: return $"Audio: {this.Codec ?? ""} {this.Name ?? ""} {this.Language ?? ""}";
+                case TrackType.Subtitle: return $"Subtitles: {this.Codec ?? ""} {this.Language ?? ""} {this.Flags ?? ""}";
+                case TrackType.Video: return $"Video: {this.Codec ?? ""}";
+                default:
+                    throw new Exception("Unknown track type.");
+            }
+        }
+
+        private string ResolutionName() {
+            if (this.Resolution == null)
+            {
+                return "";
+            } else
+            {
+                return $"{this.Resolution.Value.Width}x{this.Resolution.Value.Height}";
+            }
+        }
     }
 }

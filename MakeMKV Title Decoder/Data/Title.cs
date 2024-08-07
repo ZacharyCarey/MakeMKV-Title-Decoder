@@ -323,5 +323,20 @@ namespace MakeMKV_Title_Decoder.Data {
                 }
             }
         }
+
+        public IEnumerable<string> GetData() {
+            if (this.Name != null) yield return $"Name: {this.Name}";
+            if (this.SourceFileName != null) yield return $"Source File Name: {this.SourceFileName}";
+            if (this.Duration != null) yield return $"Duration: {this.Duration.Value.ToString("hh':'mm':'ss")}";
+            if (this.ChaptersCount != null) yield return $"Chapters Count: {this.ChaptersCount}";
+            if (this.Segments != null) yield return $"Segments: [{string.Join(", ", this.Segments)}]";
+            if (this.Size != null) yield return $"Size: {this.Size.ToString()}";
+            if (this.OutputFileName != null) yield return $"Output File Name: {this.OutputFileName}";
+            if (this.Comment != null) yield return $"Comment: {this.Comment}";
+            foreach(var pair in this.Data)
+            {
+                yield return $"{pair.Key}: {pair.Value}";
+            }
+        }
     }
 }

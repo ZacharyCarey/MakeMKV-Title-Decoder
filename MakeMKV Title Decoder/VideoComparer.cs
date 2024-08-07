@@ -21,6 +21,7 @@ namespace MakeMKV_Title_Decoder {
         VideoView longerVideo;
         string rootFolder;
         const string TimeSpanFormat = "hh':'mm':'ss";
+        CompareTracks? compareTracksForm = null;
 
         public bool PreferVideo1 = false;
 
@@ -42,6 +43,8 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void VideoComparer_FormClosing(object sender, FormClosingEventArgs e) {
+            compareTracksForm?.Close();
+
             // Attempt to prevent VLC freezing issue
             PlayBtn_Click(null, null);
             Thread.Sleep(500);
@@ -172,6 +175,12 @@ namespace MakeMKV_Title_Decoder {
             long lengthRight = right?.Length ?? 0;
             this.CurrentTimeLabelRight.Text = TimeSpan.FromMilliseconds(positionRight * lengthRight).ToString(TimeSpanFormat);
             this.TotalTimeLabelRight.Text = TimeSpan.FromMilliseconds(lengthRight).ToString(TimeSpanFormat);
+        }
+
+        private void CompareTracksBtn_Click(object sender, EventArgs e) {
+            if (compareTracksForm != null) compareTracksForm.Close();
+            compareTracksForm = new CompareTracks(this.vid1, this.vid2);
+            compareTracksForm.Show();
         }
     }
 }
