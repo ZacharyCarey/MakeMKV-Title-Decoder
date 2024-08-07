@@ -431,7 +431,7 @@
             // 
             // FileNotFoundLabel
             // 
-            FileNotFoundLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            FileNotFoundLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             FileNotFoundLabel.AutoSize = true;
             FileNotFoundLabel.ForeColor = Color.Red;
             FileNotFoundLabel.Location = new Point(368, 384);

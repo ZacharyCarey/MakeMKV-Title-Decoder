@@ -130,7 +130,7 @@ namespace MakeMKV_Title_Decoder {
                 loadVideo(this.VideoViewVLC1, fullPath);
                 PlayBtn_Click(null, null);
 
-                if (!File.Exists(currentTitle.OutputFileName))
+                if (!File.Exists(fullPath))
                 {
                     this.FileNotFoundLabel.Text = $"Could not find file: {fullPath}";
                     this.FileNotFoundLabel.Visible = true;
