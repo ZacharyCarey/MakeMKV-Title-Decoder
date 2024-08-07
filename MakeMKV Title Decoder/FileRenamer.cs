@@ -105,7 +105,12 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void NextBtn_Click(object sender, EventArgs e) {
+            // Attempt to prevent VLC freezing issue
+            PlayBtn_Click(null, null);
+            Thread.Sleep(500);
+            Application.DoEvents();
             loadVideo(this.VideoViewVLC1, null);
+
             UserInputPanel.Enabled = false;
             bool success = submitUserChoice();
             if (!success)
@@ -123,12 +128,6 @@ namespace MakeMKV_Title_Decoder {
             this.BreakApartRadioBtn.Enabled = state.HasEpisodes;
             this.DeleteEpisodesCheckBox.Enabled = state.HasEpisodes;
             this.DeleteAllChapters.Enabled = state.HasEpisodes;
-
-            // Attempt to prevent VLC freezing issue
-            PlayBtn_Click(null, null);
-            Thread.Sleep(500);
-            Application.DoEvents();
-            loadVideo(this.VideoViewVLC1, null);
 
             if (currentTitle?.OutputFileName != null)
             {
