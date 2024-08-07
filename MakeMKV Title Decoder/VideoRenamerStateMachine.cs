@@ -127,7 +127,7 @@ namespace MakeMKV_Title_Decoder {
             NamedTitle namedTitle = new(userName, this.currentTitle);
             this.currentTitle.UserName = userName;
             this.RenamedTitles.Add(this.currentTitle);
-            print($"Marked {this.currentTitle.SimplifiedFileName} to keep. name={this.currentTitle.UserName}");
+            print($"User Choice: Marked {this.currentTitle.SimplifiedFileName} to keep name={this.currentTitle.UserName} IsBonus={isBonusFeature} DeleteEpisodes={deleteEpisodes}");
 
             if (deleteEpisodes)
             {
@@ -140,7 +140,7 @@ namespace MakeMKV_Title_Decoder {
                         {
                             this.DeletedTitles.Add(title);
                             this.remainingTitles.Remove(title);
-                            print($"Marked {title.SimplifiedFileName} for deletion.");
+                            print($"Marked {title.SimplifiedFileName} for deletion because user chose to delete episodes.");
                         }
                     }
                 }
@@ -164,7 +164,7 @@ namespace MakeMKV_Title_Decoder {
             Debug.Assert(currentTitle != null, "No video is selected. Please call 'NextTitle' first.");
 
             this.DeletedTitles.Add(this.currentTitle);
-            print($"Marked {this.currentTitle.SimplifiedFileName} for deletion.");
+            print($"User Choice: Marked {this.currentTitle.SimplifiedFileName} for deletion. DeleteEpisodes={deleteEpisodes}");
 
             if (deleteEpisodes)
             {
@@ -177,7 +177,7 @@ namespace MakeMKV_Title_Decoder {
                         {
                             this.DeletedTitles.Add(title);
                             this.remainingTitles.Remove(title);
-                            print($"Marked {title.SimplifiedFileName} for deletion");
+                            print($"Marked {title.SimplifiedFileName} for deletion because the user chose to delete episodes,");
                         }
                     }
                 }
@@ -202,14 +202,14 @@ namespace MakeMKV_Title_Decoder {
             Debug.Assert(currentEpisodes != null, "Current title cannot be broken apart.");
 
             this.DeletedTitles.Add(this.currentTitle);
-            print($"Marked {this.currentTitle.SimplifiedFileName} for deletion");
+            print($"UserChoice: Marked {this.currentTitle.SimplifiedFileName} for deletion, breaking apart into episodes instead.");
 
             foreach(var solution in this.currentEpisodes)
             {
                 foreach(var title in solution.Titles)
                 {
                     this.titlesToRename.Enqueue(title);
-                    print($"Added {title.SimplifiedFileName} to the process queue.");
+                    print($"Added {title.SimplifiedFileName} to the process queue since user decided to break apart the main feature.");
                 }
             }
 
@@ -230,6 +230,7 @@ namespace MakeMKV_Title_Decoder {
         public NamedTitle? ApplyChoice(NamedTitle sameAsTitle, string rootFolder) {
             Debug.Assert(currentTitle != null, "No video is selected. Please call 'NextTitle' first.");
 
+            Console.WriteLine($"User Choice: The current episode ({this.currentTitle.SimplifiedFileName}) is the same as the previous episode '{sameAsTitle.Name}' ({sameAsTitle.Title.SimplifiedFileName})");
             VideoComparer form = new(rootFolder, sameAsTitle, this.currentTitle);
             form.ShowDialog();
 
@@ -237,18 +238,18 @@ namespace MakeMKV_Title_Decoder {
             {
                 // Keep the old title, delete the new one
                 this.DeletedTitles.Add(this.currentTitle);
-                print($"Marked {this.currentTitle.SimplifiedFileName} for deletion.");
+                print($"User Choice: Preferred video 1 ({sameAsTitle.Title.SimplifiedFileName}), Marked {this.currentTitle.SimplifiedFileName} for deletion.");
             } else
             {
                 // Replace the old title with the new title
-                print($"Marked {sameAsTitle.Title.SimplifiedFileName} (name={sameAsTitle.Title.UserName}) for deletion.");
+                print($"User Choice: preferred video 2 ({this.currentTitle.SimplifiedFileName}), Marked {sameAsTitle.Title.SimplifiedFileName} (name={sameAsTitle.Title.UserName}) for deletion.");
                 sameAsTitle.Title.UserName = null;
                 this.DeletedTitles.Add(sameAsTitle.Title);
                 this.RenamedTitles.Remove(sameAsTitle.Title);
 
                 this.currentTitle.UserName = sameAsTitle.Name;
                 this.RenamedTitles.Add(this.currentTitle);
-                print($"Marked {this.currentTitle.SimplifiedFileName} to keep name={this.currentTitle.UserName}");
+                print($"Marked {this.currentTitle.SimplifiedFileName} to keep as new video for episode name={this.currentTitle.UserName}");
             }
 
             verboseCurrentState();
