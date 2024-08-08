@@ -24,6 +24,16 @@ namespace MakeMKV_Title_Decoder {
         const string TimeSpanFormat = "hh':'mm':'ss";
         JsonData optionalMetadata;
         RenameData renameData = new();
+        bool forceFileRename = false;
+
+        public FileRenamer(RenameData data) {
+            this.renameData = data;
+            forceFileRename = true;
+            this.folder = data.OutputFolder;
+            this.bonusFolder = new Folder();
+            bonusFolder.Name = "Bonus Features";
+            InitializeComponent();
+        }
 
         public FileRenamer(Disc data, string folder, bool ignoreIncompleteVideos, IJsonSerializable optionalMetadata) {
             this.disc = data;
@@ -39,6 +49,11 @@ namespace MakeMKV_Title_Decoder {
 
         private void FileRenamer_Load(object sender, EventArgs e) {
             ResetUserInputPanel();
+            if (forceFileRename)
+            {
+                RenameFiles();
+                this.Close();
+            }
         }
 
         private void FileRenamer_FormClosing(object sender, FormClosingEventArgs e) {
@@ -295,11 +310,11 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void RenameFiles() {
-            List<string> failedFiles = new();
-            renameData = new();
-            foreach (Title title in disc.Titles)
+            if (!forceFileRename)
             {
-                try
+                renameData = new();
+                renameData.OutputFolder = this.folder;
+                foreach (Title title in disc.Titles)
                 {
                     if (state.RenamedTitles.Contains(title))
                     {
@@ -313,77 +328,112 @@ namespace MakeMKV_Title_Decoder {
                             folderName = title.Folder.ToString();
                         }
                         string newName = Path.Combine(folderName, title.UserName) + ".mkv";
-                        Console.WriteLine($"Renamed {title.SimplifiedFileName} => {newName}");
-                        renameData.Renames[title.OutputFileName] = new JsonString(newName);
-
-                        if (!string.IsNullOrWhiteSpace(folderName))
-                        {
-                            folderName = Path.Combine(this.folder, folderName);
-                            Directory.CreateDirectory(folderName);
-                        } else
-                        {
-                            folderName = this.folder;
-                        }
-
-                        File.Move(Path.Combine(this.folder, title.OutputFileName), Path.Combine(folderName, title.UserName + ".mkv"));
+                        renameData.Renamed[title.OutputFileName] = new JsonString(newName);
+                        Console.WriteLine($"Added renamed file: {title.SimplifiedFileName} => {newName}");
                     } else if (state.DeletedTitles.Contains(title))
                     {
-                        string fullPath = Path.Combine(this.folder, title.OutputFileName);
-                        if (File.Exists(fullPath))
-                        {
-                            Console.WriteLine($"Deleted {title.SimplifiedFileName}");
-                            File.Delete(fullPath);
-                        }
+                        renameData.Deleted.Add(new JsonString(title.OutputFileName));
+                        Console.WriteLine($"Added deleted file: {title.OutputFileName}");
                     } else
                     {
+                        renameData.Errors.Add(new JsonString(title.OutputFileName));
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine($"Could not find {title.SimplifiedFileName}");
                         Console.ResetColor();
                     }
+                }
+
+                // Save rename metadata if desired
+                if (MessageBox.Show("Save renamed files metadata?", "Save?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    string metadataFolder = Path.Combine(this.folder, ".metadata");
+                    try
+                    {
+                        Directory.CreateDirectory(metadataFolder);
+                    } catch (Exception)
+                    {
+                        MessageBox.Show("Failed to create folder.");
+                        return;
+                    }
+
+                    try
+                    {
+                        Json.Write(renameData, Path.Combine(metadataFolder, "FileRenames.json"));
+                        Console.WriteLine("Saved 'FileRenames.json'");
+                    } catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed to save 'FileRenames.json'");
+                        MessageBox.Show("Failed to write FileRenames.json: " + ex.Message);
+                    }
+
+                    try
+                    {
+                        Json.Write(optionalMetadata, Path.Combine(metadataFolder, "DiscScrape.json"));
+                        Console.WriteLine("Saved 'DiscScrape.json'");
+                    } catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed to save 'DiscScrape.json'");
+                        MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
+                    }
+                }
+            }
+
+            // Now actually rename every file
+            List<string> failedFiles = new();
+
+            foreach (var pair in renameData.Renamed)
+            {
+                string outputName = pair.Key;
+                string newName = pair.Value;
+
+                try
+                {
+                    string? folderName = Path.GetDirectoryName(newName);
+                    if (!string.IsNullOrWhiteSpace(folderName))
+                    {
+                        folderName = Path.Combine(this.folder, folderName);
+                        Directory.CreateDirectory(folderName);
+                    } else
+                    {
+                        folderName = this.folder;
+                    }
+
+                    string outputFile = Path.Combine(this.folder, outputName);
+                    string newFile = Path.Combine(this.folder, newName);
+
+                    File.Move(outputFile, newFile);
+                    Console.WriteLine($"Renamed {outputName} => {newName}");
                 } catch (Exception ex)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Failed to rename file {title.SimplifiedFileName}: " + ex.Message);
+                    Console.WriteLine($"Failed to rename file {outputName}: " + ex.Message);
                     Console.ResetColor();
-                    failedFiles.Add(title.SimplifiedFileName);
+                    failedFiles.Add(outputName);
                 }
             }
+
+            foreach(string outputName in renameData.Deleted)
+            {
+                try
+                {
+                    string fullPath = Path.Combine(this.folder, outputName);
+                    if (File.Exists(fullPath))
+                    {
+                        File.Delete(fullPath);
+                        Console.WriteLine($"Deleted {outputName}");
+                    }
+                }catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed to delete file {outputName}: " + ex.Message);
+                    Console.ResetColor();
+                    failedFiles.Add(outputName);
+                }
+            }
+
             if (failedFiles.Count > 0)
             {
                 MessageBox.Show($"Failed to rename files: {string.Join(", ", failedFiles)}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-            if (MessageBox.Show("Save renamed files metadata?", "Save?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                string metadataFolder = Path.Combine(this.folder, ".metadata");
-                try
-                {
-                    Directory.CreateDirectory(metadataFolder);
-                } catch(Exception)
-                {
-                    MessageBox.Show("Failed to create folder.");
-                    return;
-                }
-
-                try
-                {
-                    Json.Write(renameData, Path.Combine(metadataFolder, "FileRenames.json"));
-                    Console.WriteLine("Saved 'FileRenames.json'");
-                } catch (Exception ex)
-                {
-                    Console.WriteLine("Failed to save 'FileRenames.json'");
-                    MessageBox.Show("Failed to write FileRenames.json: " + ex.Message);
-                }
-
-                try
-                {
-                    Json.Write(optionalMetadata, Path.Combine(metadataFolder, "DiscScrape.json"));
-                    Console.WriteLine("Saved 'DiscScrape.json'");
-                } catch(Exception ex)
-                {
-                    Console.WriteLine("Failed to save 'DiscScrape.json'");
-                    MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
-                }
             }
         }
 
@@ -405,28 +455,6 @@ namespace MakeMKV_Title_Decoder {
             FolderLabelLabel.Enabled = state;
             FolderLabel.Enabled = state;
             NewFolderBtn.Enabled = state;
-        }
-
-        private struct RenameData : IJsonSerializable {
-            public const string Version = "1.0";
-            public SerializableDictionary<JsonString> Renames = new();
-
-            public RenameData() {
-
-            }
-
-            public JsonData SaveToJson() {
-                JsonObject obj = new();
-
-                obj["version"] = new JsonString(Version);
-                obj["File Names"] = Renames.SaveToJson();
-
-                return obj;
-            }
-
-            public void LoadFromJson(JsonData data) {
-                throw new NotImplementedException();
-            }
         }
     }
 }

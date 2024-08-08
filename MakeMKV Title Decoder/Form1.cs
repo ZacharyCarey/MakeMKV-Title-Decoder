@@ -375,5 +375,36 @@ namespace MakeMKV_Title_Decoder {
                 }
             }
         }
+
+        private void loadToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (OpenFileDialog dialog = new())
+            {
+                dialog.Filter = "JSON files (*.json)|*.json";
+                dialog.RestoreDirectory = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    using (var stream = dialog.OpenFile())
+                    {
+                        RenameData renameData = new();
+
+                        try
+                        {
+                            Json.Read(stream, renameData);
+                            this.OutputFolder = renameData.OutputFolder;
+                            Console.WriteLine("Loaded JSON file.");
+                        } catch (Exception ex)
+                        {
+                            PlaySound(SadSound);
+                            MessageBox.Show("Failed to read file: " + ex.Message, "Failed to read file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        FileRenamer renamer = new(renameData);
+                        renamer.Show();
+                    }
+                }
+            }
+        }
     }
 }

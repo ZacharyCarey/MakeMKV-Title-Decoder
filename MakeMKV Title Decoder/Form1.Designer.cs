@@ -45,6 +45,8 @@
             label3 = new Label();
             DrivesComboBox = new ComboBox();
             RefreshDrivesBtn = new Button();
+            renameDataToolStripMenuItem = new ToolStripMenuItem();
+            loadToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
@@ -65,7 +67,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(556, 24);
@@ -235,6 +237,20 @@
             RefreshDrivesBtn.UseVisualStyleBackColor = true;
             RefreshDrivesBtn.Click += RefreshDrivesBtn_Click;
             // 
+            // renameDataToolStripMenuItem
+            // 
+            renameDataToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadToolStripMenuItem });
+            renameDataToolStripMenuItem.Name = "renameDataToolStripMenuItem";
+            renameDataToolStripMenuItem.Size = new Size(89, 20);
+            renameDataToolStripMenuItem.Text = "Rename Data";
+            // 
+            // loadToolStripMenuItem
+            // 
+            loadToolStripMenuItem.Name = "loadToolStripMenuItem";
+            loadToolStripMenuItem.Size = new Size(180, 22);
+            loadToolStripMenuItem.Text = "Load";
+            loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -276,5 +292,7 @@
         private Label LoadedFileLabel;
         private Label label1;
         private Button SelectFolderBtn;
+        private ToolStripMenuItem renameDataToolStripMenuItem;
+        private ToolStripMenuItem loadToolStripMenuItem;
     }
 }
