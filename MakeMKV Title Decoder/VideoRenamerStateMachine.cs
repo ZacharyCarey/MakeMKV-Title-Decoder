@@ -41,7 +41,7 @@ namespace MakeMKV_Title_Decoder {
             this.remainingTitles = new(disc.Titles);
             this.ignoreIncomplete = ignoreIncompleteVideos;
 
-            Title mainFeature = SegmentIdentifier.FindMainFeature(this.remainingTitles);
+            Title mainFeature = SegmentIdentifier.FindMainFeature(disc.Titles);
             print($"Found main feature={mainFeature.SimplifiedFileName}");
             titlesToRename.Enqueue(mainFeature);
         }
@@ -89,7 +89,7 @@ namespace MakeMKV_Title_Decoder {
                 }
                 print(message);
 
-                this.currentEpisodes = SegmentIdentifier.FindEpisodes(currentTitle, this.remainingTitles);
+                this.currentEpisodes = SegmentIdentifier.FindEpisodes(currentTitle, disc.Titles);
                 if (this.currentEpisodes.Count == 0)
                 {
                     print("Unable to breakout episode any further.");
