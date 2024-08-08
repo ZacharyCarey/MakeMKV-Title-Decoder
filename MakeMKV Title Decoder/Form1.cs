@@ -285,10 +285,11 @@ namespace MakeMKV_Title_Decoder {
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     var path = dialog.FileName;
-                    if (File.Exists(path))
+                    try
                     {
                         File.Delete(path);
-                    }
+                    } catch (Exception) { }
+
                     try
                     {
                         Json.Write(this, path);

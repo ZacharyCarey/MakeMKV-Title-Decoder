@@ -358,7 +358,13 @@ namespace MakeMKV_Title_Decoder {
 
                     try
                     {
-                        Json.Write(renameData, Path.Combine(metadataFolder, "FileRenames.json"));
+                        string savePath = Path.Combine(metadataFolder, "FileRenames.json");
+                        try
+                        {
+                            File.Delete(savePath);
+                        } catch (Exception) { }
+
+                        Json.Write(renameData, savePath);
                         Console.WriteLine("Saved 'FileRenames.json'");
                     } catch (Exception ex)
                     {
@@ -368,7 +374,13 @@ namespace MakeMKV_Title_Decoder {
 
                     try
                     {
-                        Json.Write(optionalMetadata, Path.Combine(metadataFolder, "DiscScrape.json"));
+                        string savePath = Path.Combine(metadataFolder, "DiscScrape.json");
+                        try
+                        {
+                            File.Delete(savePath);
+                        } catch (Exception) { }
+
+                        Json.Write(optionalMetadata, savePath);
                         Console.WriteLine("Saved 'DiscScrape.json'");
                     } catch (Exception ex)
                     {
