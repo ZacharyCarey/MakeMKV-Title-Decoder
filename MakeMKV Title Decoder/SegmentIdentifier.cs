@@ -70,7 +70,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public static bool SegmentsMatch(List<int> segments, List<int> mainSegments, int mainStartIndex) {
-            if (mainStartIndex + segments.Count - 1 > mainSegments.Count)
+            if (mainStartIndex + segments.Count - 1 >= mainSegments.Count)
             {
                 return false;
             }
