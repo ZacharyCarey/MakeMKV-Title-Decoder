@@ -1,4 +1,5 @@
 ﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Util;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -12,206 +13,126 @@ namespace MakeMKV_Title_Decoder.MakeMKV
     /// <summary>
     /// https://www.makemkv.com/developers/usage.txt
     /// </summary>
-    internal class MakeMkvInterface
+    internal class MakeMkvInterface : CommandLineInterface
     {
-        string exePath;
+        public override string ProgramName => "MakeMKV";
 
-        private MakeMkvInterface(string MakeMkvExePath)
+        private MakeMkvInterface(string MakeMkvExePath) : base(MakeMkvExePath)
         {
-            exePath = MakeMkvExePath;
         }
 
         public static MakeMkvInterface? FindMakeMkvProcess()
         {
-            string? exeLoc = SearchDefaultInstallLocation();
-            Console.WriteLine($"Default Install Loc: {exeLoc}");
-            if (exeLoc == null)
+            string ExeLoc = CommandLineInterface.SearchProgramFiles("MakeMKV", "makemkvcon64.exe").FirstOrDefault("");
+            if (ExeLoc.Length == 0)
             {
                 return null;
             }
 
-            return new MakeMkvInterface(exeLoc);
+            return new MakeMkvInterface(ExeLoc);
         }
 
-        private static string? SearchDefaultInstallLocation()
-        {
-            const string basePath = "C:\\Program Files (x86)\\MakeMKV\\";
-            string path = basePath;
-            if (!Directory.Exists(path))
+        private static IEnumerable<MakeMkvMessage> ReportProgress(IEnumerable<MakeMkvMessage> messages, IProgress<MakeMkvProgress>? progress = null) {
+            foreach(var msg in messages)
             {
-                return null;
-            }
-
-            path = Path.Combine(path, "makemkvcon.exe");
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            return path;
-        }
-
-        private Process? RunCommand(params string[] args) {
-            try
-            {
-                var startInfo = new ProcessStartInfo();
-                startInfo.FileName = this.exePath;
-                startInfo.CreateNoWindow = true;
-                startInfo.UseShellExecute = false;
-                startInfo.RedirectStandardOutput = true;
-
-                startInfo.ArgumentList.Add("--robot");
-                foreach(string arg in args)
-                {
-                    startInfo.ArgumentList.Add(arg);
-                }
-
-                return Process.Start(startInfo);
-            } catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to read MakeMKV: {ex.Message}", "Failed to read MakeMKV", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
-            }
-        }
-
-        /// <exception cref="FormatException"></exception>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        /// <exception cref="InvalidCastException"></exception>
-        private async IAsyncEnumerable<MakeMkvMessage> ParseOutput(Process process, IProgress<MakeMkvProgress>? progress = null) {
-            for (string? line = await process.StandardOutput.ReadLineAsync(); line != null; line = await process.StandardOutput.ReadLineAsync())
-            {
-                MakeMkvMessage msg = MakeMkvMessage.Parse(line);
-                if (msg.Type == MakeMkvMessageType.ProgressCurrent || msg.Type == MakeMkvMessageType.ProgressTotal)
-                {
+                if (msg.Type == MakeMkvMessageType.ProgressCurrent || msg.Type == MakeMkvMessageType.ProgressTotal) {
                     continue;
-                } else if (msg.Type == MakeMkvMessageType.ProgressValues)
-                {
-                    if (msg.Arguments.Count != 3) throw new FormatException("Only expected 2 arguments.");
+                } else if (msg.Type == MakeMkvMessageType.ProgressValues) {
+                    if (msg.Arguments.Count != 3) throw new FormatException("Only expected 3 arguments.");
                     progress?.Report(new MakeMkvProgress((int)(long)msg[0], (int)(long)msg[1]));
-                } else
-                {
+                } else {
                     yield return msg;
                 }
             }
         }
 
+        /// <exception cref="Exception"></exception>
         public List<DiscDrive>? ReadDrives() {
-            try
+            var result = RunCommand<MakeMkvMessage>("--robot", "info", "disc");
+
+            // Decode
+            List<DiscDrive> drives = new();
+            foreach(MakeMkvMessage msg in result.Where(x => x.Type == MakeMkvMessageType.Drive))
             {
-                var process = RunCommand("info", "disc");
-                if (process == null)
+                if (msg.Arguments.Count != 7) throw new FormatException("Unexpected number of args when parsing drive.");
+
+                DiscDrive info = new();
+                info.Index = (UInt32)(long)msg[0];
+                info.Visible = (UInt32)(long)msg[1];
+                info.Enabled = (UInt32)(long)msg[2];
+                info.Flags = (UInt32)(long)msg[3];
+                info.DriveName = (string)msg[4];
+                info.DiscName = (string)msg[5];
+                info.DriveLetter = (string)msg[6];
+
+                if (info.IsValid)
                 {
-                    return null;
+                    drives.Add(info);
+                    Console.WriteLine($"Found drive {info.DriveName} ({info.DiscName})");
                 }
-
-                Task<List<MakeMkvMessage>> task = new(() =>
-                {
-                    return ParseOutput(process).ToBlockingEnumerable().ToList();
-                });
-                task.Start();
-                task.Wait();
-                process.WaitForExit();
-
-                if (!task.IsCompletedSuccessfully)
-                {
-                    return null;
-                }
-
-                // Decode
-                List<DiscDrive> drives = new();
-                foreach(MakeMkvMessage msg in task.Result.Where(x => x.Type == MakeMkvMessageType.Drive))
-                {
-                    if (msg.Arguments.Count != 7) throw new FormatException("Unexpected number of args when parsing drive.");
-
-                    DiscDrive info = new();
-                    info.Index = (UInt32)(long)msg[0];
-                    info.Visible = (UInt32)(long)msg[1];
-                    info.Enabled = (UInt32)(long)msg[2];
-                    info.Flags = (UInt32)(long)msg[3];
-                    info.DriveName = (string)msg[4];
-                    info.DiscName = (string)msg[5];
-                    info.DriveLetter = (string)msg[6];
-
-                    if (info.IsValid)
-                    {
-                        drives.Add(info);
-                        Console.WriteLine($"Found drive {info.DriveName} ({info.DiscName})");
-                    }
-                }
-
-                return drives;
-            }catch(Exception ex)
-            {
-                MessageBox.Show($"Failed to read MakeMKV: {ex.Message}", "Failed to read MakeMKV", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
             }
-        } 
 
+            return drives;
+        }
+
+        /// <exception cref="Exception"></exception>
         public Disc? ReadDisc(int driveIndex, IProgress<MakeMkvProgress>? progress = null) {
-            var process = RunCommand("--progress=-stdout", "info", $"disc:{driveIndex}");
-            if (process == null)
-            {
-                return null;
-            }
+            var process = ReportProgress(RunCommand<MakeMkvMessage>("--robot", "--progress=-stdout", "info", $"disc:{driveIndex}"), progress);
 
-            Task<Disc> task = new(() => {
-                Disc result = new();
-                foreach(var msg in ParseOutput(process, progress).ToBlockingEnumerable())
+            Disc result = new();
+            foreach (var msg in process)
+            {
+                if (msg.Type == MakeMkvMessageType.Message)
                 {
-                    if (msg.Type == MakeMkvMessageType.Message)
-                    {
-                        Console.WriteLine(msg[3]);
-                    } else if (msg.Type == MakeMkvMessageType.DiscInfo)
-                    {
-                        result.ParseMakeMkv(msg);
-                    } else if (msg.Type == MakeMkvMessageType.TitleInfo)
-                    {
-                        Title.ParseMakeMkv(result, msg);
-                    } else if (msg.Type == MakeMkvMessageType.StreamInfo)
-                    {
-                        Track.ParseMakeMkv(result, msg);
-                    }
+                    Console.WriteLine(msg[3]);
+                } else if (msg.Type == MakeMkvMessageType.DiscInfo)
+                {
+                    result.ParseMakeMkv(msg);
+                } else if (msg.Type == MakeMkvMessageType.TitleInfo)
+                {
+                    Title.ParseMakeMkv(result, msg);
+                } else if (msg.Type == MakeMkvMessageType.StreamInfo)
+                {
+                    Track.ParseMakeMkv(result, msg);
                 }
-                return result;
-            });
-
-            task.Start();
-            while (!task.IsCompleted && !process.HasExited)
-            {
-                Application.DoEvents();
             }
-            task.Wait();
-            process.WaitForExit();
+            return result;
+        }
 
-            if (!task.IsCompletedSuccessfully) return null;
+        /// <exception cref="Exception"></exception>
+        public async Task<Disc?> ReadDiscAsync(int driveIndex, IProgress<MakeMkvProgress>? progress = null) {
+            var task = Task.Run(() => ReadDisc(driveIndex, progress));
+            await task;
             return task.Result;
         }
 
-        public bool BackupDisc(int driveIndex, string outputFolder, IProgress<MakeMkvProgress>? progress = null) {
-            var process = RunCommand("--progress=-stdout", "--decrypt", "--noscan", "mkv", $"disc:{driveIndex}", "all", Path.GetFullPath(outputFolder));
-            if (process == null)
+        /// <exception cref="Exception"></exception>
+        public void BackupDisc(int driveIndex, string outputFolder, IProgress<MakeMkvProgress>? progress = null) {
+            var process = ReportProgress(
+                RunCommand<MakeMkvMessage>(
+                    "--robot", 
+                    "--progress=-stdout", 
+                    "--decrypt", 
+                    "--noscan", 
+                    "mkv", 
+                    $"disc:{driveIndex}", 
+                    "all", 
+                    Path.GetFullPath(outputFolder)
+                ), 
+                progress
+            );
+
+            foreach (var msg in process)
             {
-                return false;
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(msg);
+                Console.ResetColor();
             }
+        }
 
-            Task task = new(() => {
-                foreach (var msg in ParseOutput(process, progress).ToBlockingEnumerable())
-                {
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine(msg);
-                    Console.ResetColor();
-                }
-            });
-
-            task.Start();
-            while (!task.IsCompleted && !process.HasExited)
-            {
-                Application.DoEvents();
-            }
-            task.Wait();
-            process.WaitForExit();
-
-            return task.IsCompletedSuccessfully;
+        /// <exception cref="Exception"></exception>
+        public async Task BackupDiscAsync(int driveIndex, string outputFolder, IProgress<MakeMkvProgress>? progress = null) {
+            await Task.Run(() => BackupDisc(driveIndex, outputFolder, progress));
         }
     }
 }
