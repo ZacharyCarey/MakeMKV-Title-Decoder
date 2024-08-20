@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.MPLS {
+namespace MakeMKV_Title_Decoder.Data.Bluray.MPLS
+{
 
     /// <summary>
     /// Blu-ray specs 5.3.4.5.2.1 table 5-8
     /// </summary>
-    public enum StreamType {
+    public enum StreamType
+    {
         Reserved = 0,
         UsedByPlayItem = 1,
         UsedBySubPathType23456 = 2,
@@ -17,7 +19,8 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
     }
 
     // Blu-ray specs 5.4.4.3.2 table 5-16
-    public enum StreamCodingType {
+    public enum StreamCodingType
+    {
         mpeg2_video_primary_secondary = 0x02,
         mpeg4_avc_video_primary_secondary = 0x1b,
         mpegh_hevc_video_primary_secondary = 0x24,
@@ -36,7 +39,8 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
         text_subtitles = 0x92,
     }
 
-    public struct MplsStream {
+    public struct MplsStream
+    {
 
         public StreamType stream_type;
         public StreamCodingType coding_type;
@@ -50,13 +54,14 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
         /// <summary>
         /// bcp47
         /// </summary>
-        public string language; 
+        public string language;
 
-        public void dump(string type) {
+        public void dump(string type)
+        {
             Console.WriteLine($"        {type} stream dump");
             Console.WriteLine($"          stream_type:                     {(int)stream_type} [{stream_type.ToString()}]");
             Console.WriteLine($"          sub_path_id / sub_clip_id / pid: {sub_path_id} / {sub_clip_id} / {pid:04x}");
-            Console.WriteLine($"          coding_type:                     {((int)coding_type):02x} [{coding_type.ToString()}]");
+            Console.WriteLine($"          coding_type:                     {(int)coding_type:02x} [{coding_type.ToString()}]");
             Console.WriteLine($"          format / rate:                   {format} / {rate}");
             Console.WriteLine($"          char_code / language:            {char_code} / {language}");
         }

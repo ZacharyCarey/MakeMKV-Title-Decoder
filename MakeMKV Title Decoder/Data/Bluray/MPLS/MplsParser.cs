@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MakeMKV_Title_Decoder.Util;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,173 +9,86 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.MPLS {
-    public class MplsParser {
+namespace MakeMKV_Title_Decoder.Data.Bluray.MPLS
+{
+    public class MplsParser : ByteParser
+    {
 
-        private string m_path;
         public Header Header;
         public Playlist Playlist;
         public List<Chapter> Chapters = new();
 
-        byte[] Bytes;
-        int byteIndex = 0;
-        int bitIndex = 0;
+        public MplsParser(string path) : base(path)
+        {
 
-        bool m_ok = false;
-        bool m_drop_last_entry_if_at_end = true;
-
-        public MplsParser(string path) {
-            this.m_path = path;
-            this.Bytes = File.ReadAllBytes(path);
         }
 
-        private string ReadString(int length) {
-            Debug.Assert(bitIndex == 0, "Must be byte aligned to read string");
-            string result = Encoding.ASCII.GetString(Bytes.AsSpan(byteIndex, length));
-            Skip(length);
-            return result;
-        }
-
-        private T Read<T>(int bits) where T : struct, IBinaryInteger<T>, IShiftOperators<uint, int, uint>, IBitwiseOperators<uint, uint, uint>, ISubtractionOperators<uint, uint, uint> {
-            if (bits == 0) return default;
-            T result = T.AllBitsSet;
-            Debug.Assert(bits <= result.GetByteCount() * 8);
-
-            result = T.Zero;
-
-            int bitsUntilAligned = (8 - this.bitIndex) % 8;
-            T mask;
-            if (bits >= bitsUntilAligned)
-            {
-                // Align with bytes
-                mask = (T.One << bitsUntilAligned) - T.One;
-                result = ((T)Convert.ChangeType(Bytes[byteIndex], typeof(T)) >> (8 - bitIndex - bitsUntilAligned)) & mask;
-                bits -= bitsUntilAligned;
-                Skip(0, bitsUntilAligned);
-                Debug.Assert(this.bitIndex == 0, "This should not happen.");
-
-                while(bits >= 8)
-                {
-                    result <<= 8;
-                    result |= (T)Convert.ChangeType(Bytes[byteIndex], typeof(T));
-                    Skip(1);
-                    bits -= 8;
-                }
-            }
-
-            mask = (T.One << bits) - T.One;
-            result <<= bits;
-            result |= ((T)Convert.ChangeType(Bytes[byteIndex], typeof(T)) >> (8 - bitIndex - bits)) & mask;
-            Skip(0, bits);
-
-            return result;
-        }
-
-        private byte ReadUInt8() {
-            Debug.Assert(bitIndex == 0, "Must be byte aligned to read uint32");
-            byte result = Bytes[byteIndex];
-            Skip(1);
-            return result;
-        }
-
-        private UInt32 ReadUInt16() {
-            Debug.Assert(bitIndex == 0, "Must be byte aligned to read uint32");
-            uint result = BinaryPrimitives.ReadUInt16BigEndian(Bytes.AsSpan(byteIndex, 2));
-            Skip(2);
-            return result;
-        }
-
-        private UInt32 ReadUInt32() {
-            Debug.Assert(bitIndex == 0, "Must be byte aligned to read uint32");
-            uint result = BinaryPrimitives.ReadUInt32BigEndian(Bytes.AsSpan(byteIndex, 4));
-            Skip(4);
-            return result;
-        }
-
-        private bool ReadBool() {
-            bool result = ((Bytes[byteIndex] >> (7 - bitIndex)) & 0x01) != 0;
-            Skip(0, 1);
-            return result;
-        }
-
-        private void Seek(int pos, int bit = 0) {
-            this.byteIndex = pos;
-            this.bitIndex = bit;
-        }
-
-        private void Skip(int bytes, int bits = 0) {
-            this.byteIndex += bytes + (bits / 8);
-            this.bitIndex += bits % 8;
-            if (this.bitIndex >= 8)
-            {
-                this.byteIndex++;
-                this.bitIndex -= 8;
-            }
-        }
-
-        public bool Parse() {
+        public bool Parse()
+        {
             try
             {
                 parse_header();
                 Seek(0);
                 parse_playlist();
                 parse_chapters();
-                read_chapter_names(this.m_path);
-                m_ok = true;
+                read_chapter_names(FilePath);
 #if DEBUG
                 dump();
 #endif
-            } catch(Exception ex)
+                return true;
+            }
+            catch (Exception ex)
             {
-                m_ok = false;
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"MPLS Exception: {ex.Message}");
                 Console.ResetColor();
+                return false;
             }
-
-            return this.m_ok;
         }
 
-        private void parse_header() {
-            this.Header.type_indicator1 = ReadString(4);
-            this.Header.type_indicator2 = ReadString(4);
-            this.Header.playlist_pos = ReadUInt32();
-            this.Header.chapter_pos = ReadUInt32();
-            this.Header.ext_pos = ReadUInt32();
+        private void parse_header()
+        {
+            Header.type_indicator1 = ReadString(4);
+            Header.type_indicator2 = ReadString(4);
+            Header.playlist_pos = ReadUInt32();
+            Header.chapter_pos = ReadUInt32();
+            Header.ext_pos = ReadUInt32();
 
-            if (this.Header.type_indicator1 != "MPLS" || !(this.Header.type_indicator2 == "0100" || this.Header.type_indicator2 == "0200" || this.Header.type_indicator2 == "0300"))
+            if (Header.type_indicator1 != "MPLS" || !(Header.type_indicator2 == "0100" || Header.type_indicator2 == "0200" || Header.type_indicator2 == "0300"))
             {
-                throw new FormatException($"Wrong type indicator 1({this.Header.type_indicator1}) or 2 ({this.Header.type_indicator2})");
+                throw new FormatException($"Wrong type indicator 1({Header.type_indicator1}) or 2 ({Header.type_indicator2})");
             }
         }
-        private void parse_playlist() {
-            this.Playlist.duration = 0;
+        private void parse_playlist()
+        {
+            Playlist.duration = 0;
 
-            Seek((int)this.Header.playlist_pos);
+            Seek((int)Header.playlist_pos);
             Skip(4 + 2); // playlist length, reserved bytes
 
-            this.Playlist.list_count = ReadUInt16();
-            this.Playlist.sub_count = ReadUInt16();
+            Playlist.list_count = ReadUInt16();
+            Playlist.sub_count = ReadUInt16();
 
-            this.Playlist.items = new PlayItem[this.Playlist.list_count];
-            this.Playlist.sub_paths = new SubPath[this.Playlist.sub_count];
+            Playlist.items = new PlayItem[Playlist.list_count];
+            Playlist.sub_paths = new SubPath[Playlist.sub_count];
 
-            for (uint i = 0; i < this.Playlist.list_count; i++)
+            for (uint i = 0; i < Playlist.list_count; i++)
             {
-                this.Playlist.items[i] = parse_play_item();
+                Playlist.items[i] = parse_play_item();
             }
 
-            for (uint i = 0; i < this.Playlist.sub_count; i++)
+            for (uint i = 0; i < Playlist.sub_count; i++)
             {
-                this.Playlist.sub_paths[i] = parse_sub_path();
+                Playlist.sub_paths[i] = parse_sub_path();
             }
         }
 
-        private PlayItem parse_play_item() {
+        private PlayItem parse_play_item()
+        {
             var item = new PlayItem();
 
             uint length = ReadUInt16();
-            int position = this.byteIndex;
+            BitIndex position = Index;
 
             item.clip_id = ReadString(5);
             item.codec_id = ReadString(4);
@@ -186,8 +100,8 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             item.stc_id = ReadUInt8();
             item.in_time = mpls_time_to_timestamp(ReadUInt32());
             item.out_time = mpls_time_to_timestamp(ReadUInt32());
-            item.relative_in_time = this.Playlist.duration;
-            this.Playlist.duration += item.out_time - item.in_time;
+            item.relative_in_time = Playlist.duration;
+            Playlist.duration += item.out_time - item.in_time;
 
             Skip(12); // UO_mask_table, random_access_flag, reserved, still_mode
 
@@ -206,12 +120,14 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
 
             item.stn = parse_stn();
 
-            Seek((int)(position + length));
+            position.Byte += (int)length;
+            Seek(position);
 
             return item;
         }
 
-        private STN parse_stn() {
+        private STN parse_stn()
+        {
             var stn = new STN();
 
             stn.num_video = ReadUInt8();
@@ -246,15 +162,16 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             return stn;
         }
 
-        private MplsStream parse_stream() {
+        private MplsStream parse_stream()
+        {
             var str = new MplsStream();
 
             int length = ReadUInt8();
-            int position = this.byteIndex;
+            BitIndex position = Index;
 
             str.stream_type = (StreamType)ReadUInt8();
 
-            switch(str.stream_type)
+            switch (str.stream_type)
             {
                 case StreamType.UsedByPlayItem:
                     str.pid = ReadUInt16();
@@ -275,13 +192,14 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
                     break;
             }
 
-            Seek(length + position);
+            position.Byte += length;
+            Seek(position);
 
             length = ReadUInt8();
-            position = this.byteIndex;
+            position = Index;
 
             str.coding_type = (StreamCodingType)ReadUInt8();
-            switch(str.coding_type)
+            switch (str.coding_type)
             {
                 case StreamCodingType.mpeg2_video_primary_secondary:
                 case StreamCodingType.mpeg4_avc_video_primary_secondary:
@@ -317,12 +235,14 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
                     break;
             }
 
-            Seek(position + length);
+            position.Byte += length;
+            Seek(position);
 
             return str;
         }
 
-        private SubPath parse_sub_path() {
+        private SubPath parse_sub_path()
+        {
             var path = new SubPath();
 
             Skip(4 + 1); // Length, reserved
@@ -341,7 +261,8 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             return path;
         }
 
-        private SubPlayItem parse_sub_play_item() {
+        private SubPlayItem parse_sub_play_item()
+        {
             var item = new SubPlayItem();
 
             Skip(2); // Length
@@ -373,7 +294,8 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             return item;
         }
 
-        private SubPlayItemClip parse_sub_play_item_clip() {
+        private SubPlayItemClip parse_sub_play_item_clip()
+        {
             var clip = new SubPlayItemClip();
 
             clip.clip_file_name = ReadString(5);
@@ -383,8 +305,9 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             return clip;
         }
 
-        private void parse_chapters() {
-            Seek((int)this.Header.chapter_pos);
+        private void parse_chapters()
+        {
+            Seek((int)Header.chapter_pos);
             Skip(4); // Length
             uint num_chapters = ReadUInt16();
 
@@ -396,7 +319,7 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
 
             for (uint i = 0; i < num_chapters; i++)
             {
-                Seek((int)(this.Header.chapter_pos + 4 + 2 + i * 14));
+                Seek((int)(Header.chapter_pos + 4 + 2 + i * 14));
                 Skip(1); // reserved
                 if (ReadUInt8() != 1) // chapter type: entry mark
                 {
@@ -404,23 +327,24 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
                 }
 
                 uint play_item_index = ReadUInt16();
-                if (play_item_index >= this.Playlist.items.Length)
+                if (play_item_index >= Playlist.items.Length)
                 {
                     continue;
                 }
 
                 Chapter chapter = new();
 
-                ref var play_item = ref this.Playlist.items[play_item_index];
+                ref var play_item = ref Playlist.items[play_item_index];
                 chapter.timestamp = mpls_time_to_timestamp(ReadUInt32()) - play_item.in_time + play_item.relative_in_time;
 
-                this.Chapters.Add(chapter);
+                Chapters.Add(chapter);
             }
 
-            this.Chapters.Sort((x, y) => x.timestamp.CompareTo(y.timestamp));
+            Chapters.Sort((x, y) => x.timestamp.CompareTo(y.timestamp));
         }
 
-        private void read_chapter_names(string base_file_name) {
+        private void read_chapter_names(string base_file_name)
+        {
             var matches = Regex.Matches(Path.GetFileName(base_file_name), "(.{5})\\.mpls$");
             if (matches.Count == 0)
             {
@@ -429,7 +353,7 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
 
             var all_names = locate_and_parse_for_title(base_file_name, matches[0].Groups[1].Value);
 
-            for (uint chapter_index = 0, num_chapters = (uint)this.Chapters.Count; chapter_index < num_chapters; chapter_index++)
+            for (uint chapter_index = 0, num_chapters = (uint)Chapters.Count; chapter_index < num_chapters; chapter_index++)
             {
                 foreach (var pair in all_names)
                 {
@@ -438,13 +362,14 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
                         ChapterName name = new();
                         name.language = pair.Key;
                         name.name = pair.Value[(int)chapter_index];
-                        this.Chapters[(int)chapter_index].names.Add(name);
+                        Chapters[(int)chapter_index].names.Add(name);
                     }
                 }
             }
         }
 
-        private Dictionary<string, List<string>> locate_and_parse_for_title(string location, string title_number) {
+        private Dictionary<string, List<string>> locate_and_parse_for_title(string location, string title_number)
+        {
             /*var base_dir = find_base_dir(location);
             if (string.IsNullOrEmpty(base_dir))
             {
@@ -485,30 +410,32 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             return new();
         }
 
-        private static UInt64 mpls_time_to_timestamp(UInt64 value) {
+        private static ulong mpls_time_to_timestamp(ulong value)
+        {
             return value * 1000000 / 45;
         }
 
-        public void dump() {
+        public void dump()
+        {
             Console.WriteLine($"MPLS class dump");
-            Console.WriteLine($"  ok:           {m_ok}");
-            Console.WriteLine($"  num_chapters: {this.Chapters.Count}");
+            Console.WriteLine($"  ok:           {true}");
+            Console.WriteLine($"  num_chapters: {Chapters.Count}");
 
-            foreach(var entry in this.Chapters)
+            foreach (var entry in Chapters)
             {
                 List<string> names = new();
-                foreach(var name in entry.names)
+                foreach (var name in entry.names)
                 {
                     names.Add($"{name.language}:{name.name}");
                 }
 
-                var names_str = (names.Count == 0) ? "" : $" {string.Join(" ", names)}";
+                var names_str = names.Count == 0 ? "" : $" {string.Join(" ", names)}";
 
                 Console.WriteLine($"    {entry.timestamp}{names_str}");
             }
 
-            this.Header.dump();
-            this.Playlist.dump();
+            Header.dump();
+            Playlist.dump();
         }
     }
 }

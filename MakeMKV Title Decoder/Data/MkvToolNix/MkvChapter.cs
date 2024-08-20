@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
-    public class MkvChapter {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
+    public class MkvChapter
+    {
 
         /*
 |+ Chapters
@@ -25,7 +27,8 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
 |    + Chapter language (IETF BCP 47): en
          */
 
-        public static MkvChapter Parse(List<KeyValuePair<string, object?>> data) {
+        public static MkvChapter Parse(List<KeyValuePair<string, object?>> data)
+        {
             return new MkvChapter();
         }
 

@@ -1,6 +1,8 @@
 using JsonSerializable;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.Bluray.BlurayIndex;
+using MakeMKV_Title_Decoder.Data.CLPI;
 using MakeMKV_Title_Decoder.Data.MPLS;
 using MakeMKV_Title_Decoder.MakeMKV;
 using System;
@@ -10,7 +12,8 @@ using System.Linq;
 using System.Media;
 using System.Reflection;
 
-namespace MakeMKV_Title_Decoder {
+namespace MakeMKV_Title_Decoder
+{
     public partial class Form1 : Form, IJsonSerializable {
         string? _outputFolder = null;
         string? OutputFolder {
@@ -417,13 +420,13 @@ namespace MakeMKV_Title_Decoder {
         private void testToolStripMenuItem_Click(object sender, EventArgs e) {
             using (OpenFileDialog dialog = new())
             {
-                dialog.Filter = "mpls (*.mpls)|*.mpls";
+                dialog.Filter = "index (index.bdmv)|index.bdmv";
                 dialog.RestoreDirectory = true;
 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     Console.WriteLine($"Opening {Path.GetFileName(dialog.FileName)}");
-                    MplsParser parser = new(dialog.FileName);
+                    BlurayIndexParser parser = new(dialog.FileName);
                     parser.Parse();
                 }
             }

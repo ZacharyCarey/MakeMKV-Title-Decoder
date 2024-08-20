@@ -5,8 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
-    public class MkvSegmentInfo {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
+    public class MkvSegmentInfo
+    {
         public int TimestampScale;
         public string MultiplexingApplication = "";
         public string WritingApplication = "";
@@ -15,11 +17,13 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
         public string Title = "";
         public List<int> SegmentUID = new();
 
-        private MkvSegmentInfo() {
+        private MkvSegmentInfo()
+        {
 
         }
 
-        public static MkvSegmentInfo Parse(Dictionary<string, object?> data) {
+        public static MkvSegmentInfo Parse(Dictionary<string, object?> data)
+        {
             MkvSegmentInfo result = new();
 
             result.TimestampScale = (int)data[MkvInfoKeys.TimestampScale];

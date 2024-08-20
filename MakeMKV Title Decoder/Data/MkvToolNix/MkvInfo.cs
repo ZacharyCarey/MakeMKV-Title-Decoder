@@ -5,18 +5,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
-    public class MkvInfo {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
+    public class MkvInfo
+    {
 
         public EBML_Header EBML_Head;
         public MkvSegment Segment;
 
-        private MkvInfo(EBML_Header header, MkvSegment segment) {
-            this.EBML_Head = header;
-            this.Segment = segment;
+        private MkvInfo(EBML_Header header, MkvSegment segment)
+        {
+            EBML_Head = header;
+            Segment = segment;
         }
 
-        public static MkvInfo? Parse(IEnumerable<string> input) {
+        public static MkvInfo? Parse(IEnumerable<string> input)
+        {
             IEnumerator<string> itr = input.GetEnumerator();
             Dictionary<string, object?> data = new();
 
@@ -29,14 +33,16 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                 EBML_Header header = EBML_Header.Parse((Dictionary<string, object?>)data[MkvInfoKeys.EBML_Head]);
                 MkvSegment segment = MkvSegment.Parse((Dictionary<string, object?>)data[MkvInfoKeys.Segment]);
                 return new MkvInfo(header, segment);
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
                 return null;
             }
         }
 
-        private static bool Parse(object data, IEnumerator<string> itr, int tab) {
+        private static bool Parse(object data, IEnumerator<string> itr, int tab)
+        {
             KeyValuePair<string, object?>? last = null;
 
             bool hasItem = true;
@@ -54,8 +60,9 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                     if (data is List<KeyValuePair<string, object?>> list)
                     {
                         list.Add(last.Value);
-                        
-                    } else if (data is Dictionary<string, object?> dict)
+
+                    }
+                    else if (data is Dictionary<string, object?> dict)
                     {
 
                         dict.Add(last.Value.Key, last.Value.Value);
@@ -64,7 +71,8 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                     // Read the data for the sub-list
                     hasItem = Parse(last.Value.Value, itr, tab + 1);
                     continue;
-                } else if (tabIndex < tab)
+                }
+                else if (tabIndex < tab)
                 {
                     // Exited this list
                     if (last != null)
@@ -72,14 +80,16 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                         if (data is List<KeyValuePair<string, object?>> list)
                         {
                             list.Add(last.Value);
-                        } else if (data is Dictionary<string, object?> dict)
+                        }
+                        else if (data is Dictionary<string, object?> dict)
                         {
 
                             dict.Add(last.Value.Key, last.Value.Value);
                         }
                     }
                     return true;
-                } else if (tabIndex == tab)
+                }
+                else if (tabIndex == tab)
                 {
                     // Just save the data
                     if (last != null)
@@ -87,13 +97,15 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                         if (data is List<KeyValuePair<string, object?>> list)
                         {
                             list.Add(last.Value);
-                        } else if (data is Dictionary<string, object?> dict)
+                        }
+                        else if (data is Dictionary<string, object?> dict)
                         {
 
                             dict.Add(last.Value.Key, last.Value.Value);
                         }
                     }
-                } else
+                }
+                else
                 {
                     throw new FormatException("Unknown error occurred.");
                 }
@@ -106,7 +118,7 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                 {
                     string key = str.Substring(0, index);
                     string value = str.Substring(index + 2);
-                    switch(key)
+                    switch (key)
                     {
                         case MkvInfoKeys.EBML_Version:
                         case MkvInfoKeys.EBML_ReadVersion:
@@ -132,7 +144,7 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                         case MkvInfoKeys.Flag_EditionDefault:
                         case MkvInfoKeys.Flag_ChapterHidden:
                         case MkvInfoKeys.Flag_ChapterEnabled:
-                            last = new(key, (int.Parse(value)) != 0);
+                            last = new(key, int.Parse(value) != 0);
                             break;
                         case MkvInfoKeys.DocumentType:
                         case MkvInfoKeys.MultiplexingApplication:
@@ -187,7 +199,7 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                 }
                 if (last == null)
                 {
-                    switch(str)
+                    switch (str)
                     {
                         case MkvInfoKeys.EBML_Head:
                         case MkvInfoKeys.SeekHead:
@@ -229,9 +241,10 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
                 if (data is List<KeyValuePair<string, object?>> list)
                 {
                     list.Add(last.Value);
-                } else if (data is Dictionary<string, object?> dict)
+                }
+                else if (data is Dictionary<string, object?> dict)
                 {
-                    
+
                     dict.Add(last.Value.Key, last.Value.Value);
                 }
             }

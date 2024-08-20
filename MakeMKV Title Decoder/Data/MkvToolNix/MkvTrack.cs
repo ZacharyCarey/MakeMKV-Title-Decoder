@@ -5,9 +5,11 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
 
-    public abstract class MkvTrack {
+    public abstract class MkvTrack
+    {
         public int Number;
         public string UID;
         public string Type;
@@ -17,11 +19,13 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
         public string CodecPrivateData;
         public bool DefaultTrack = false;
 
-        protected MkvTrack() {
+        protected MkvTrack()
+        {
 
         }
 
-        public static MkvTrack Parse(KeyValuePair<string, object?> data) {
+        public static MkvTrack Parse(KeyValuePair<string, object?> data)
+        {
             if (data.Key != "Track")
             {
                 throw new FormatException();
@@ -34,13 +38,16 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
             if (type == "video" || track.ContainsKey(MkvInfoKeys.VideoTrack))
             {
                 result = MkvVideoTrack.Parse(track);
-            } else if (type == "audio" || track.ContainsKey(MkvInfoKeys.AudioTrack))
+            }
+            else if (type == "audio" || track.ContainsKey(MkvInfoKeys.AudioTrack))
             {
                 result = MkvAudioTrack.Parse(track);
-            } else if (type == "subtitles" || track.ContainsKey(MkvInfoKeys.ContentEncodings))
+            }
+            else if (type == "subtitles" || track.ContainsKey(MkvInfoKeys.ContentEncodings))
             {
                 result = MkvSubtitlesTrack.Parse(track);
-            } else
+            }
+            else
             {
                 throw new FormatException();
             }
@@ -64,7 +71,8 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
         }
     }
 
-    public class MkvVideoTrack : MkvTrack {
+    public class MkvVideoTrack : MkvTrack
+    {
         public int PixelWidth;
         public int PixelHeight;
         public Size PixelSize => new(PixelWidth, PixelHeight);
@@ -75,11 +83,13 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
 
         public bool Lacing;
 
-        protected MkvVideoTrack() {
+        protected MkvVideoTrack()
+        {
 
         }
 
-        public static new MkvVideoTrack Parse(Dictionary<string, object?> data) {
+        public static new MkvVideoTrack Parse(Dictionary<string, object?> data)
+        {
             MkvVideoTrack result = new();
 
             result.Lacing = (bool)data[MkvInfoKeys.Flag_Lacing];
@@ -94,17 +104,20 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
         }
     }
 
-    public class MkvAudioTrack : MkvTrack {
+    public class MkvAudioTrack : MkvTrack
+    {
         public int SamplingFrequency;
         public int Channels;
         public int BitDepth;
         public bool CommentaryFlag = false;
 
-        protected MkvAudioTrack() {
+        protected MkvAudioTrack()
+        {
 
         }
 
-        public static new MkvAudioTrack Parse(Dictionary<string, object?> data) {
+        public static new MkvAudioTrack Parse(Dictionary<string, object?> data)
+        {
             MkvAudioTrack result = new();
 
             var track = (Dictionary<string, object?>)data[MkvInfoKeys.AudioTrack];
@@ -121,14 +134,17 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
         }
     }
 
-    public class MkvSubtitlesTrack : MkvTrack {
+    public class MkvSubtitlesTrack : MkvTrack
+    {
         public bool Lacing;
 
-        protected MkvSubtitlesTrack() {
+        protected MkvSubtitlesTrack()
+        {
 
         }
 
-        public static new MkvSubtitlesTrack Parse(Dictionary<string, object?> data) {
+        public static new MkvSubtitlesTrack Parse(Dictionary<string, object?> data)
+        {
             MkvSubtitlesTrack result = new();
 
             result.Lacing = (bool)data[MkvInfoKeys.Flag_Lacing];

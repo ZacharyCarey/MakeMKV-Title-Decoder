@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.MPLS {
+namespace MakeMKV_Title_Decoder.Data.Bluray.MPLS
+{
 
-    public enum SubPathType {
+    public enum SubPathType
+    {
         reserved1 = 0,
         reserved2 = 1,
         primary_audio_of_browsable_slideshow = 2,
@@ -17,17 +19,19 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
         in_mux_synchronous_picture_in_picture = 7,
     }
 
-    public struct SubPath {
+    public struct SubPath
+    {
 
         public SubPathType type;
         public bool is_repeat_sub_path;
         public SubPlayItem[] items;
 
-        public void dump() {
+        public void dump()
+        {
             Console.WriteLine("    sub path dump");
             Console.WriteLine($"      type / is_repeat:        {(int)type} [{type.ToString()}] / {is_repeat_sub_path}");
-        
-            foreach(var item in items)
+
+            foreach (var item in items)
             {
                 item.dump();
             }

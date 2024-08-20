@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.MPLS {
+namespace MakeMKV_Title_Decoder.Data.Bluray.MPLS
+{
 
-    public struct ChapterName {
+    public struct ChapterName
+    {
         /// <summary>
         /// bcp47
         /// </summary>
@@ -14,12 +16,14 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
         public string name;
     }
 
-    public struct Chapter {
+    public struct Chapter
+    {
 
-        public UInt64 timestamp;
+        public ulong timestamp;
         public List<ChapterName> names = new();
 
-        public Chapter() {
+        public Chapter()
+        {
 
         }
 

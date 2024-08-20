@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
-    public class EBML_Header {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
+    public class EBML_Header
+    {
         public int Version;
         public int ReadVersion;
         public int IdLength;
@@ -14,11 +16,13 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
         public int DocumentTypeVersion;
         public int DocumentTypeReadVersion;
 
-        private EBML_Header() {
+        private EBML_Header()
+        {
 
         }
 
-        public static EBML_Header Parse(Dictionary<string, object?> data) {
+        public static EBML_Header Parse(Dictionary<string, object?> data)
+        {
             EBML_Header result = new();
 
             result.Version = (int)data[MkvInfoKeys.EBML_Version];

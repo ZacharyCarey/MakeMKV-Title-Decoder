@@ -4,23 +4,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
-    public class MkvSegment {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
+    public class MkvSegment
+    {
 
         //public List<MkvSeekEntry> SeekHead;
         public MkvSegmentInfo SegmentInfo;
         public List<MkvTrack> Tracks;
         public List<MkvChapter> Chapters;
 
-        private MkvSegment() {
+        private MkvSegment()
+        {
 
         }
 
-        public static MkvSegment Parse(Dictionary<string, object?> data) {
+        public static MkvSegment Parse(Dictionary<string, object?> data)
+        {
             MkvSegment result = new();
 
             result.SegmentInfo = MkvSegmentInfo.Parse((Dictionary<string, object?>)data[MkvInfoKeys.SegmentInfo]);
-            foreach(var pair in (List<KeyValuePair<string, object?>>)data[MkvInfoKeys.Tracks])
+            foreach (var pair in (List<KeyValuePair<string, object?>>)data[MkvInfoKeys.Tracks])
             {
                 result.Tracks.Add(MkvTrack.Parse(pair));
             }
@@ -28,7 +32,7 @@ namespace MakeMKV_Title_Decoder.Data.Matroska {
             if (data.ContainsKey(MkvInfoKeys.Chapters))
             {
                 var chapters = (List<KeyValuePair<string, object?>>)data[MkvInfoKeys.Chapters];
-                foreach(var pair in chapters)
+                foreach (var pair in chapters)
                 {
                     if (pair.Key != MkvInfoKeys.EditionEntry)
                     {

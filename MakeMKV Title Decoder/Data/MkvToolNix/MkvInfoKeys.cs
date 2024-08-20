@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.Matroska {
-    internal static class MkvInfoKeys {
+namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+{
+    internal static class MkvInfoKeys
+    {
 
         public const string EBML_Version = "EBML version";
         public const string EBML_ReadVersion = "EBML read version";

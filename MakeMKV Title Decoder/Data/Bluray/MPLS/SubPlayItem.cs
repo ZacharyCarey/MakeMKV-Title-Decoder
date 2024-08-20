@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.MPLS {
-    public struct SubPlayItem {
+namespace MakeMKV_Title_Decoder.Data.Bluray.MPLS
+{
+    public struct SubPlayItem
+    {
 
         public string clip_file_name;
         public string codec_id;
@@ -13,12 +15,13 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
         public uint sync_playitem_id;
         public uint ref_to_stc_id;
         public bool is_multi_clip_entries;
-        public UInt64 in_time;
-        public UInt64 out_time;
-        public UInt64 sync_start_pts_of_playitem;
+        public ulong in_time;
+        public ulong out_time;
+        public ulong sync_start_pts_of_playitem;
         public SubPlayItemClip[] clips;
 
-        public void dump() {
+        public void dump()
+        {
             Console.WriteLine($"      sub play item dump");
             Console.WriteLine($"        clip_id / codec_id:    {clip_file_name} / {codec_id}");
             Console.WriteLine($"        conn_con / sync_pi_id: {connection_condition} / {sync_playitem_id}");
@@ -26,7 +29,7 @@ namespace MakeMKV_Title_Decoder.Data.MPLS {
             Console.WriteLine($"        in_time / out_time:    {in_time} / {out_time}");
             Console.WriteLine($"        sync_start_pts:        {sync_start_pts_of_playitem}");
 
-            foreach(var clip in clips)
+            foreach (var clip in clips)
             {
                 clip.dump();
             }
