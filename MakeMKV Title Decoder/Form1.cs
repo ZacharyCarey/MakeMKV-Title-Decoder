@@ -1,8 +1,10 @@
 using JsonSerializable;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.MPLS;
 using MakeMKV_Title_Decoder.MakeMKV;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
@@ -201,7 +203,7 @@ namespace MakeMKV_Title_Decoder {
             try
             {
                 await mkv.BackupDiscAsync(this.DrivesComboBox.SelectedIndex, outputPath, progress);
-            }catch(Exception ex)
+            } catch (Exception ex)
             {
                 PlaySound(SadSound);
                 MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MakeMKV", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -223,7 +225,7 @@ namespace MakeMKV_Title_Decoder {
                 this.DriveSelectionPanel.Enabled = true;
                 return;
             }
-            
+
             try
             {
                 Json.Write(this, Path.Combine(metadataFolder, "DiscScrape.json"));
@@ -232,9 +234,9 @@ namespace MakeMKV_Title_Decoder {
             {
                 Console.WriteLine("Failed to save 'DiscScrape.json'");
                 MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
-            }finally
+            } finally
             {
-            this.DriveSelectionPanel.Enabled = true;
+                this.DriveSelectionPanel.Enabled = true;
             }
         }
 
@@ -408,6 +410,21 @@ namespace MakeMKV_Title_Decoder {
                         FileRenamer renamer = new(renameData);
                         renamer.Show();
                     }
+                }
+            }
+        }
+
+        private void testToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (OpenFileDialog dialog = new())
+            {
+                dialog.Filter = "mpls (*.mpls)|*.mpls";
+                dialog.RestoreDirectory = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    Console.WriteLine($"Opening {Path.GetFileName(dialog.FileName)}");
+                    MplsParser parser = new(dialog.FileName);
+                    parser.Parse();
                 }
             }
         }

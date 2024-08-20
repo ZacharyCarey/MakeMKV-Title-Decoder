@@ -50,6 +50,7 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             tabPage2 = new TabPage();
+            testToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
@@ -71,7 +72,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem, testToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(829, 24);
@@ -280,10 +281,17 @@
             tabPage2.Location = new Point(4, 24);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(192, 72);
+            tabPage2.Size = new Size(753, 267);
             tabPage2.TabIndex = 1;
             tabPage2.Text = "tabPage2";
             tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // testToolStripMenuItem
+            // 
+            testToolStripMenuItem.Name = "testToolStripMenuItem";
+            testToolStripMenuItem.Size = new Size(39, 20);
+            testToolStripMenuItem.Text = "Test";
+            testToolStripMenuItem.Click += testToolStripMenuItem_Click;
             // 
             // Form1
             // 
@@ -333,5 +341,6 @@
         private TabControl tabControl1;
         private TabPage tabPage1;
         private TabPage tabPage2;
+        private ToolStripMenuItem testToolStripMenuItem;
     }
 }
