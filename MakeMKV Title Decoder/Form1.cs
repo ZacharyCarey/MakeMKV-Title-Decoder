@@ -1,14 +1,18 @@
 using JsonSerializable;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.Bluray.BlurayIndex;
 using MakeMKV_Title_Decoder.MakeMKV;
+using MakeMKV_Title_Decoder.MakeMKV.Data;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
 using System.Reflection;
 
-namespace MakeMKV_Title_Decoder {
+namespace MakeMKV_Title_Decoder
+{
     public partial class Form1 : Form, IJsonSerializable {
         string? _outputFolder = null;
         string? OutputFolder {
@@ -161,7 +165,7 @@ namespace MakeMKV_Title_Decoder {
             this.DownloadBtn.Enabled = (drive != null);
         }
 
-        private void DownloadBtn_Click(object sender, EventArgs e) {
+        private async void DownloadBtn_Click(object sender, EventArgs e) {
             this.DriveSelectionPanel.Enabled = false;
             MakeMkvInterface mkv;
             if (!getMakeMkv(out mkv))
@@ -198,15 +202,17 @@ namespace MakeMKV_Title_Decoder {
 
             // Blocking, but will keep application running while in progress
             IProgress<MakeMkvProgress> progress = new Progress<MakeMkvProgress>(UpdateProgressBar);
-            bool success = mkv.BackupDisc(this.DrivesComboBox.SelectedIndex, outputPath, progress);
-
-            if (!success)
+            try
+            {
+                await mkv.BackupDiscAsync(this.DrivesComboBox.SelectedIndex, outputPath, progress);
+            } catch (Exception ex)
             {
                 PlaySound(SadSound);
-                MessageBox.Show("There was an error reading the disc.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MakeMKV", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.DriveSelectionPanel.Enabled = true;
                 return;
             }
+
             PlaySound(HappySound);
             UpdateProgressBar(MakeMkvProgress.Max);
 
@@ -218,6 +224,7 @@ namespace MakeMKV_Title_Decoder {
             } catch (Exception)
             {
                 MessageBox.Show("Failed to create folder.");
+                this.DriveSelectionPanel.Enabled = true;
                 return;
             }
 
@@ -229,9 +236,10 @@ namespace MakeMKV_Title_Decoder {
             {
                 Console.WriteLine("Failed to save 'DiscScrape.json'");
                 MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
+            } finally
+            {
+                this.DriveSelectionPanel.Enabled = true;
             }
-
-            this.DriveSelectionPanel.Enabled = true;
         }
 
         private void UpdateProgressBar(MakeMkvProgress progress) {
@@ -404,6 +412,21 @@ namespace MakeMKV_Title_Decoder {
                         FileRenamer renamer = new(renameData);
                         renamer.Show();
                     }
+                }
+            }
+        }
+
+        private void testToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (OpenFileDialog dialog = new())
+            {
+                dialog.Filter = "index (index.bdmv)|index.bdmv";
+                dialog.RestoreDirectory = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    Console.WriteLine($"Opening {Path.GetFileName(dialog.FileName)}");
+                    BlurayIndexParser parser = new(dialog.FileName);
+                    parser.Parse();
                 }
             }
         }

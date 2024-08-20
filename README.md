@@ -1,9 +1,14 @@
 # MakeMKV Title Decoder
 
 # Environment
-Visual studio 2022
-.NET 8 using C#
-WinForms application with debug console window.
+Visual studio 2022 \
+.NET 8 using C# \
+WinForms application with debug console window. \
+\
+[MakeMKV](https://www.makemkv.com/download/) must be installed (with valid license) to your ProgramFiles \
+[mkvtoolnix](https://mkvtoolnix.download/downloads.html) is included with the program in it's portable form, there is no need to download it.\
+\
+NOTE: The following README is probably incorrect. I will update it once the program is in a more stable state.
 
 # Description
 I mainly made this for myself so it's just duct-taped together without a lot of QoL.

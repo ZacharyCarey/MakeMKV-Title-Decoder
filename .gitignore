@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+#mkvtoolnix
+MakeMKV Title Decoder/lib/mkvtoolnix/cache/

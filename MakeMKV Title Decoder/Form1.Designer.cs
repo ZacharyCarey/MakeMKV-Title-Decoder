@@ -31,6 +31,8 @@
             discToolStripMenuItem = new ToolStripMenuItem();
             saveDiscToolStripMenuItem = new ToolStripMenuItem();
             loadDiscToolStripMenuItem = new ToolStripMenuItem();
+            renameDataToolStripMenuItem = new ToolStripMenuItem();
+            loadToolStripMenuItem = new ToolStripMenuItem();
             DriveSelectionPanel = new Panel();
             SelectFolderBtn = new Button();
             LoadedFileLabel = new Label();
@@ -45,11 +47,14 @@
             label3 = new Label();
             DrivesComboBox = new ComboBox();
             RefreshDrivesBtn = new Button();
-            renameDataToolStripMenuItem = new ToolStripMenuItem();
-            loadToolStripMenuItem = new ToolStripMenuItem();
+            tabControl1 = new TabControl();
+            tabPage1 = new TabPage();
+            tabPage2 = new TabPage();
+            testToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
+            tabControl1.SuspendLayout();
             SuspendLayout();
             // 
             // IgnoreIncompleteCheckBox
@@ -67,10 +72,10 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem, testToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(556, 24);
+            menuStrip1.Size = new Size(829, 24);
             menuStrip1.TabIndex = 6;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -94,6 +99,20 @@
             loadDiscToolStripMenuItem.Size = new Size(100, 22);
             loadDiscToolStripMenuItem.Text = "Load";
             loadDiscToolStripMenuItem.Click += loadDiscToolStripMenuItem_Click;
+            // 
+            // renameDataToolStripMenuItem
+            // 
+            renameDataToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadToolStripMenuItem });
+            renameDataToolStripMenuItem.Name = "renameDataToolStripMenuItem";
+            renameDataToolStripMenuItem.Size = new Size(89, 20);
+            renameDataToolStripMenuItem.Text = "Rename Data";
+            // 
+            // loadToolStripMenuItem
+            // 
+            loadToolStripMenuItem.Name = "loadToolStripMenuItem";
+            loadToolStripMenuItem.Size = new Size(100, 22);
+            loadToolStripMenuItem.Text = "Load";
+            loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
             // 
             // DriveSelectionPanel
             // 
@@ -237,25 +256,49 @@
             RefreshDrivesBtn.UseVisualStyleBackColor = true;
             RefreshDrivesBtn.Click += RefreshDrivesBtn_Click;
             // 
-            // renameDataToolStripMenuItem
+            // tabControl1
             // 
-            renameDataToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadToolStripMenuItem });
-            renameDataToolStripMenuItem.Name = "renameDataToolStripMenuItem";
-            renameDataToolStripMenuItem.Size = new Size(89, 20);
-            renameDataToolStripMenuItem.Text = "Rename Data";
+            tabControl1.Controls.Add(tabPage1);
+            tabControl1.Controls.Add(tabPage2);
+            tabControl1.Location = new Point(12, 232);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(761, 295);
+            tabControl1.TabIndex = 13;
             // 
-            // loadToolStripMenuItem
+            // tabPage1
             // 
-            loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-            loadToolStripMenuItem.Size = new Size(180, 22);
-            loadToolStripMenuItem.Text = "Load";
-            loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
+            tabPage1.Location = new Point(4, 24);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(753, 267);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "tabPage1";
+            tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // tabPage2
+            // 
+            tabPage2.Location = new Point(4, 24);
+            tabPage2.Name = "tabPage2";
+            tabPage2.Padding = new Padding(3);
+            tabPage2.Size = new Size(753, 267);
+            tabPage2.TabIndex = 1;
+            tabPage2.Text = "tabPage2";
+            tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // testToolStripMenuItem
+            // 
+            testToolStripMenuItem.Name = "testToolStripMenuItem";
+            testToolStripMenuItem.Size = new Size(39, 20);
+            testToolStripMenuItem.Text = "Test";
+            testToolStripMenuItem.Click += testToolStripMenuItem_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(556, 215);
+            ClientSize = new Size(829, 539);
+            Controls.Add(tabControl1);
             Controls.Add(DriveSelectionPanel);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
@@ -267,6 +310,7 @@
             DriveSelectionPanel.ResumeLayout(false);
             DriveSelectionPanel.PerformLayout();
             DriveBtnPanel.ResumeLayout(false);
+            tabControl1.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -294,5 +338,9 @@
         private Button SelectFolderBtn;
         private ToolStripMenuItem renameDataToolStripMenuItem;
         private ToolStripMenuItem loadToolStripMenuItem;
+        private TabControl tabControl1;
+        private TabPage tabPage1;
+        private TabPage tabPage2;
+        private ToolStripMenuItem testToolStripMenuItem;
     }
 }

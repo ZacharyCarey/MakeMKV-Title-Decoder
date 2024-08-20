@@ -19,7 +19,7 @@ namespace MakeMKV_Title_Decoder.MakeMKV {
         StreamInfo
     }
 
-    public struct MakeMkvMessage {
+    public struct MakeMkvMessage : IParsable<MakeMkvMessage> {
         public MakeMkvMessageType Type;
         public List<object> Arguments;
 
@@ -32,10 +32,27 @@ namespace MakeMKV_Title_Decoder.MakeMKV {
             get => Arguments[index];
         }
 
+        public static bool TryParse(string? input, IFormatProvider? provider, out MakeMkvMessage result) {
+            if (input == null)
+            {
+                result = new();
+                return false;
+            }
+
+            try
+            {
+                result = Parse(input, provider);
+                return true;
+            } catch(Exception ex)
+            {
+                result = new();
+                return false;
+            }
+        }
 
         /// <exception cref="FormatException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public static MakeMkvMessage Parse(string input) {
+        public static MakeMkvMessage Parse(string input, IFormatProvider? provider) {
             input = input.Trim();
             int divider = input.IndexOf(':');
             string key = input.Substring(0, divider);
