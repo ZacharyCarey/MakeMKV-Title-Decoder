@@ -1,11 +1,12 @@
-﻿using MakeMKV_Title_Decoder.Data;
+﻿using MakeMKV_Title_Decoder.MakeMKV.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder {
+namespace MakeMKV_Title_Decoder
+{
     class EpisodeSolution {
         public List<Title> Titles;
 

@@ -1,4 +1,5 @@
 ﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.MakeMKV;
 using System;
 using System.Collections.Generic;
@@ -9,14 +10,16 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data {
-    public class Title : IJsonSerializable, IEquatable<Title> {
+namespace MakeMKV_Title_Decoder.MakeMKV.Data
+{
+    public class Title : IJsonSerializable, IEquatable<Title>
+    {
         public string? Name = null;
         public string? SourceFileName = null;
         public TimeSpan? Duration = null;
         public int? ChaptersCount = null;
         public List<int>? Segments = new();
-        public DataSize? Size = null; 
+        public DataSize? Size = null;
         public string? OutputFileName = null;
         public string? Comment = null;
 
@@ -29,7 +32,8 @@ namespace MakeMKV_Title_Decoder.Data {
         public Folder? Folder = null;
         public string? UserName = null;
 
-        public string SourceFileExtension {
+        public string SourceFileExtension
+        {
             get
             {
                 if (SourceFileName == null)
@@ -43,13 +47,15 @@ namespace MakeMKV_Title_Decoder.Data {
                 {
                     int paren = ext.LastIndexOf('(');
                     return ext.Substring(0, paren);
-                } else
+                }
+                else
                 {
                     return ext;
                 }
             }
         }
-        public int SourceFileDuplicateNumber {
+        public int SourceFileDuplicateNumber
+        {
             get
             {
                 if (SourceFileName == null)
@@ -63,25 +69,28 @@ namespace MakeMKV_Title_Decoder.Data {
                 {
                     int paren = ext.LastIndexOf('(');
                     return int.Parse(ext.Substring(paren + 1, ext.Length - paren - 2));
-                } else
+                }
+                else
                 {
                     return 0;
                 }
             }
         }
-        public string SimplifiedFileName {
+        public string SimplifiedFileName
+        {
             get
             {
-                if (this.OutputFileName == null) return "null";
+                if (OutputFileName == null) return "null";
 
-                int underscore = this.OutputFileName.LastIndexOf('_');
-                return this.OutputFileName.Substring(underscore + 1);
+                int underscore = OutputFileName.LastIndexOf('_');
+                return OutputFileName.Substring(underscore + 1);
             }
         }
 
         public Title() { }
 
-        public bool Equals(Title other) {
+        public bool Equals(Title other)
+        {
             return this == other;
         }
 
@@ -136,36 +145,39 @@ namespace MakeMKV_Title_Decoder.Data {
             return !(left == right);
         }*/
 
-        public override string ToString() {
+        public override string ToString()
+        {
             return ToString(0);
         }
 
-        public string ToString(int tabs) {
+        public string ToString(int tabs)
+        {
             StringBuilder sb = new();
             sb.Append('\t', tabs);
-            sb.AppendLine($"Title '{this.SimplifiedFileName}': {{");
+            sb.AppendLine($"Title '{SimplifiedFileName}': {{");
 
-            sb.Append(tabs + 1, "Name: ", this.Name);
-            sb.Append(tabs + 1, "Source file name: ", this.SourceFileName);
-            sb.Append(tabs + 1, "Duration: ", this.Duration);
-            sb.Append(tabs + 1, "Chapters count: ", this.ChaptersCount);
-            sb.Append(tabs + 1, "Segments: ", this.Segments);
-            sb.Append(tabs + 1, "Size: ", this.Size);
-            sb.Append(tabs + 1, "File name: ", this.OutputFileName);
-            sb.Append(tabs + 1, "Comment: ", this.Comment);
+            sb.Append(tabs + 1, "Name: ", Name);
+            sb.Append(tabs + 1, "Source file name: ", SourceFileName);
+            sb.Append(tabs + 1, "Duration: ", Duration);
+            sb.Append(tabs + 1, "Chapters count: ", ChaptersCount);
+            sb.Append(tabs + 1, "Segments: ", Segments);
+            sb.Append(tabs + 1, "Size: ", Size);
+            sb.Append(tabs + 1, "File name: ", OutputFileName);
+            sb.Append(tabs + 1, "Comment: ", Comment);
 
             sb.Append('\t', tabs + 1);
             sb.Append("Data: ");
-            if (this.Data.Count == 0)
+            if (Data.Count == 0)
             {
                 sb.AppendLine("{}");
-            } else
+            }
+            else
             {
                 sb.AppendLine();
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("{");
 
-                sb.AppendLine(string.Join(",\r\n", this.Data.Select(x => $"{new string('\t', tabs + 2)}{x.Key}={x.Value}")));
+                sb.AppendLine(string.Join(",\r\n", Data.Select(x => $"{new string('\t', tabs + 2)}{x.Key}={x.Value}")));
 
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("}");
@@ -176,16 +188,17 @@ namespace MakeMKV_Title_Decoder.Data {
 
             sb.Append('\t', tabs + 1);
             sb.Append("Tracks: ");
-            if (this.Tracks.Count == 0)
+            if (Tracks.Count == 0)
             {
                 sb.AppendLine("[]");
-            } else
+            }
+            else
             {
                 sb.AppendLine();
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("[");
 
-                sb.AppendLine(string.Join(",\r\n", this.Tracks.Select(x => x.ToString(tabs + 2))));
+                sb.AppendLine(string.Join(",\r\n", Tracks.Select(x => x.ToString(tabs + 2))));
 
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("]");
@@ -194,37 +207,39 @@ namespace MakeMKV_Title_Decoder.Data {
             return sb.ToString();
         }
 
-        public JsonData SaveToJson() {
+        public JsonData SaveToJson()
+        {
             JsonObject data = new();
 
-            data.SaveToJson("Name", this.Name);
-            data.SaveToJson("Source File Name", this.SourceFileName);
-            data.SaveToJson("Duration", this.Duration);
-            data.SaveToJson("Chapters Count", this.ChaptersCount);
-            data.SaveToJson("Segments", this.Segments?.Select(x => new JsonInteger(x)));
-            data.SaveToJson("Size", (IJsonSerializable?)this.Size);
-            data.SaveToJson("File Name", this.OutputFileName);
-            data.SaveToJson("Comment", this.Comment);
-            
-            data["Tracks"] = this.Tracks.SaveToJson();
-            data["Data"] = this.Data.SaveToJson();
+            data.SaveToJson("Name", Name);
+            data.SaveToJson("Source File Name", SourceFileName);
+            data.SaveToJson("Duration", Duration);
+            data.SaveToJson("Chapters Count", ChaptersCount);
+            data.SaveToJson("Segments", Segments?.Select(x => new JsonInteger(x)));
+            data.SaveToJson("Size", (IJsonSerializable?)Size);
+            data.SaveToJson("File Name", OutputFileName);
+            data.SaveToJson("Comment", Comment);
+
+            data["Tracks"] = Tracks.SaveToJson();
+            data["Data"] = Data.SaveToJson();
 
             return data;
         }
 
-        public void LoadFromJson(JsonData Data) {
+        public void LoadFromJson(JsonData Data)
+        {
             JsonObject obj = (JsonObject)Data;
 
-            obj["Name"].LoadFromJson(out this.Name);
-            obj["Source File Name"].LoadFromJson(out this.SourceFileName);
-            obj["Duration"].LoadFromJson(out this.Duration);
-            obj["Chapters Count"].LoadFromJson(out this.ChaptersCount);
-            obj["Segments"].LoadFromJson(out this.Segments, (JsonData data) => (int)(JsonInteger)data);
-            obj["Size"].LoadSerializableFromJson(out this.Size);
-            obj["File Name"].LoadFromJson(out this.OutputFileName);
-            obj["Comment"].LoadFromJson(out this.Comment);
+            obj["Name"].LoadFromJson(out Name);
+            obj["Source File Name"].LoadFromJson(out SourceFileName);
+            obj["Duration"].LoadFromJson(out Duration);
+            obj["Chapters Count"].LoadFromJson(out ChaptersCount);
+            obj["Segments"].LoadFromJson(out Segments, (data) => (int)(JsonInteger)data);
+            obj["Size"].LoadSerializableFromJson(out Size);
+            obj["File Name"].LoadFromJson(out OutputFileName);
+            obj["Comment"].LoadFromJson(out Comment);
 
-            this.Tracks.LoadFromJson(obj["Tracks"]);
+            Tracks.LoadFromJson(obj["Tracks"]);
             this.Data.LoadFromJson(obj["Data"]);
         }
 
@@ -233,7 +248,8 @@ namespace MakeMKV_Title_Decoder.Data {
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <exception cref="OverflowException"></exception>
         /// <exception cref="InvalidCastException"></exception>
-        public static void ParseMakeMkv(Disc disc, MakeMkvMessage info) {
+        public static void ParseMakeMkv(Disc disc, MakeMkvMessage info)
+        {
             if (info.Type != MakeMkvMessageType.TitleInfo || info.Arguments.Count != 4)
             {
                 throw new FormatException("Incorrect message type.");
@@ -256,32 +272,33 @@ namespace MakeMKV_Title_Decoder.Data {
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <exception cref="OverflowException"></exception>
         /// <exception cref="InvalidCastException"></exception>
-        private void ParseMakeMkv(ApItemAttributeId id, int code, string value) {
-            switch(id)
+        private void ParseMakeMkv(ApItemAttributeId id, int code, string value)
+        {
+            switch (id)
             {
                 case ApItemAttributeId.Name:
-                    this.Name = value;
+                    Name = value;
                     break;
                 case ApItemAttributeId.ChapterCount:
-                    this.ChaptersCount = int.Parse(value);
+                    ChaptersCount = int.Parse(value);
                     break;
                 case ApItemAttributeId.Duration:
-                    this.Duration = TimeSpan.Parse(value);
+                    Duration = TimeSpan.Parse(value);
                     break;
                 case ApItemAttributeId.DiskSizeBytes:
-                    this.Size = new DataSize(long.Parse(value), Unit.None);
+                    Size = new DataSize(long.Parse(value), Unit.None);
                     break;
                 case ApItemAttributeId.SourceFileName:
-                    this.SourceFileName = value;
+                    SourceFileName = value;
                     break;
                 case ApItemAttributeId.SegmentsMap:
-                    this.Segments = ParseSegments(value).ToList();
+                    Segments = ParseSegments(value).ToList();
                     break;
                 case ApItemAttributeId.OutputFileName:
-                    this.OutputFileName = value;
+                    OutputFileName = value;
                     break;
                 case ApItemAttributeId.Comment:
-                    this.Comment = value;
+                    Comment = value;
                     break;
                 case ApItemAttributeId.DiskSize: // String version of DiskSizeBytes
                 case ApItemAttributeId.SegmentsCount: // We just add them dynamicly
@@ -293,7 +310,7 @@ namespace MakeMKV_Title_Decoder.Data {
                     // Ignored;
                     break;
                 default:
-                    this.Data[id.ToString()] = new(value);
+                    Data[id.ToString()] = new(value);
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"WARNING: Unknown title attribute: {id.ToString()}={value}");
                     Console.ResetColor();
@@ -301,22 +318,25 @@ namespace MakeMKV_Title_Decoder.Data {
             }
         }
 
-        public override int GetHashCode() {
-            return (this.SourceFileName ?? "").GetHashCode();
+        public override int GetHashCode()
+        {
+            return (SourceFileName ?? "").GetHashCode();
         }
 
-        private IEnumerable<int> ParseSegments(string value) {
-            foreach(string str in value.Split(','))
+        private IEnumerable<int> ParseSegments(string value)
+        {
+            foreach (string str in value.Split(','))
             {
                 int rangeIndex = str.IndexOf('-');
                 if (rangeIndex < 0)
                 {
                     yield return int.Parse(str);
-                } else
+                }
+                else
                 {
                     int min = int.Parse(str.Substring(0, rangeIndex));
                     int max = int.Parse(str.Substring(rangeIndex + 1));
-                    for(int i = min; i <= max; i++)
+                    for (int i = min; i <= max; i++)
                     {
                         yield return i;
                     }
@@ -324,16 +344,17 @@ namespace MakeMKV_Title_Decoder.Data {
             }
         }
 
-        public IEnumerable<string> GetData() {
-            if (this.Name != null) yield return $"Name: {this.Name}";
-            if (this.SourceFileName != null) yield return $"Source File Name: {this.SourceFileName}";
-            if (this.Duration != null) yield return $"Duration: {this.Duration.Value.ToString("hh':'mm':'ss")}";
-            if (this.ChaptersCount != null) yield return $"Chapters Count: {this.ChaptersCount}";
-            if (this.Segments != null) yield return $"Segments: [{string.Join(", ", this.Segments)}]";
-            if (this.Size != null) yield return $"Size: {this.Size.ToString()}";
-            if (this.OutputFileName != null) yield return $"Output File Name: {this.OutputFileName}";
-            if (this.Comment != null) yield return $"Comment: {this.Comment}";
-            foreach(var pair in this.Data)
+        public IEnumerable<string> GetData()
+        {
+            if (Name != null) yield return $"Name: {Name}";
+            if (SourceFileName != null) yield return $"Source File Name: {SourceFileName}";
+            if (Duration != null) yield return $"Duration: {Duration.Value.ToString("hh':'mm':'ss")}";
+            if (ChaptersCount != null) yield return $"Chapters Count: {ChaptersCount}";
+            if (Segments != null) yield return $"Segments: [{string.Join(", ", Segments)}]";
+            if (Size != null) yield return $"Size: {Size.ToString()}";
+            if (OutputFileName != null) yield return $"Output File Name: {OutputFileName}";
+            if (Comment != null) yield return $"Comment: {Comment}";
+            foreach (var pair in Data)
             {
                 yield return $"{pair.Key}: {pair.Value}";
             }

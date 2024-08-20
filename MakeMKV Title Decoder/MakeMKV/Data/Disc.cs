@@ -6,15 +6,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data {
+namespace MakeMKV_Title_Decoder.MakeMKV.Data
+{
 
-    public enum DiscType {
+    public enum DiscType
+    {
         DVD,
         HD_DVD,
         BluRay
     }
 
-    public class Disc : IJsonSerializable, IEquatable<Disc> {
+    public class Disc : IJsonSerializable, IEquatable<Disc>
+    {
 
         public DiscType? Type;
         public string? Name;
@@ -29,7 +32,8 @@ namespace MakeMKV_Title_Decoder.Data {
 
         public Disc() { }
 
-        public bool Equals(Disc other) {
+        public bool Equals(Disc other)
+        {
             return this == other;
         }
 
@@ -78,33 +82,36 @@ namespace MakeMKV_Title_Decoder.Data {
 
         public static bool operator !=(Disc? left, Disc? right) => !(left == right);
         */
-        public override string ToString() {
-            return this.ToString(0);
+        public override string ToString()
+        {
+            return ToString(0);
         }
 
-        public string ToString(int tabs) {
+        public string ToString(int tabs)
+        {
             StringBuilder sb = new();
             sb.Append('\t', tabs);
-            sb.AppendLine($"Disc '{this.Name}': {{");
+            sb.AppendLine($"Disc '{Name}': {{");
 
-            sb.Append(tabs + 1, "Type: ", this.Type);
-            sb.Append(tabs + 1, "Name: ", this.Name);
-            sb.Append(tabs + 1, "Language: ", this.Language);
-            sb.Append(tabs + 1, "Volume name: ", this.VolumeName);
-            sb.Append(tabs + 1, "Comment: ", this.Comment);
+            sb.Append(tabs + 1, "Type: ", Type);
+            sb.Append(tabs + 1, "Name: ", Name);
+            sb.Append(tabs + 1, "Language: ", Language);
+            sb.Append(tabs + 1, "Volume name: ", VolumeName);
+            sb.Append(tabs + 1, "Comment: ", Comment);
 
             sb.Append('\t', tabs + 1);
             sb.Append("Data: ");
-            if (this.Data.Count == 0)
+            if (Data.Count == 0)
             {
                 sb.AppendLine("{}");
-            } else
+            }
+            else
             {
                 sb.AppendLine();
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("{");
 
-                sb.AppendLine(string.Join(",\r\n", this.Data.Select(x => $"{new string('\t', tabs + 2)}{x.Key}={x.Value}")));
+                sb.AppendLine(string.Join(",\r\n", Data.Select(x => $"{new string('\t', tabs + 2)}{x.Key}={x.Value}")));
 
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("}");
@@ -112,16 +119,17 @@ namespace MakeMKV_Title_Decoder.Data {
 
             sb.Append('\t', tabs + 1);
             sb.Append("Titles: ");
-            if (this.Titles.Count == 0)
+            if (Titles.Count == 0)
             {
                 sb.AppendLine("[]");
-            } else
+            }
+            else
             {
                 sb.AppendLine();
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("[");
 
-                sb.AppendLine(string.Join(",\r\n", this.Titles.Select(x => x.ToString(tabs + 2))));
+                sb.AppendLine(string.Join(",\r\n", Titles.Select(x => x.ToString(tabs + 2))));
 
                 sb.Append('\t', tabs + 1);
                 sb.AppendLine("]");
@@ -133,31 +141,33 @@ namespace MakeMKV_Title_Decoder.Data {
             return sb.ToString();
         }
 
-        public JsonData SaveToJson() {
+        public JsonData SaveToJson()
+        {
             JsonObject obj = new();
 
-            obj.SaveToJson("Type", this.Type);
-            obj.SaveToJson("Name", this.Name);
-            obj.SaveToJson("Language", this.Language);
-            obj.SaveToJson("Volume name", this.VolumeName);
-            obj.SaveToJson("Comment", this.Comment);
+            obj.SaveToJson("Type", Type);
+            obj.SaveToJson("Name", Name);
+            obj.SaveToJson("Language", Language);
+            obj.SaveToJson("Volume name", VolumeName);
+            obj.SaveToJson("Comment", Comment);
 
-            obj["Titles"] = this.Titles.SaveToJson();
-            obj["Data"] = this.Data.SaveToJson();
+            obj["Titles"] = Titles.SaveToJson();
+            obj["Data"] = Data.SaveToJson();
             return obj;
         }
 
-        public void LoadFromJson(JsonData data) {
+        public void LoadFromJson(JsonData data)
+        {
             JsonObject obj = (JsonObject)data;
 
-            obj["Type"].LoadFromJson(out this.Type, ParseDiscTypeFromJson);
-            obj["Name"].LoadFromJson(out this.Name);
-            obj["Language"].LoadFromJson(out this.Language);
-            obj["Volume name"].LoadFromJson(out this.VolumeName);
-            obj["Comment"].LoadFromJson(out this.Comment);
+            obj["Type"].LoadFromJson(out Type, ParseDiscTypeFromJson);
+            obj["Name"].LoadFromJson(out Name);
+            obj["Language"].LoadFromJson(out Language);
+            obj["Volume name"].LoadFromJson(out VolumeName);
+            obj["Comment"].LoadFromJson(out Comment);
 
-            this.Titles.LoadFromJson(obj["Titles"]);
-            this.Data.LoadFromJson(obj["Data"]);
+            Titles.LoadFromJson(obj["Titles"]);
+            Data.LoadFromJson(obj["Data"]);
         }
 
 
@@ -166,7 +176,8 @@ namespace MakeMKV_Title_Decoder.Data {
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         /// <exception cref="OverflowException"></exception>
         /// <exception cref="InvalidCastException"></exception>
-        public void ParseMakeMkv(MakeMkvMessage info) {
+        public void ParseMakeMkv(MakeMkvMessage info)
+        {
             if (info.Type != MakeMkvMessageType.DiscInfo || info.Arguments.Count != 3)
             {
                 throw new FormatException("Incorrect message type");
@@ -176,22 +187,22 @@ namespace MakeMKV_Title_Decoder.Data {
             int code = (int)(long)info[1];
             string value = (string)info[2];
 
-            switch(id)
+            switch (id)
             {
                 case ApItemAttributeId.Type:
-                    this.Type = ParseDiscTypeFromMakeMkv(value);
+                    Type = ParseDiscTypeFromMakeMkv(value);
                     break;
                 case ApItemAttributeId.Name:
-                    this.Name = value;
+                    Name = value;
                     break;
                 case ApItemAttributeId.MetadataLanguageName:
-                    this.Language = value;
+                    Language = value;
                     break;
                 case ApItemAttributeId.VolumeName:
-                    this.VolumeName = value;
+                    VolumeName = value;
                     break;
                 case ApItemAttributeId.Comment:
-                    this.Comment = value;
+                    Comment = value;
                     break;
                 case ApItemAttributeId.MetadataLanguageCode:
                 case ApItemAttributeId.TreeInfo:
@@ -200,7 +211,7 @@ namespace MakeMKV_Title_Decoder.Data {
                     // Ignored
                     break;
                 default:
-                    this.Data[id.ToString()] = new(value);
+                    Data[id.ToString()] = new(value);
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine($"WARNING: Unknown disc attribute: {id.ToString()}={value}");
                     Console.ResetColor();
@@ -209,7 +220,8 @@ namespace MakeMKV_Title_Decoder.Data {
         }
 
         /// <exception cref="FormatException"></exception>
-        private static DiscType ParseDiscTypeFromJson(string value) {
+        private static DiscType ParseDiscTypeFromJson(string value)
+        {
             switch (value)
             {
                 case nameof(DiscType.DVD):
@@ -224,7 +236,8 @@ namespace MakeMKV_Title_Decoder.Data {
         }
 
         /// <exception cref="FormatException"></exception>
-        private static DiscType ParseDiscTypeFromMakeMkv(string value) {
+        private static DiscType ParseDiscTypeFromMakeMkv(string value)
+        {
             switch (value)
             {
                 case "Blu-ray disc":

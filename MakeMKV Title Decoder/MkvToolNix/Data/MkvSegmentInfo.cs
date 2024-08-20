@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Data.MkvToolNix
+namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
 {
     public class MkvSegmentInfo
     {

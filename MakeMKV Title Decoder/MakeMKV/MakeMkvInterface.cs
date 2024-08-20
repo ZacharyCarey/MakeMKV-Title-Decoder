@@ -1,4 +1,4 @@
-﻿using MakeMKV_Title_Decoder.Data;
+﻿using MakeMKV_Title_Decoder.MakeMKV.Data;
 using MakeMKV_Title_Decoder.Util;
 using Microsoft.Win32;
 using System;
