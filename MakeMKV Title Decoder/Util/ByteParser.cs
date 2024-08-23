@@ -43,7 +43,7 @@ namespace MakeMKV_Title_Decoder.Util {
             return result;
         }
 
-        protected T Read<T>(int bits) where T : struct, IBinaryInteger<T>, IShiftOperators<uint, int, uint>, IBitwiseOperators<uint, uint, uint>, ISubtractionOperators<uint, uint, uint> {
+        protected T Read<T>(int bits) where T : struct, IBinaryInteger<T>, IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>, ISubtractionOperators<T, T, T> {
             if (bits == 0) return default;
             T result = T.AllBitsSet;
             Debug.Assert(bits <= result.GetByteCount() * 8);
@@ -74,8 +74,47 @@ namespace MakeMKV_Title_Decoder.Util {
             result <<= bits;
             result |= ((T)Convert.ChangeType(Bytes[Index.Byte], typeof(T)) >> (8 - Index.Bit - bits)) & mask;
             Skip(0, bits);
-
+            
             return result;
+        }
+
+        protected T ReadEnum<T>(int bits) where T : struct, System.Enum {
+            uint value = Read<uint>(bits);
+            return (T)Enum.ToObject(typeof(T), value);
+        }
+
+        protected T ReadEnum<T>(int bits, T default_value, string? message = null) where T : struct, System.Enum {
+            uint value = Read<uint>(bits);
+            if (Enum.IsDefined(typeof(T), value))
+            {
+                return (T)Enum.ToObject(typeof(T), value);
+            } else
+            {
+                if (message != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine(message + value.ToString());
+                    Console.ResetColor();
+                }
+                return default_value;
+            }
+        }
+
+        protected bool TryReadEnum<T>(int bits, out T result) where T : struct, System.Enum {
+            return TryReadEnum(bits, out result, default);
+        }
+
+        protected bool TryReadEnum<T>(int bits, out T result, T defaultValue) where T : struct, System.Enum {
+            uint value = Read<uint>(bits);
+            if (Enum.IsDefined(typeof(T), value))
+            {
+                result = (T)Enum.ToObject(typeof(T), value);
+                return true;
+            } else
+            {
+                result = defaultValue;
+                return false;
+            }
         }
 
         protected byte ReadUInt8() {

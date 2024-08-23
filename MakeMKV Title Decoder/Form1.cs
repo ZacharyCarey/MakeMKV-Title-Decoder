@@ -1,7 +1,6 @@
 using JsonSerializable;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
-using MakeMKV_Title_Decoder.Data.Bluray.BlurayIndex;
 using MakeMKV_Title_Decoder.MakeMKV;
 using MakeMKV_Title_Decoder.MakeMKV.Data;
 using System;
@@ -417,18 +416,17 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void testToolStripMenuItem_Click(object sender, EventArgs e) {
-            using (OpenFileDialog dialog = new())
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
-                dialog.Filter = "index (index.bdmv)|index.bdmv";
-                dialog.RestoreDirectory = true;
+                openFileDialog.InitialDirectory = "F:\\Video\\backup";
 
-                if (dialog.ShowDialog() == DialogResult.OK)
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    Console.WriteLine($"Opening {Path.GetFileName(dialog.FileName)}");
-                    BlurayIndexParser parser = new(dialog.FileName);
-                    parser.Parse();
+                    //BlurayBackup? backup = BlurayBackup.FromBackupFolder(openFileDialog.SelectedPath);
+                    
                 }
             }
+            //new ClipRenamer().ShowDialog();
         }
     }
 }

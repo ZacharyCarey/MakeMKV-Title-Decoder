@@ -75,14 +75,14 @@
             VideoViewVLC1.Location = new Point(12, 12);
             VideoViewVLC1.MediaPlayer = null;
             VideoViewVLC1.Name = "VideoViewVLC1";
-            VideoViewVLC1.Size = new Size(508, 340);
+            VideoViewVLC1.Size = new Size(516, 339);
             VideoViewVLC1.TabIndex = 10;
             VideoViewVLC1.Text = "videoView1";
             // 
             // NextBtn
             // 
             NextBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            NextBtn.Location = new Point(114, 537);
+            NextBtn.Location = new Point(114, 536);
             NextBtn.Name = "NextBtn";
             NextBtn.Size = new Size(75, 23);
             NextBtn.TabIndex = 12;
@@ -94,10 +94,10 @@
             // 
             VideoScrubTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoScrubTrackBar.Enabled = false;
-            VideoScrubTrackBar.Location = new Point(12, 358);
+            VideoScrubTrackBar.Location = new Point(12, 357);
             VideoScrubTrackBar.Maximum = 1000;
             VideoScrubTrackBar.Name = "VideoScrubTrackBar";
-            VideoScrubTrackBar.Size = new Size(810, 45);
+            VideoScrubTrackBar.Size = new Size(818, 45);
             VideoScrubTrackBar.TabIndex = 13;
             VideoScrubTrackBar.TickStyle = TickStyle.None;
             VideoScrubTrackBar.Scroll += VideoSrubTrackBar_Scroll;
@@ -107,7 +107,7 @@
             // 
             VolumeTrackBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             VolumeTrackBar.LargeChange = 10;
-            VolumeTrackBar.Location = new Point(12, 409);
+            VolumeTrackBar.Location = new Point(12, 408);
             VolumeTrackBar.Maximum = 100;
             VolumeTrackBar.Name = "VolumeTrackBar";
             VolumeTrackBar.Orientation = Orientation.Vertical;
@@ -121,7 +121,7 @@
             // 
             label1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             label1.AutoSize = true;
-            label1.Location = new Point(10, 516);
+            label1.Location = new Point(10, 515);
             label1.Name = "label1";
             label1.Size = new Size(47, 15);
             label1.TabIndex = 15;
@@ -131,7 +131,7 @@
             // 
             PlayBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             PlayBtn.Enabled = false;
-            PlayBtn.Location = new Point(190, 380);
+            PlayBtn.Location = new Point(190, 379);
             PlayBtn.Name = "PlayBtn";
             PlayBtn.Size = new Size(77, 23);
             PlayBtn.TabIndex = 16;
@@ -143,7 +143,7 @@
             // 
             PauseBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             PauseBtn.Enabled = false;
-            PauseBtn.Location = new Point(273, 380);
+            PauseBtn.Location = new Point(273, 379);
             PauseBtn.Name = "PauseBtn";
             PauseBtn.Size = new Size(75, 23);
             PauseBtn.TabIndex = 17;
@@ -154,15 +154,15 @@
             // titleInfo1
             // 
             titleInfo1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            titleInfo1.Location = new Point(114, 419);
+            titleInfo1.Location = new Point(114, 418);
             titleInfo1.Name = "titleInfo1";
-            titleInfo1.Size = new Size(708, 112);
+            titleInfo1.Size = new Size(716, 112);
             titleInfo1.TabIndex = 18;
             // 
             // ReloadBtn
             // 
             ReloadBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ReloadBtn.Location = new Point(195, 537);
+            ReloadBtn.Location = new Point(195, 536);
             ReloadBtn.Name = "ReloadBtn";
             ReloadBtn.Size = new Size(75, 23);
             ReloadBtn.TabIndex = 19;
@@ -182,9 +182,9 @@
             UserInputPanel.Controls.Add(KeepOptionsPanel);
             UserInputPanel.Controls.Add(DeleteOptionsPanel);
             UserInputPanel.Controls.Add(panel2);
-            UserInputPanel.Location = new Point(526, 12);
+            UserInputPanel.Location = new Point(534, 12);
             UserInputPanel.Name = "UserInputPanel";
-            UserInputPanel.Size = new Size(296, 340);
+            UserInputPanel.Size = new Size(296, 339);
             UserInputPanel.TabIndex = 20;
             // 
             // KeepOptionsPanel
@@ -413,7 +413,7 @@
             // 
             CurrentTimeLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             CurrentTimeLabel.AutoSize = true;
-            CurrentTimeLabel.Location = new Point(12, 380);
+            CurrentTimeLabel.Location = new Point(12, 379);
             CurrentTimeLabel.Name = "CurrentTimeLabel";
             CurrentTimeLabel.Size = new Size(49, 15);
             CurrentTimeLabel.TabIndex = 21;
@@ -423,7 +423,7 @@
             // 
             TotalTimeLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             TotalTimeLabel.AutoSize = true;
-            TotalTimeLabel.Location = new Point(773, 380);
+            TotalTimeLabel.Location = new Point(773, 379);
             TotalTimeLabel.Name = "TotalTimeLabel";
             TotalTimeLabel.Size = new Size(49, 15);
             TotalTimeLabel.TabIndex = 22;
@@ -434,7 +434,7 @@
             FileNotFoundLabel.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             FileNotFoundLabel.AutoSize = true;
             FileNotFoundLabel.ForeColor = Color.Red;
-            FileNotFoundLabel.Location = new Point(368, 384);
+            FileNotFoundLabel.Location = new Point(368, 383);
             FileNotFoundLabel.Name = "FileNotFoundLabel";
             FileNotFoundLabel.Size = new Size(106, 15);
             FileNotFoundLabel.TabIndex = 23;
@@ -445,7 +445,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(834, 568);
+            ClientSize = new Size(842, 567);
             Controls.Add(FileNotFoundLabel);
             Controls.Add(TotalTimeLabel);
             Controls.Add(CurrentTimeLabel);
