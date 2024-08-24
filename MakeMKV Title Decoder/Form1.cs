@@ -1,4 +1,5 @@
 using JsonSerializable;
+using libbluray.disc;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.MakeMKV;
@@ -200,10 +201,15 @@ namespace MakeMKV_Title_Decoder
             UpdateProgressBar(new MakeMkvProgress());
 
             // Blocking, but will keep application running while in progress
-            IProgress<MakeMkvProgress> progress = new Progress<MakeMkvProgress>(UpdateProgressBar);
             try
             {
-                await mkv.BackupDiscAsync(this.DrivesComboBox.SelectedIndex, outputPath, progress);
+                var progressForm = new TaskProgressViewer<Task, MakeMkvProgress>(
+                    (IProgress<MakeMkvProgress> progress) =>
+                    {
+                        return mkv.BackupDiscAsync(this.DrivesComboBox.SelectedIndex, outputPath, progress);
+                    }
+                );
+                progressForm.ShowDialog();
             } catch (Exception ex)
             {
                 PlaySound(SadSound);
@@ -213,7 +219,6 @@ namespace MakeMKV_Title_Decoder
             }
 
             PlaySound(HappySound);
-            UpdateProgressBar(MakeMkvProgress.Max);
 
             // Try and save metadata with the rip
             string metadataFolder = Path.Combine(outputPath, ".metadata");
@@ -242,8 +247,8 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void UpdateProgressBar(MakeMkvProgress progress) {
-            CurrentProgressBar.Value = progress.Current;
-            TotalProgressBar.Value = progress.Total;
+            //CurrentProgressBar.Value = progress.Current;
+            //TotalProgressBar.Value = progress.Total;
         }
 
         private void ReadBtn_Click(object sender, EventArgs e) {
@@ -255,13 +260,7 @@ namespace MakeMKV_Title_Decoder
                 return;
             }
 
-            UpdateProgressBar(new MakeMkvProgress());
-
-            // Blocking, but will keep application running while in progress
-            IProgress<MakeMkvProgress> progress = new Progress<MakeMkvProgress>(UpdateProgressBar);
-            this.loadedDisc = mkv.ReadDisc(this.DrivesComboBox.SelectedIndex, progress);
-
-            UpdateProgressBar(MakeMkvProgress.Max);
+            this.loadedDisc = mkv.ReadDisc(this.DrivesComboBox.SelectedIndex, null);
 
             if (this.loadedDisc == null)
             {
@@ -423,10 +422,26 @@ namespace MakeMKV_Title_Decoder
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     //BlurayBackup? backup = BlurayBackup.FromBackupFolder(openFileDialog.SelectedPath);
-                    
+
                 }
             }
             //new ClipRenamer().ShowDialog();
+        }
+
+        private void viewInfoToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            {
+                openFileDialog.InitialDirectory = "F:\\Video\\backup";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    BD_DISC? disc = BD_DISC.open(openFileDialog.SelectedPath);
+                    if (disc != null)
+                    {
+                        new ViewInfo(disc).ShowDialog();
+                    }
+                }
+            }
         }
     }
 }

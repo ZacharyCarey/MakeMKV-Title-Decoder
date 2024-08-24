@@ -455,11 +455,13 @@ namespace libbluray.bdnav {
                 pi.is_seamless_angle = bits.read_bool();
             }
             pi.clip = new MPLS_CLIP[pi.angle_count];
+            pi.clip[0] = new();
             pi.clip[0].clip_id = clip_id;
             pi.clip[0].codec_id = coded_id;
             pi.clip[0].stc_id = stc_id;
             for(ii = 1; ii < pi.angle_count; ii++)
             {
+                pi.clip[ii] = new();
                 bits.read_string(out pi.clip[ii].clip_id, 5);
 
                 bits.read_string(out pi.clip[ii].codec_id, 4);

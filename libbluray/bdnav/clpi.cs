@@ -107,7 +107,7 @@ namespace libbluray.bdnav {
                     break;
 
                 default:
-                    Utils.BD_DEBUG(LogLevel.Critical, module, $"_parse_stream_attr(): unrecognized coding type {ss.coding_type:X2}");
+                    Utils.BD_DEBUG(LogLevel.Critical, module, $"_parse_stream_attr(): unrecognized coding type {(uint)ss.coding_type:X2}");
                     break;
             }
 
@@ -185,6 +185,7 @@ namespace libbluray.bdnav {
                 cl.clip.atc_delta = new CLPI_ATC_DELTA[cl.clip.atc_delta_count];
                 for (ii = 0; ii < cl.clip.atc_delta_count; ii++)
                 {
+                    cl.clip.atc_delta[ii] = new();
                     cl.clip.atc_delta[ii].delta = bits.read(32);
                     bits.read_string(out cl.clip.atc_delta[ii].file_id, 5);
                     bits.read_string(out cl.clip.atc_delta[ii].file_code, 4);
@@ -229,6 +230,7 @@ namespace libbluray.bdnav {
             cl.sequence.atc_seq = atc_seq;
             for (ii = 0; ii < cl.sequence.num_atc_seq; ii++)
             {
+                atc_seq[ii] = new();
                 atc_seq[ii].spn_atc_start = bits.read(32);
                 atc_seq[ii].num_stc_seq = (byte)bits.read(8);
                 atc_seq[ii].offset_stc_id = (byte)bits.read(8);
@@ -237,6 +239,7 @@ namespace libbluray.bdnav {
                 atc_seq[ii].stc_seq = stc_seq;
                 for (jj = 0; jj < atc_seq[ii].num_stc_seq; jj++)
                 {
+                    stc_seq[jj] = new();
                     stc_seq[jj].pcr_pid = (UInt16)bits.read(16);
                     stc_seq[jj].spn_stc_start = bits.read(32);
                     stc_seq[jj].presentation_start_time = bits.read(32);
@@ -259,6 +262,7 @@ namespace libbluray.bdnav {
             program.progs = progs;
             for (ii = 0; ii < program.num_prog; ii++)
             {
+                progs[ii] = new();
                 progs[ii].spn_program_sequence_start = bits.read(32);
                 progs[ii].program_map_pid = (UInt16)bits.read(16);
                 progs[ii].num_streams = (byte)bits.read(8);
@@ -268,6 +272,7 @@ namespace libbluray.bdnav {
                 progs[ii].streams = ps;
                 for (jj = 0; jj < progs[ii].num_streams; jj++)
                 {
+                    ps[jj] = new();
                     ps[jj].pid = (UInt16)bits.read(16);
                     if (!_parse_stream_attr(bits, ps[jj]))
                     {
@@ -360,6 +365,7 @@ namespace libbluray.bdnav {
             cpi.entry = entry;
             for (ii = 0; ii < cpi.num_stream_pid; ii++)
             {
+                entry[ii] = new();
                 entry[ii].pid = (UInt16)bits.read(16);
                 bits.skip(10);
                 entry[ii].ep_stream_type = (byte)bits.read(4);

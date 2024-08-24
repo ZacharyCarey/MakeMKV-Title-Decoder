@@ -46,6 +46,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\libbluray\libbluray.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="lib\mkvtoolnix\data\portable-app">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

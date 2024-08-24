@@ -22,7 +22,7 @@ namespace libbluray.bdnav {
             // If failed, try backup file
             if (bdid == null)
             {
-                bdid = _bdid_get(disc, Path.Combine("VERTIFICATE", "BACKUP", "id.bdmv"));
+                bdid = _bdid_get(disc, Path.Combine("CERTIFICATE", "BACKUP", "id.bdmv"));
             }
 
             return bdid;

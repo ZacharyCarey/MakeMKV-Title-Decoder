@@ -6,11 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.MakeMKV {
-    public struct MakeMkvProgress {
-        public int Current;
-        public int Total;
+    public struct MakeMkvProgress : TaskProgress {
+        public uint Current { get; private set; }
+        public uint Total { get; private set; }
 
-        public static MakeMkvProgress Max => new MakeMkvProgress(65536, 65536);
+        public uint CurrentMax => 65536;
+        public uint TotalMax => 65536;
 
         public MakeMkvProgress() {
             this.Current = 0;
@@ -18,8 +19,8 @@ namespace MakeMKV_Title_Decoder.MakeMKV {
         }
 
         public MakeMkvProgress(int current, int total) {
-            this.Current = current;
-            this.Total = total;
+            this.Current = (uint)current;
+            this.Total = (uint)total;
         }
 
         public static bool operator ==(MakeMkvProgress left, MakeMkvProgress right) {
@@ -48,8 +49,8 @@ namespace MakeMKV_Title_Decoder.MakeMKV {
         }
 
         public override string ToString() {
-            int current = this.Current * 100 / 65536;
-            int total = this.Total * 100 / 65536;
+            uint current = this.Current * 100 / this.CurrentMax;
+            uint total = this.Total * 100 / this.TotalMax;
             return $"Progress=[Current: {current:00}%, Total: {total:00}%]";
         }
     }

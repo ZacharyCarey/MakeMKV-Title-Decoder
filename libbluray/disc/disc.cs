@@ -16,7 +16,7 @@ namespace libbluray.disc {
         public string disc_root;
 
         private static void _set_paths(BD_DISC p, string device_path) {
-            string disc_root = device_path;
+            p.disc_root = device_path;
         }
 
         private static BD_DISC? _disc_init() {
