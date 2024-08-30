@@ -2,188 +2,171 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace libbluray.util {
-    public class BITSTREAM {
-        const string module = "DBG_FILE";
-        const int BF_BUF_SIZE = 1024 * 32;
+    public class BitStream {
 
-        BD_FILE_H fp = null;
-        byte[] buf = new byte[BF_BUF_SIZE];
-        BITBUFFER bb = new();
+        private BufferedStream stream;
+        private bool streamEOF;
 
-        /// <summary>
-        /// file offset of buffer start (buf[0])
-        /// </summary>
-        Int64 _pos;
+        private byte current;
+        private int bitsRemaining;
 
-        /// <summary>
-        /// size of file
-        /// </summary>
-        Int64 _end;
+        public Int64 Position => (this.stream.Position * 8) - this.bitsRemaining;
+        public bool EOF => streamEOF && (bitsRemaining == 0);
 
-        /// <summary>
-        /// bytes in buf
-        /// </summary>
-        UInt64 size;
+        public BitStream (Stream stream) {
+            this.stream = new BufferedStream(stream);
 
-        private Int32 _read() {
-            int result = 0;
-            Int64 got;
-
-            got = this.fp.read(this.buf.AsSpan());
-            if (got <= 0 || got > BF_BUF_SIZE)
-            {
-                Utils.BD_DEBUG(module, "_bs_read(): read error");
-                got = 0;
-                result = -1;
-            }
-
-            this.size = (UInt64)got;
-            this.bb.init(this.buf, this.size);
-
-            return result;
+            this.streamEOF = false;
+            ReadNextByte();
         }
 
-        private Int32 _read_at(Int64 off) {
-            if (this.fp.seek(off, SeekOrigin.Begin) < 0)
-            {
-                Utils.BD_DEBUG(LogLevel.Critical, module, "bs_read(): seek failed");
-                // No change in state. Call _must_ check return value
-                return -1;
-            }
-            this._pos = off;
-            return _read();
+        public BitStream(BD_FILE_H file) : this(file.GetStream()) {
+
         }
 
-        internal Int32 init(BD_FILE_H fp) {
-            Int64 size = fp.size();
-            this.fp = fp;
-            this._pos = 0;
-            this._end = (size < 0) ? 0 : size;
-
-            return _read();
-        }
-
-        private Int32 _seek(Int64 off, SeekOrigin whence) {
-            int result = 0;
-            Int64 b;
-
-            switch (whence)
+        private void ReadNextByte() {
+            int val = this.stream.ReadByte();
+            if (val < 0)
             {
-                case SeekOrigin.Current:
-                    off = this._pos * 8 + (this.bb.p - this.bb.p_start) * 8 + off;
-                    break;
-                case SeekOrigin.End:
-                    off = this._end * 8 - off;
-                    break;
-                case SeekOrigin.Begin:
-                default:
-                    break;
-            }
-            if (off < 0)
-            {
-                Utils.BD_DEBUG(LogLevel.Critical, module, "bs_seek(): seek failed (negative offset)");
-                return -1;
-            }
-
-            b = off >> 3;
-            if (b >= this._end)
-            {
-                Int64 pos;
-                if (this._end > BF_BUF_SIZE)
-                {
-                    pos = this._end - BF_BUF_SIZE;
-                } else
-                {
-                    pos = 0;
-                }
-                result = _read_at(pos);
-                this.bb.p = this.bb.p_end;
-            } else if (b < this._pos || b >= (this._pos + BF_BUF_SIZE))
-            {
-                result = _read_at(b);
+                this.streamEOF = true;
+                this.current = 0;
+                this.bitsRemaining = 0;
             } else
             {
-                b -= this._pos;
-                this.bb.p = this.bb.p_start + (int)b;
-                this.bb.i_left = 8 - (int)(off & 0x07);
+                this.current = (byte)val;
+                this.bitsRemaining = 8;
+                this.streamEOF = false;
+            }
+        }
+
+        public void Seek(Int64 offset, SeekOrigin origin = SeekOrigin.Begin) {
+            Int64 position;
+            switch (origin)
+            {
+                case SeekOrigin.Current:
+                    position = this.Position + offset;
+                    break;
+                case SeekOrigin.Begin:
+                    position = offset;
+                    break;
+                case SeekOrigin.End:
+                    position = (stream.Length * 8) + offset;
+                    break;
+                default:
+                    throw new Exception("Unknown origin type");
+            }
+
+            this.stream.Seek(position / 8, SeekOrigin.Begin);
+            ReadNextByte();
+            if (this.bitsRemaining > 0)
+            {
+                this.bitsRemaining = 8 - (int)(position % 8);
+            }
+        }
+
+        public void SeekByte(Int64 position, SeekOrigin origin = SeekOrigin.Begin) {
+            Seek(position * 8, origin);
+        }
+
+        public void Skip(Int64 bits) {
+            Seek(bits, SeekOrigin.Current);
+        }
+
+        public void SkipBytes(Int64 bytes) {
+            Skip(bytes * 8);
+        }
+
+        public T Read<T>(int bits) where T : IBinaryInteger<T> {
+            T result = T.Zero;
+
+            while (bits > 0)
+            {
+                if (bitsRemaining == 0)
+                {
+                    throw new IndexOutOfRangeException("Read past end of file");
+                }
+
+                // Will be max of 8
+                int bitsToRead = Math.Min(bits, this.bitsRemaining);
+
+                UInt32 mask = (1u << bitsToRead) - 1;
+                int shr = this.bitsRemaining - bitsToRead;
+                byte data = (byte)((this.current >> shr) & mask);
+                result <<= bitsToRead;
+                result |= (T)Convert.ChangeType(data, typeof(T));
+
+                this.bitsRemaining -= bitsToRead;
+                if (this.bitsRemaining <= 0) // should never go below 0
+                {
+                    ReadNextByte();
+                }
             }
 
             return result;
         }
 
-        internal Int32 seek_byte(Int64 off) {
-            return _seek(off << 3, SeekOrigin.Begin);
+        public T Read<T>() where T : IBinaryInteger<T> {
+            T result = T.Zero;
+            return this.Read<T>(result.GetByteCount() * 8);
         }
 
-        internal void skip(UInt64 i_count) {
-            int left;
-            UInt64 bytes = (i_count + 7) >> 3;
-
-            if ((UInt64)this.bb.p + bytes >= (UInt64)this.bb.p_end)
-            {
-                this._pos = this._pos + (this.bb.p - this.bb.p_start);
-                left = this.bb.i_left;
-                this.fp.seek(this._pos, SeekOrigin.Begin);
-                this.size = (ulong)this.fp.read(this.buf.AsSpan());
-                this.bb.init(this.buf, this.size);
-                this.bb.i_left = left;
-            }
-            this.bb.skip(i_count);
-        }
-
-        internal UInt32 read(int i_count) {
-            int left;
-            int bytes = (i_count + 7) >> 3;
-
-            if (this.bb.p + bytes >= this.bb.p_end)
-            {
-                this._pos = this._pos + (this.bb.p - this.bb.p_start);
-                left = this.bb.i_left;
-                this.fp.seek(this._pos, SeekOrigin.Begin);
-                this.size = (ulong)this.fp.read(this.buf.AsSpan());
-                this.bb.init(this.buf, this.size);
-                this.bb.i_left = left;
-            }
-            return this.bb.read(i_count);
-        }
-
-        internal bool read_bool() {
-            UInt32 value = read(1);
+        public bool ReadBool() {
+            byte value = Read<byte>(1);
             return value != 0;
         }
 
-        public Int64 pos() {
-            return this._pos * 8 + bb.pos();
+        public T ReadEnum<T>(int bits) where T : Enum {
+            return (T)Convert.ChangeType(Read<UInt32>(bits), typeof(T));
         }
 
-        public Int64 end() {
-            return this._end * 8;
-        }
-
-        public Int64 avail() {
-            return end() - pos();
-        }
-
-        public void read_bytes(Span<byte> buf) {
-            for (int ii = 0; ii < buf.Length; ii++)
+        public T ReadEnum<T>(int bits, T defaultValue, string? module = null, string? err_message = null) where T : Enum {
+            UInt32 result = Read<UInt32>(bits);
+            if (Enum.IsDefined(typeof(T), result))
             {
-                buf[ii] = (byte)read(8);
+                return (T)Convert.ChangeType(result, typeof(T));
+            } else
+            {
+                if (module != null)
+                {
+                    string? msg = err_message;
+                    if (msg == null)
+                    {
+                        msg = $"Unknown value for enum '{nameof(T)}'";
+                    }
+                    Utils.BD_DEBUG(LogLevel.Warning, module, $"{msg}: {result:X2}");
+                }
+                return defaultValue;
             }
         }
 
-        public void read_string(out string str, Int32 i_count) {
-            byte[] buf = new byte[i_count];
-            read_bytes(buf);
-            str = Encoding.ASCII.GetString(buf);
+        public void Read(Span<byte> buffer) {
+            for(int i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = Read<byte>();
+            }
         }
 
-        public bool is_align(UInt32 mask) {
-            Int64 off = pos();
-            return (off & mask) == 0;
+        public string ReadString(int bytes) {
+            byte[] buffer = new byte[bytes];
+            Read(buffer);
+            return Encoding.ASCII.GetString(buffer);
+        }
+
+        public Int64 Available() {
+            return (stream.Length - stream.Position) * 8 + this.bitsRemaining;
+        }
+
+        public Int64 AvailableBytes() {
+            return Available() / 8;
+        }
+
+        public bool IsAligned() {
+            return this.bitsRemaining == 8;
         }
     }
 }

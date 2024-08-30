@@ -5,24 +5,31 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace libbluray.bdnav {
+    // TODO mark primay/seconadry?
     public enum StreamType : uint {
         VIDEO_MPEG1          = 0x01,
         VIDEO_MPEG2          = 0x02,
         AUDIO_MPEG1          = 0x03,
         AUDIO_MPEG2          = 0x04,
-        AUDIO_LPCM           = 0x80,
-        AUDIO_AC3            = 0x81,
-        AUDIO_DTS            = 0x82,
-        AUDIO_TRUHD          = 0x83,
-        AUDIO_AC3PLUS        = 0x84,
-        AUDIO_DTSHD          = 0x85,
-        AUDIO_DTSHD_MASTER   = 0x86,
-        VIDEO_VC1            = 0xea,
         VIDEO_H264           = 0x1b,
         VIDEO_HEVC           = 0x24,
-        SUB_PG               = 0x90,
-        SUB_IG               = 0x91,
+        AUDIO_LPCM           = 0x80, // primary
+        AUDIO_AC3            = 0x81, // primary // TODO DolbyDigital audio?? https://github.com/lw/BluRay/wiki/StreamAttributes
+        AUDIO_DTS            = 0x82, // primary
+        AUDIO_TRUHD          = 0x83, // primary
+        AUDIO_AC3PLUS        = 0x84, // primary // TODO DolbyDigital audio?? https://github.com/lw/BluRay/wiki/StreamAttributes
+        AUDIO_DTSHD          = 0x85, // primary
+        AUDIO_DTSHD_MASTER   = 0x86, // primary
+        SUB_PresentationGraphics               = 0x90,
+        SUB_InteractiveGraphics               = 0x91,
         SUB_TEXT             = 0x92,
+        AUDIO_Secondary_DolbyDigital = 0xA1, // secondary
+        AUDIO_Secondary_DTS  = 0xA2, // secondary
+        VIDEO_VC1            = 0xea,
+
+        // TODO other streams? https://github.com/lw/BluRay/wiki/StreamAttributes
+        // 0x20: MPEG-4 MVC video stream
+        //
 
         Unknown = 0xFFFFFFFF
     }
@@ -51,6 +58,14 @@ namespace libbluray.bdnav {
         Unknown = 0xFFFFFFFF
     }
 
+    public enum DynamicRangeType : uint {
+        SDR = 0,
+        HDR10 = 1,
+        DolbyVision = 2,
+
+        Unknown = 0xFFFFFFFF
+    }
+
     public enum AspectRatio : uint {
         _4_3 = 2,
         _16_9 = 3,
@@ -59,6 +74,7 @@ namespace libbluray.bdnav {
     }
 
     public enum ColorSpace : uint {
+        Reserved = 0,
         _BT_709 = 1,
         _BT_2020 = 2,
 

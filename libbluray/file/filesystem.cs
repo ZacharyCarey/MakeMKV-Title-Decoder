@@ -76,6 +76,8 @@ namespace libbluray.file {
 
         public Int64 size();
 
+        public Stream GetStream();
+
         /// <summary>
         /// Prototype for a function that returns BD_FILE_H implementation.
         /// </summary>

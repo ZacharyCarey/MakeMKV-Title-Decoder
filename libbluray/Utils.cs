@@ -19,16 +19,19 @@ namespace libbluray {
         }
 
         public static void BD_DEBUG(LogLevel level, string module, string msg) {
+            string loglevel = "";
             switch (level)
             {
                 case LogLevel.Warning:
                     Console.ForegroundColor = ConsoleColor.Yellow;
+                    loglevel = "[WARNING]";
                     break;
                 case LogLevel.Critical:
                     Console.ForegroundColor = ConsoleColor.Red;
+                    loglevel = "[CRITICAL]";
                     break;
             }
-            Console.WriteLine($"[{module}] {msg}");
+            Console.WriteLine($"{loglevel}[{module}] {msg}");
             Console.ResetColor();
         }
 

@@ -1,4 +1,6 @@
-﻿using libbluray.disc;
+﻿using libbluray.bdnav.Clpi;
+using libbluray.bdnav.Mpls;
+using libbluray.disc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,7 +61,7 @@ namespace libbluray.bdnav {
         public byte still_mode;
         public UInt16 still_time;
 
-        public CLPI_CL? cl = null;
+        public ClpiFile? cl = null;
     }
 
     public class NAV_CLIP_LIST {
@@ -87,7 +89,7 @@ namespace libbluray.bdnav {
         public UInt32 packets;
         public UInt32 duration;
 
-        public MPLS_PL? pl = null;
+        public PlayList? pl = null;
     }
 
     public class NAV_TITLE_INFO {

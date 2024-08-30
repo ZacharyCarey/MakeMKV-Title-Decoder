@@ -43,7 +43,7 @@ namespace libbluray.bdnav {
             return bdid;
         }
 
-        private static bool _parse_header(BITSTREAM bs, out UInt32 data_start, out UInt32 extension_data_start) {
+        private static bool _parse_header(BitStream bs, out UInt32 data_start, out UInt32 extension_data_start) {
             string temp;
             if (!bdmv.parse_header(bs, BDID_SIG1, out temp))
             {
@@ -52,25 +52,19 @@ namespace libbluray.bdnav {
                 return false;
             }
 
-            data_start = bs.read(32);
-            extension_data_start = bs.read(32);
+            data_start = bs.Read<UInt32>();
+            extension_data_start = bs.Read<UInt32>();
 
             return true;
         }
 
         private static BDID_DATA? _bdid_parse(BD_FILE_H? fp) {
-            BITSTREAM bs = new();
+            BitStream bs = new(fp);
             BDID_DATA? bdid = null;
 
             UInt32 data_start;
             UInt32 extension_data_start;
             byte[] tmp = new byte[16];
-
-            if (bs.init(fp) < 0)
-            {
-                Utils.BD_DEBUG(module, "id.bdmv: read error");
-                return null;
-            }
 
             if (!_parse_header(bs, out data_start, out extension_data_start))
             {
@@ -78,18 +72,14 @@ namespace libbluray.bdnav {
                 return null;
             }
 
-            if (bs.seek_byte(40) < 0)
-            {
-                Utils.BD_DEBUG(module, "id.bdmv: read error");
-                return null;
-            }
+            bs.SeekByte(40);
 
             bdid = new();
             Span<byte> tmp2 = tmp.AsSpan(0, 4);
-            bs.read_bytes(tmp2);
+            bs.Read(tmp2);
             tmp2.print_hex(out bdid.org_id);
 
-            bs.read_bytes(tmp);
+            bs.Read(tmp);
             tmp.print_hex(out bdid.disc_id);
 
             if (extension_data_start > 0)

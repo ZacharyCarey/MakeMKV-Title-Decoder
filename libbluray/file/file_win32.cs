@@ -129,5 +129,9 @@ namespace libbluray.file {
                 return -1;
             }
         }
+
+        public Stream GetStream() {
+            return file;
+        }
     }
 }

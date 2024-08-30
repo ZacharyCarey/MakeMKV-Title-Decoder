@@ -21,11 +21,11 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void ViewInfo_Load(object sender, EventArgs e) {
-            MPLS_PL? playlist = mpls.get(disc, "00001.mpls");
+            /*PlayList? playlist = mpls.get(disc, "00001.mpls");
             this.SourceFileLabel.Text = "00001";
             if (playlist != null)
             {
-                MPLS_STREAM stream = playlist.play_item[0].stn.video[0];
+                StreamEntry stream = playlist.play_item[0].stn.PrimaryVideoStreams[0];
                 DisplaySizeLabel.Text = GetResolutionText(stream.video_format);
                 FPSLabel.Text = $"{GetFPSText(stream.video_rate)} FPS";
             }
@@ -39,7 +39,7 @@ namespace MakeMKV_Title_Decoder {
             }
 
             var clip = CLPI_CL.get(disc, "00001.clpi");
-            Console.WriteLine(clip != null);
+            Console.WriteLine(clip != null);*/
         }
 
         private static string GetResolutionText(VideoFormat format) {
