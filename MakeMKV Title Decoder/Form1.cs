@@ -4,6 +4,7 @@ using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.MakeMKV;
 using MakeMKV_Title_Decoder.MakeMKV.Data;
+using MakeMKV_Title_Decoder.MkvToolNix;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -422,6 +423,9 @@ namespace MakeMKV_Title_Decoder
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     //BlurayBackup? backup = BlurayBackup.FromBackupFolder(openFileDialog.SelectedPath);
+                    //var viewer = new TaskProgressViewer<Task, SimpleProgress>(x => BD_DISC.LoadBackupFolder(openFileDialog.SelectedPath, x));
+                    //viewer.ShowDialog();
+                    var data = MkvToolNixInterface.Identify(Path.Combine(openFileDialog.SelectedPath, "BDMV", "STREAM", "00339.m2ts"));
 
                 }
             }

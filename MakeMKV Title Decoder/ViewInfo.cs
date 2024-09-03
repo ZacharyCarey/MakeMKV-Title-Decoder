@@ -1,10 +1,13 @@
 ﻿using libbluray.bdnav;
+using libbluray.bdnav.Clpi;
 using libbluray.disc;
+using libbluray.file;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,6 +43,18 @@ namespace MakeMKV_Title_Decoder {
 
             var clip = CLPI_CL.get(disc, "00001.clpi");
             Console.WriteLine(clip != null);*/
+
+            var file = file_win32.OpenFile(Path.Combine(this.disc.DiscPath, "BDMV", "CLIPINF", "00339.clpi"), FileMode.Open);
+            ClpiFile? clip = ClpiFile.Parse(file);
+            if (clip == null)
+            {
+                //Console.WriteLine(clip.type_indicator);
+                return;
+            }
+            var attribs = clip.program.progs[0].streams[0].attributes;
+            TitleList.Items.Add("00339");
+            DisplaySizeLabel.Text = GetResolutionText(attribs.video_format);
+            FPSLabel.Text = $"{GetFPSText(attribs.video_rate)} FPS";
         }
 
         private static string GetResolutionText(VideoFormat format) {

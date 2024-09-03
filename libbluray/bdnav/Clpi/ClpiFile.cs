@@ -81,10 +81,11 @@ namespace libbluray.bdnav.Clpi {
             }
 
             bits.SeekByte(this.cpi_start_addr);
-            if (!this.cpi.Parse(bits))
+            // TODO
+            /*if (!this.cpi.Parse(bits))
             {
                 return false;
-            }
+            }*/
 
             return true;
         }

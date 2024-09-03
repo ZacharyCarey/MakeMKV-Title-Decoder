@@ -18,7 +18,7 @@ namespace MakeMKV_Title_Decoder {
         public UInt32 TotalMax { get; }
     }
 
-    public struct SimpleProgress : TaskProgress {
+    public struct SimpleProgress : TaskProgress, libbluray.disc.TaskProgress {
         
         public UInt32 Current { get; set; }
         public UInt32 CurrentMax { get; set; }

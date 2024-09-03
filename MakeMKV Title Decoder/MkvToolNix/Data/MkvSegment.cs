@@ -11,8 +11,8 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
 
         //public List<MkvSeekEntry> SeekHead;
         public MkvSegmentInfo SegmentInfo;
-        public List<MkvTrack> Tracks;
-        public List<MkvChapter> Chapters;
+        public List<MkvInfoTrack> Tracks;
+        public List<MkvInfoChapter> Chapters;
 
         private MkvSegment()
         {
@@ -26,7 +26,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
             result.SegmentInfo = MkvSegmentInfo.Parse((Dictionary<string, object?>)data[MkvInfoKeys.SegmentInfo]);
             foreach (var pair in (List<KeyValuePair<string, object?>>)data[MkvInfoKeys.Tracks])
             {
-                result.Tracks.Add(MkvTrack.Parse(pair));
+                result.Tracks.Add(MkvInfoTrack.Parse(pair));
             }
 
             if (data.ContainsKey(MkvInfoKeys.Chapters))
@@ -39,7 +39,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
                         throw new FormatException("Unknown chapter entry.");
                     }
 
-                    result.Chapters.Add(MkvChapter.Parse((List<KeyValuePair<string, object?>>)pair.Value));
+                    result.Chapters.Add(MkvInfoChapter.Parse((List<KeyValuePair<string, object?>>)pair.Value));
                 }
             }
 

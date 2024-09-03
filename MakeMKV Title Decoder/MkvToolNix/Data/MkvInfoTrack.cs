@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
 {
 
-    public abstract class MkvTrack
+    public abstract class MkvInfoTrack
     {
         public int Number;
         public string UID;
@@ -19,12 +19,12 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
         public string CodecPrivateData;
         public bool DefaultTrack = false;
 
-        protected MkvTrack()
+        protected MkvInfoTrack()
         {
 
         }
 
-        public static MkvTrack Parse(KeyValuePair<string, object?> data)
+        public static MkvInfoTrack Parse(KeyValuePair<string, object?> data)
         {
             if (data.Key != "Track")
             {
@@ -34,7 +34,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
 
             string type = (string)track[MkvInfoKeys.TrackType];
 
-            MkvTrack result;
+            MkvInfoTrack result;
             if (type == "video" || track.ContainsKey(MkvInfoKeys.VideoTrack))
             {
                 result = MkvVideoTrack.Parse(track);
@@ -71,7 +71,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
         }
     }
 
-    public class MkvVideoTrack : MkvTrack
+    public class MkvVideoTrack : MkvInfoTrack
     {
         public int PixelWidth;
         public int PixelHeight;
@@ -104,7 +104,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
         }
     }
 
-    public class MkvAudioTrack : MkvTrack
+    public class MkvAudioTrack : MkvInfoTrack
     {
         public int SamplingFrequency;
         public int Channels;
@@ -134,7 +134,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
         }
     }
 
-    public class MkvSubtitlesTrack : MkvTrack
+    public class MkvSubtitlesTrack : MkvInfoTrack
     {
         public bool Lacing;
 

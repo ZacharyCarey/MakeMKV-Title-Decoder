@@ -100,6 +100,7 @@ namespace libbluray.util {
                 result <<= bitsToRead;
                 result |= (T)Convert.ChangeType(data, typeof(T));
 
+                bits -= bitsToRead;
                 this.bitsRemaining -= bitsToRead;
                 if (this.bitsRemaining <= 0) // should never go below 0
                 {
@@ -128,7 +129,7 @@ namespace libbluray.util {
             UInt32 result = Read<UInt32>(bits);
             if (Enum.IsDefined(typeof(T), result))
             {
-                return (T)Convert.ChangeType(result, typeof(T));
+                return (T)Enum.ToObject(typeof(T), result); 
             } else
             {
                 if (module != null)

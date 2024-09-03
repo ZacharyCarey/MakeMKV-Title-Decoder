@@ -1,4 +1,7 @@
-﻿using libbluray.file;
+﻿using libbluray.bdnav;
+using libbluray.bdnav.Clpi;
+using libbluray.bdnav.Mpls;
+using libbluray.file;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +9,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace libbluray.disc {
+
+    public interface TaskProgress {
+        public UInt32 Current { get; }
+        public UInt32 CurrentMax { get; }
+
+        public UInt32 Total { get; }
+        public UInt32 TotalMax { get; }
+    }
+
     public class BD_DISC {
 
         const string module = "DBG_FILE";
@@ -13,25 +25,36 @@ namespace libbluray.disc {
         /// <summary>
         /// disc filesystem root (if disc is mounted)
         /// </summary>
-        public string disc_root;
+        public string DiscPath;
 
-        private static void _set_paths(BD_DISC p, string device_path) {
-            p.disc_root = device_path;
+        private ClpiFile[] ClipFiles = Array.Empty<ClpiFile>();
+        private META_ROOT? MetaFiles = null;
+        private PlayList[] PlaylistFiles = Array.Empty<PlayList>();
+
+
+        public BD_DISC(string path) {
+            this.DiscPath = path;
         }
 
-        private static BD_DISC? _disc_init() {
-            BD_DISC p = new BD_DISC();
-            return p;
+        public static Task LoadBackupFolder<T>(string path, IProgress<T> progress) where T : TaskProgress, new() {
+            // TODO
+            //BD_DISC? disc = open(path);
+            var file = file_win32.OpenFile(Path.Combine(path, "BDMV", "CLIPINF", "00339.clpi"), FileMode.Open);
+            ClpiFile? clip = ClpiFile.Parse(file);
+            if (clip != null)
+            {
+                Console.WriteLine(clip.type_indicator);
+            }
+
+            return Task.Delay(100);
         }
 
         public static BD_DISC? open(string device_path) {
-            BD_DISC? p = _disc_init();
+            BD_DISC p = new(device_path);
             if (p == null)
             {
                 return null;
             }
-
-            _set_paths(p, device_path);
 
             // check if disc root directory can be opened. If not, treat it as device/image file.
             BD_DIR_H? dp_img = (device_path != null) ? dir_win32.Open(device_path) : null;
@@ -48,12 +71,12 @@ namespace libbluray.disc {
         }
 
         public string root() {
-            return this.disc_root;
+            return this.DiscPath;
         }
 
         private BD_DIR_H? _bdrom_open_dir(string dir) {
             BD_DIR_H? dp = null;
-            string path = Path.Combine(this.disc_root, dir);
+            string path = Path.Combine(this.DiscPath, dir);
             dp = dir_win32.Open(path);
             return dp;
         }
@@ -73,7 +96,7 @@ namespace libbluray.disc {
         public BD_FILE_H? open_path(string path) {
             BD_FILE_H? fp = null;
 
-            return file_win32.OpenFile(Path.Combine(this.disc_root, path), FileMode.Open);
+            return file_win32.OpenFile(Path.Combine(this.DiscPath, path), FileMode.Open);
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix;
+﻿using MakeMKV_Title_Decoder.MkvToolNix.Data;
+using MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,6 +10,10 @@ using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.MkvToolNix
 {
+    internal interface MkvToolNixData<TSelf> where TSelf : class {
+        abstract static TSelf? Parse(IEnumerable<string> std);
+    }
+
     internal static class MkvToolNixInterface {
 
         private static Process? RunCommand(string exeName, params string[] args) {
@@ -22,7 +27,6 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
                 startInfo.UseShellExecute = false;
                 startInfo.RedirectStandardOutput = true;
 
-                startInfo.ArgumentList.Add("--robot");
                 foreach (string arg in args)
                 {
                     startInfo.ArgumentList.Add(arg);
@@ -45,23 +49,31 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
             }
         }
 
-        public static MkvInfo? ReadInfo(string filePath) {
-            var process = RunCommand(filePath);
-            if (process != null)
+        private static T? ParseCommand<T>(string exeName, params string[] args) where T : class, MkvToolNixData<T> {
+            var process = RunCommand(exeName, args);
+            if(process == null)
             {
                 return null;
             }
 
             try
             {
-                MkvInfo? info = MkvInfo.Parse(ReadAllStdOut(process));
+                T? result = T.Parse(ReadAllStdOut(process));
                 process.WaitForExit();
-                return info;
-            } catch(Exception ex)
+                return result;
+            }catch(Exception ex)
             {
                 MessageBox.Show(ex.Message);
                 return null;
             }
+        }
+
+        public static MkvInfo? ReadInfo(string filePath) {
+            return null; //ParseCommand<MkvInfo>("mkvinfo.exe", filePath);
+        }
+
+        public static MkvMergeID? Identify(string filePath) {
+            return ParseCommand<MkvMergeID>("mkvmerge.exe", "--identify", "--identification-format", "json", filePath);
         }
     }
 }

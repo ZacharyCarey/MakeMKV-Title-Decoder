@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
 {
-    public class MkvChapter
+    public class MkvInfoChapter
     {
 
         /*
@@ -27,9 +27,9 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.MkvToolNix
 |    + Chapter language (IETF BCP 47): en
          */
 
-        public static MkvChapter Parse(List<KeyValuePair<string, object?>> data)
+        public static MkvInfoChapter Parse(List<KeyValuePair<string, object?>> data)
         {
-            return new MkvChapter();
+            return new MkvInfoChapter();
         }
 
     }
