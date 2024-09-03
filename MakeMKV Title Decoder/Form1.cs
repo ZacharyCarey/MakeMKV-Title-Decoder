@@ -5,6 +5,7 @@ using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.MakeMKV;
 using MakeMKV_Title_Decoder.MakeMKV.Data;
 using MakeMKV_Title_Decoder.MkvToolNix;
+using MakeMKV_Title_Decoder.MkvToolNix.Data;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -439,11 +440,23 @@ namespace MakeMKV_Title_Decoder
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    BD_DISC? disc = BD_DISC.open(openFileDialog.SelectedPath);
-                    if (disc != null)
+                    MkvToolNixDisc? disc = null;
+                    try
                     {
-                        new ViewInfo(disc).ShowDialog();
+                        disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+                    } catch (Exception ex)
+                    {
+                        MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
                     }
+
+                    if (disc == null)
+                    {
+                        MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    new ViewInfo(disc).ShowDialog();
                 }
             }
         }

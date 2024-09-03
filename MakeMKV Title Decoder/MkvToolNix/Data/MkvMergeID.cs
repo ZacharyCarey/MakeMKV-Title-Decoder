@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
-    public class MkvMergeID : MkvToolNixData<MkvMergeID>, IJsonSerializable {
+    public class MkvMergeID : MkvToolNixData, IJsonSerializable {
 
         /// <summary>
         /// An array describing the attachments found, if any
@@ -27,6 +27,9 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         /// </summary>
         public string? FileName = null;
 
+        public DataSize FileSize = new();
+        public string FileDirectory;
+
         public List<MkvGlobalTag> GlobalTags = new();
 
         /// <summary>
@@ -41,7 +44,19 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         public List<string> Errors = new();
         public List<string> Warnings = new();
 
-        public static MkvMergeID? Parse(IEnumerable<string> std) {
+        public MkvMergeID(string FilePath) {
+            try
+            {
+                this.FileDirectory = Path.GetDirectoryName(FilePath) ?? "N/A";
+                this.FileSize = new DataSize(new FileInfo(FilePath).Length, Unit.None);
+            } catch (Exception)
+            {
+                this.FileDirectory = "N/A";
+                this.FileSize = new();
+            }
+        }
+
+        public bool Parse(IEnumerable<string> std) {
             try
             {
                 Stream stream = new SequentialStream(std);
@@ -67,12 +82,11 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
                     file.Flush();
                 }*/
 
-                MkvMergeID result = new();
-                Json.Read(stream, result);
-                return result;
+                Json.Read(stream, this);
+                return true;
             }catch(Exception ex)
             {
-                return null;
+                return false;
             }
         }
 
@@ -83,6 +97,14 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             this.Container = MkvToolNixUtils.ParseOptionalObject<MkvContainer>(obj["container"]);
             this.Errors.LoadFromJson(obj["errors"]);
             this.FileName = MkvToolNixUtils.ParseOptional<JsonString>(obj["file_name"]) ?? (string?)null;
+            if (FileName != null)
+            {
+                try
+                {
+                    this.FileName = Path.GetFileName(this.FileName);
+                } catch (Exception) { }
+            }
+
             this.GlobalTags.LoadFromJson(obj["global_tags"]);
             this.IdentificationFormatVersion = MkvToolNixUtils.ParseOptional<JsonInteger>(obj["identification_format_version"]);
             this.TrackTags.LoadFromJson(obj["track_tags"]);
@@ -94,6 +116,9 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             throw new NotImplementedException();
         }
 
+        public override string ToString() {
+            return this.FileName ?? "N/A";
+        }
     }
 
     public class MkvAttachment : IJsonSerializable {

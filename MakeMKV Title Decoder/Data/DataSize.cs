@@ -88,26 +88,20 @@ namespace MakeMKV_Title_Decoder {
             return delta <= maxDelta;
         }
 
-        public override string ToString() {
-            string unit;
+        private string GetUnitString() {
             switch(this.Unit)
             {
-                case Unit.None:
-                    unit = "B";
-                    break;
-                case Unit.Kilo:
-                    unit = "MB";
-                    break;
-                case Unit.Mega:
-                    unit = "MB";
-                    break;
-                case Unit.Giga:
-                    unit = "GB";
-                    break;
+                case Unit.None: return "B";
+                case Unit.Kilo: return "MB";
+                case Unit.Mega: return "MB";
+                case Unit.Giga: return "GB";
                 default:
                     throw new Exception("Unknown unit type.");
             }
-            return $"{this.Value} {unit}";
+        }
+
+        public override string ToString() {
+            return $"{this.Value:0.00} {GetUnitString()}";
         }
 
         public static DataSize Parse(string str) {
@@ -130,7 +124,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public JsonData SaveToJson() {
-            return new JsonString(this.ToString());
+            return new JsonString($"{this.Value} {GetUnitString()}");
         }
 
         public void LoadFromJson(JsonData Data) {

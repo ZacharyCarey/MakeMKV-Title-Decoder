@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.MkvToolNix
 {
-    internal interface MkvToolNixData<TSelf> where TSelf : class {
-        abstract static TSelf? Parse(IEnumerable<string> std);
+    internal interface MkvToolNixData {
+        bool Parse(IEnumerable<string> std);
     }
 
     internal static class MkvToolNixInterface {
@@ -49,22 +49,22 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
             }
         }
 
-        private static T? ParseCommand<T>(string exeName, params string[] args) where T : class, MkvToolNixData<T> {
+        private static bool ParseCommand<T>(T data, string exeName, params string[] args) where T : class, MkvToolNixData {
             var process = RunCommand(exeName, args);
             if(process == null)
             {
-                return null;
+                return false;
             }
 
             try
             {
-                T? result = T.Parse(ReadAllStdOut(process));
+                bool result = data.Parse(ReadAllStdOut(process));
                 process.WaitForExit();
                 return result;
             }catch(Exception ex)
             {
                 MessageBox.Show(ex.Message);
-                return null;
+                return false;
             }
         }
 
@@ -73,7 +73,15 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
         }
 
         public static MkvMergeID? Identify(string filePath) {
-            return ParseCommand<MkvMergeID>("mkvmerge.exe", "--identify", "--identification-format", "json", filePath);
+            MkvMergeID data = new MkvMergeID(filePath);
+            bool result = ParseCommand<MkvMergeID>(data, "mkvmerge.exe", "--identify", "--identification-format", "json", filePath);
+            if (result)
+            {
+                return data;
+            } else
+            {
+                return null;
+            }
         }
     }
 }

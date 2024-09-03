@@ -24,171 +24,91 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            label1 = new Label();
-            SourceFileLabel = new Label();
+            components = new System.ComponentModel.Container();
+            ListViewItem listViewItem3 = new ListViewItem(new string[] { "1", "3", "4" }, -1);
+            ListViewItem listViewItem4 = new ListViewItem("2");
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ViewInfo));
             label2 = new Label();
             TitleList = new ComboBox();
-            label3 = new Label();
-            comboBox2 = new ComboBox();
             label4 = new Label();
-            ChaptersLabel = new Label();
             label5 = new Label();
-            DurationLabel = new Label();
-            tabControl1 = new TabControl();
-            SummaryTab = new TabPage();
             videoView1 = new LibVLCSharp.WinForms.VideoView();
-            DimensionsTab = new TabPage();
-            AspectRatioLabel = new Label();
-            label9 = new Label();
-            DisplaySizeLabel = new Label();
-            label8 = new Label();
-            label6 = new Label();
-            FiltersTab = new TabPage();
-            VideoTab = new TabPage();
-            HDRLabel = new Label();
-            FPSLabel = new Label();
             AudioTab = new TabPage();
-            AudioList = new ListView();
-            SourceColumnHeader1 = new ColumnHeader();
-            CodeccolumnHeader1 = new ColumnHeader();
-            QualitycolumnHeader1 = new ColumnHeader();
-            ChannelsColumn = new ColumnHeader();
-            SamplecolumnHeader1 = new ColumnHeader();
-            SubtitlesTab = new TabPage();
-            SubtitlesList = new ListView();
+            splitContainer1 = new SplitContainer();
+            TrackList = new ListView();
             columnHeader1 = new ColumnHeader();
             columnHeader2 = new ColumnHeader();
             columnHeader3 = new ColumnHeader();
             columnHeader4 = new ColumnHeader();
-            ChaptersTab = new TabPage();
-            ChaptersList = new ListView();
             columnHeader5 = new ColumnHeader();
             columnHeader6 = new ColumnHeader();
+            columnHeader12 = new ColumnHeader();
             columnHeader7 = new ColumnHeader();
+            columnHeader13 = new ColumnHeader();
+            columnHeader8 = new ColumnHeader();
+            columnHeader9 = new ColumnHeader();
+            columnHeader10 = new ColumnHeader();
+            columnHeader11 = new ColumnHeader();
+            IconImageList = new ImageList(components);
+            TrackProperties = new RichTextBox();
+            tabControl1 = new TabControl();
+            SummaryTab = new TabPage();
+            tabPage1 = new TabPage();
+            label3 = new Label();
+            ContainerLabel = new Label();
+            FileSizeLabel = new Label();
+            DirectoryLabel = new Label();
+            label1 = new Label();
+            panel1 = new Panel();
+            label6 = new Label();
+            DiscSetLabel = new Label();
+            DiscNameLabel = new Label();
+            ((System.ComponentModel.ISupportInitialize)videoView1).BeginInit();
+            AudioTab.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
             tabControl1.SuspendLayout();
             SummaryTab.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)videoView1).BeginInit();
-            DimensionsTab.SuspendLayout();
-            VideoTab.SuspendLayout();
-            AudioTab.SuspendLayout();
-            SubtitlesTab.SuspendLayout();
-            ChaptersTab.SuspendLayout();
+            panel1.SuspendLayout();
             SuspendLayout();
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(12, 9);
-            label1.Name = "label1";
-            label1.Size = new Size(49, 15);
-            label1.TabIndex = 0;
-            label1.Text = "Source: ";
-            // 
-            // SourceFileLabel
-            // 
-            SourceFileLabel.AutoSize = true;
-            SourceFileLabel.Location = new Point(67, 9);
-            SourceFileLabel.Name = "SourceFileLabel";
-            SourceFileLabel.Size = new Size(37, 15);
-            SourceFileLabel.TabIndex = 1;
-            SourceFileLabel.Text = "00000";
             // 
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(12, 41);
+            label2.Location = new Point(3, 48);
             label2.Name = "label2";
-            label2.Size = new Size(32, 15);
+            label2.Size = new Size(46, 15);
             label2.TabIndex = 3;
-            label2.Text = "Title:";
+            label2.Text = "Source:";
             // 
             // TitleList
             // 
             TitleList.FormattingEnabled = true;
-            TitleList.Location = new Point(50, 38);
+            TitleList.Location = new Point(55, 45);
             TitleList.Name = "TitleList";
-            TitleList.Size = new Size(206, 23);
+            TitleList.Size = new Size(288, 23);
             TitleList.TabIndex = 4;
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(275, 41);
-            label3.Name = "label3";
-            label3.Size = new Size(41, 15);
-            label3.TabIndex = 5;
-            label3.Text = "Angle:";
-            // 
-            // comboBox2
-            // 
-            comboBox2.FormattingEnabled = true;
-            comboBox2.Location = new Point(322, 38);
-            comboBox2.Name = "comboBox2";
-            comboBox2.Size = new Size(72, 23);
-            comboBox2.TabIndex = 6;
+            TitleList.SelectedIndexChanged += TitleList_SelectedIndexChanged;
             // 
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(416, 41);
+            label4.Location = new Point(3, 71);
             label4.Name = "label4";
-            label4.Size = new Size(57, 15);
+            label4.Size = new Size(62, 15);
             label4.TabIndex = 7;
-            label4.Text = "Chapters:";
-            // 
-            // ChaptersLabel
-            // 
-            ChaptersLabel.AutoSize = true;
-            ChaptersLabel.Location = new Point(479, 41);
-            ChaptersLabel.Name = "ChaptersLabel";
-            ChaptersLabel.Size = new Size(38, 15);
-            ChaptersLabel.TabIndex = 8;
-            ChaptersLabel.Text = "label5";
+            label4.Text = "Container:";
             // 
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(579, 41);
+            label5.Location = new Point(3, 86);
             label5.Name = "label5";
-            label5.Size = new Size(56, 15);
+            label5.Size = new Size(50, 15);
             label5.TabIndex = 9;
-            label5.Text = "Duration:";
-            // 
-            // DurationLabel
-            // 
-            DurationLabel.AutoSize = true;
-            DurationLabel.Location = new Point(641, 41);
-            DurationLabel.Name = "DurationLabel";
-            DurationLabel.Size = new Size(38, 15);
-            DurationLabel.TabIndex = 10;
-            DurationLabel.Text = "label6";
-            // 
-            // tabControl1
-            // 
-            tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tabControl1.Controls.Add(SummaryTab);
-            tabControl1.Controls.Add(DimensionsTab);
-            tabControl1.Controls.Add(FiltersTab);
-            tabControl1.Controls.Add(VideoTab);
-            tabControl1.Controls.Add(AudioTab);
-            tabControl1.Controls.Add(SubtitlesTab);
-            tabControl1.Controls.Add(ChaptersTab);
-            tabControl1.Location = new Point(12, 67);
-            tabControl1.Name = "tabControl1";
-            tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(870, 468);
-            tabControl1.TabIndex = 11;
-            // 
-            // SummaryTab
-            // 
-            SummaryTab.Controls.Add(videoView1);
-            SummaryTab.Location = new Point(4, 24);
-            SummaryTab.Name = "SummaryTab";
-            SummaryTab.Padding = new Padding(3);
-            SummaryTab.Size = new Size(862, 440);
-            SummaryTab.TabIndex = 0;
-            SummaryTab.Text = "Summary";
-            SummaryTab.UseVisualStyleBackColor = true;
+            label5.Text = "File size:";
             // 
             // videoView1
             // 
@@ -197,306 +117,337 @@
             videoView1.Location = new Point(3, 3);
             videoView1.MediaPlayer = null;
             videoView1.Name = "videoView1";
-            videoView1.Size = new Size(856, 434);
+            videoView1.Size = new Size(1393, 895);
             videoView1.TabIndex = 0;
-            videoView1.Text = "videoView1";
-            // 
-            // DimensionsTab
-            // 
-            DimensionsTab.Controls.Add(AspectRatioLabel);
-            DimensionsTab.Controls.Add(label9);
-            DimensionsTab.Controls.Add(DisplaySizeLabel);
-            DimensionsTab.Controls.Add(label8);
-            DimensionsTab.Controls.Add(label6);
-            DimensionsTab.Location = new Point(4, 24);
-            DimensionsTab.Name = "DimensionsTab";
-            DimensionsTab.Padding = new Padding(3);
-            DimensionsTab.Size = new Size(862, 440);
-            DimensionsTab.TabIndex = 1;
-            DimensionsTab.Text = "Dimensions";
-            DimensionsTab.UseVisualStyleBackColor = true;
-            // 
-            // AspectRatioLabel
-            // 
-            AspectRatioLabel.AutoSize = true;
-            AspectRatioLabel.Location = new Point(248, 18);
-            AspectRatioLabel.Name = "AspectRatioLabel";
-            AspectRatioLabel.Size = new Size(38, 15);
-            AspectRatioLabel.TabIndex = 6;
-            AspectRatioLabel.Text = "label8";
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.Location = new Point(166, 18);
-            label9.Name = "label9";
-            label9.Size = new Size(76, 15);
-            label9.TabIndex = 5;
-            label9.Text = "Aspect Ratio:";
-            // 
-            // DisplaySizeLabel
-            // 
-            DisplaySizeLabel.AutoSize = true;
-            DisplaySizeLabel.Location = new Point(84, 18);
-            DisplaySizeLabel.Name = "DisplaySizeLabel";
-            DisplaySizeLabel.Size = new Size(38, 15);
-            DisplaySizeLabel.TabIndex = 4;
-            DisplaySizeLabel.Text = "label8";
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.Location = new Point(7, 18);
-            label8.Name = "label8";
-            label8.Size = new Size(71, 15);
-            label8.TabIndex = 3;
-            label8.Text = "Display Size:";
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            label6.Location = new Point(7, 3);
-            label6.Name = "label6";
-            label6.Size = new Size(116, 15);
-            label6.TabIndex = 0;
-            label6.Text = "Source Dimensions:";
-            // 
-            // FiltersTab
-            // 
-            FiltersTab.Location = new Point(4, 24);
-            FiltersTab.Name = "FiltersTab";
-            FiltersTab.Padding = new Padding(3);
-            FiltersTab.Size = new Size(862, 440);
-            FiltersTab.TabIndex = 2;
-            FiltersTab.Text = "Filters";
-            FiltersTab.UseVisualStyleBackColor = true;
-            // 
-            // VideoTab
-            // 
-            VideoTab.Controls.Add(HDRLabel);
-            VideoTab.Controls.Add(FPSLabel);
-            VideoTab.Location = new Point(4, 24);
-            VideoTab.Name = "VideoTab";
-            VideoTab.Padding = new Padding(3);
-            VideoTab.Size = new Size(862, 440);
-            VideoTab.TabIndex = 3;
-            VideoTab.Text = "Video";
-            VideoTab.UseVisualStyleBackColor = true;
-            // 
-            // HDRLabel
-            // 
-            HDRLabel.AutoSize = true;
-            HDRLabel.Location = new Point(9, 29);
-            HDRLabel.Name = "HDRLabel";
-            HDRLabel.Size = new Size(43, 15);
-            HDRLabel.TabIndex = 1;
-            HDRLabel.Text = "HDR10";
-            // 
-            // FPSLabel
-            // 
-            FPSLabel.AutoSize = true;
-            FPSLabel.Location = new Point(6, 3);
-            FPSLabel.Name = "FPSLabel";
-            FPSLabel.Size = new Size(47, 15);
-            FPSLabel.TabIndex = 0;
-            FPSLabel.Text = "120 FPS";
             // 
             // AudioTab
             // 
-            AudioTab.Controls.Add(AudioList);
+            AudioTab.Controls.Add(splitContainer1);
             AudioTab.Location = new Point(4, 24);
             AudioTab.Name = "AudioTab";
             AudioTab.Padding = new Padding(3);
-            AudioTab.Size = new Size(862, 440);
+            AudioTab.Size = new Size(1399, 843);
             AudioTab.TabIndex = 4;
-            AudioTab.Text = "Audio";
+            AudioTab.Text = "Tracks";
             AudioTab.UseVisualStyleBackColor = true;
             // 
-            // AudioList
+            // splitContainer1
             // 
-            AudioList.Columns.AddRange(new ColumnHeader[] { SourceColumnHeader1, CodeccolumnHeader1, QualitycolumnHeader1, ChannelsColumn, SamplecolumnHeader1 });
-            AudioList.Dock = DockStyle.Fill;
-            AudioList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            AudioList.Location = new Point(3, 3);
-            AudioList.MultiSelect = false;
-            AudioList.Name = "AudioList";
-            AudioList.Size = new Size(856, 434);
-            AudioList.TabIndex = 0;
-            AudioList.UseCompatibleStateImageBehavior = false;
-            AudioList.View = View.Details;
+            splitContainer1.Dock = DockStyle.Fill;
+            splitContainer1.Location = new Point(3, 3);
+            splitContainer1.Name = "splitContainer1";
             // 
-            // SourceColumnHeader1
+            // splitContainer1.Panel1
             // 
-            SourceColumnHeader1.Text = "Source";
+            splitContainer1.Panel1.Controls.Add(TrackList);
             // 
-            // CodeccolumnHeader1
+            // splitContainer1.Panel2
             // 
-            CodeccolumnHeader1.Text = "Codec";
+            splitContainer1.Panel2.AutoScroll = true;
+            splitContainer1.Panel2.Controls.Add(TrackProperties);
+            splitContainer1.Size = new Size(1393, 837);
+            splitContainer1.SplitterDistance = 948;
+            splitContainer1.TabIndex = 0;
             // 
-            // QualitycolumnHeader1
+            // TrackList
             // 
-            QualitycolumnHeader1.Text = "Quality";
-            // 
-            // ChannelsColumn
-            // 
-            ChannelsColumn.Text = "Channels";
-            // 
-            // SamplecolumnHeader1
-            // 
-            SamplecolumnHeader1.Text = "Sample";
-            // 
-            // SubtitlesTab
-            // 
-            SubtitlesTab.Controls.Add(SubtitlesList);
-            SubtitlesTab.Location = new Point(4, 24);
-            SubtitlesTab.Name = "SubtitlesTab";
-            SubtitlesTab.Size = new Size(862, 440);
-            SubtitlesTab.TabIndex = 5;
-            SubtitlesTab.Text = "Subtitles";
-            SubtitlesTab.UseVisualStyleBackColor = true;
-            // 
-            // SubtitlesList
-            // 
-            SubtitlesList.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2, columnHeader3, columnHeader4 });
-            SubtitlesList.Dock = DockStyle.Fill;
-            SubtitlesList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            SubtitlesList.Location = new Point(0, 0);
-            SubtitlesList.MultiSelect = false;
-            SubtitlesList.Name = "SubtitlesList";
-            SubtitlesList.Size = new Size(862, 440);
-            SubtitlesList.TabIndex = 1;
-            SubtitlesList.UseCompatibleStateImageBehavior = false;
-            SubtitlesList.View = View.Details;
+            TrackList.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2, columnHeader3, columnHeader4, columnHeader5, columnHeader6, columnHeader12, columnHeader7, columnHeader13, columnHeader8, columnHeader9, columnHeader10, columnHeader11 });
+            TrackList.Dock = DockStyle.Fill;
+            TrackList.FullRowSelect = true;
+            TrackList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            TrackList.Items.AddRange(new ListViewItem[] { listViewItem3, listViewItem4 });
+            TrackList.Location = new Point(0, 0);
+            TrackList.MultiSelect = false;
+            TrackList.Name = "TrackList";
+            TrackList.OwnerDraw = true;
+            TrackList.Size = new Size(948, 837);
+            TrackList.SmallImageList = IconImageList;
+            TrackList.TabIndex = 0;
+            TrackList.UseCompatibleStateImageBehavior = false;
+            TrackList.View = View.Details;
+            TrackList.DrawColumnHeader += TrackList_DrawColumnHeader;
+            TrackList.DrawItem += TrackList_DrawItem;
+            TrackList.DrawSubItem += TrackList_DrawSubItem;
+            TrackList.SelectedIndexChanged += TrackList_SelectedIndexChanged;
             // 
             // columnHeader1
             // 
-            columnHeader1.Text = "Source";
+            columnHeader1.Text = "Codec";
+            columnHeader1.Width = 205;
             // 
             // columnHeader2
             // 
-            columnHeader2.Text = "Forced Only";
+            columnHeader2.Text = "Type";
             columnHeader2.Width = 80;
             // 
             // columnHeader3
             // 
-            columnHeader3.Text = "Burn In";
+            columnHeader3.Text = "Language";
+            columnHeader3.Width = 100;
             // 
             // columnHeader4
             // 
-            columnHeader4.Text = "Default";
-            // 
-            // ChaptersTab
-            // 
-            ChaptersTab.Controls.Add(ChaptersList);
-            ChaptersTab.Location = new Point(4, 24);
-            ChaptersTab.Name = "ChaptersTab";
-            ChaptersTab.Size = new Size(862, 440);
-            ChaptersTab.TabIndex = 6;
-            ChaptersTab.Text = "Chapters";
-            ChaptersTab.UseVisualStyleBackColor = true;
-            // 
-            // ChaptersList
-            // 
-            ChaptersList.Columns.AddRange(new ColumnHeader[] { columnHeader5, columnHeader6, columnHeader7 });
-            ChaptersList.Dock = DockStyle.Fill;
-            ChaptersList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            ChaptersList.Location = new Point(0, 0);
-            ChaptersList.MultiSelect = false;
-            ChaptersList.Name = "ChaptersList";
-            ChaptersList.Size = new Size(862, 440);
-            ChaptersList.TabIndex = 2;
-            ChaptersList.UseCompatibleStateImageBehavior = false;
-            ChaptersList.View = View.Details;
+            columnHeader4.Text = "Name";
+            columnHeader4.Width = 150;
             // 
             // columnHeader5
             // 
-            columnHeader5.Text = "Chapter";
+            columnHeader5.Text = "ID";
+            columnHeader5.Width = 100;
             // 
             // columnHeader6
             // 
-            columnHeader6.Text = "Duration";
-            columnHeader6.Width = 80;
+            columnHeader6.Text = "Default Track";
+            columnHeader6.Width = 100;
+            // 
+            // columnHeader12
+            // 
+            columnHeader12.DisplayIndex = 12;
+            columnHeader12.Text = "Forced display";
+            columnHeader12.Width = 100;
             // 
             // columnHeader7
             // 
-            columnHeader7.Text = "Name";
+            columnHeader7.DisplayIndex = 6;
+            columnHeader7.Text = "Character Set";
+            columnHeader7.Width = 100;
+            // 
+            // columnHeader13
+            // 
+            columnHeader13.DisplayIndex = 7;
+            columnHeader13.Text = "Properties";
+            columnHeader13.Width = 150;
+            // 
+            // columnHeader8
+            // 
+            columnHeader8.DisplayIndex = 8;
+            columnHeader8.Text = "Source file";
+            columnHeader8.Width = 100;
+            // 
+            // columnHeader9
+            // 
+            columnHeader9.DisplayIndex = 9;
+            columnHeader9.Text = "Source file directory";
+            columnHeader9.Width = 265;
+            // 
+            // columnHeader10
+            // 
+            columnHeader10.DisplayIndex = 10;
+            columnHeader10.Text = "Program";
+            columnHeader10.Width = 100;
+            // 
+            // columnHeader11
+            // 
+            columnHeader11.DisplayIndex = 11;
+            columnHeader11.Text = "Delay";
+            columnHeader11.Width = 100;
+            // 
+            // IconImageList
+            // 
+            IconImageList.ColorDepth = ColorDepth.Depth32Bit;
+            IconImageList.ImageStream = (ImageListStreamer)resources.GetObject("IconImageList.ImageStream");
+            IconImageList.TransparentColor = Color.Transparent;
+            IconImageList.Images.SetKeyName(0, "tool-animator.png");
+            IconImageList.Images.SetKeyName(1, "audio-headphones.png");
+            IconImageList.Images.SetKeyName(2, "text.png");
+            IconImageList.Images.SetKeyName(3, "clock.png");
+            IconImageList.Images.SetKeyName(4, "dialog-ok-apply.png");
+            IconImageList.Images.SetKeyName(5, "dialog-cancel.png");
+            // 
+            // TrackProperties
+            // 
+            TrackProperties.Dock = DockStyle.Fill;
+            TrackProperties.Location = new Point(0, 0);
+            TrackProperties.Name = "TrackProperties";
+            TrackProperties.ReadOnly = true;
+            TrackProperties.Size = new Size(441, 837);
+            TrackProperties.TabIndex = 0;
+            TrackProperties.Text = "";
+            // 
+            // tabControl1
+            // 
+            tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tabControl1.Controls.Add(SummaryTab);
+            tabControl1.Controls.Add(AudioTab);
+            tabControl1.Controls.Add(tabPage1);
+            tabControl1.Location = new Point(12, 138);
+            tabControl1.Name = "tabControl1";
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(1407, 871);
+            tabControl1.TabIndex = 11;
+            // 
+            // SummaryTab
+            // 
+            SummaryTab.Controls.Add(videoView1);
+            SummaryTab.Location = new Point(4, 24);
+            SummaryTab.Name = "SummaryTab";
+            SummaryTab.Padding = new Padding(3);
+            SummaryTab.Size = new Size(1399, 901);
+            SummaryTab.TabIndex = 0;
+            SummaryTab.Text = "Preview";
+            SummaryTab.UseVisualStyleBackColor = true;
+            // 
+            // tabPage1
+            // 
+            tabPage1.Location = new Point(4, 24);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(1399, 901);
+            tabPage1.TabIndex = 5;
+            tabPage1.Text = "Attachments";
+            tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(3, 101);
+            label3.Name = "label3";
+            label3.Size = new Size(58, 15);
+            label3.TabIndex = 12;
+            label3.Text = "Directory:";
+            // 
+            // ContainerLabel
+            // 
+            ContainerLabel.AutoSize = true;
+            ContainerLabel.Location = new Point(71, 71);
+            ContainerLabel.Name = "ContainerLabel";
+            ContainerLabel.Size = new Size(38, 15);
+            ContainerLabel.TabIndex = 13;
+            ContainerLabel.Text = "label6";
+            // 
+            // FileSizeLabel
+            // 
+            FileSizeLabel.AutoSize = true;
+            FileSizeLabel.Location = new Point(71, 86);
+            FileSizeLabel.Name = "FileSizeLabel";
+            FileSizeLabel.Size = new Size(38, 15);
+            FileSizeLabel.TabIndex = 14;
+            FileSizeLabel.Text = "label6";
+            // 
+            // DirectoryLabel
+            // 
+            DirectoryLabel.AutoSize = true;
+            DirectoryLabel.Location = new Point(71, 101);
+            DirectoryLabel.Name = "DirectoryLabel";
+            DirectoryLabel.Size = new Size(38, 15);
+            DirectoryLabel.TabIndex = 15;
+            DirectoryLabel.Text = "label6";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(3, 12);
+            label1.Name = "label1";
+            label1.Size = new Size(65, 15);
+            label1.TabIndex = 16;
+            label1.Text = "Disc name:";
+            // 
+            // panel1
+            // 
+            panel1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            panel1.Controls.Add(DiscNameLabel);
+            panel1.Controls.Add(DirectoryLabel);
+            panel1.Controls.Add(DiscSetLabel);
+            panel1.Controls.Add(FileSizeLabel);
+            panel1.Controls.Add(label6);
+            panel1.Controls.Add(ContainerLabel);
+            panel1.Controls.Add(label1);
+            panel1.Controls.Add(label3);
+            panel1.Controls.Add(TitleList);
+            panel1.Controls.Add(label2);
+            panel1.Controls.Add(label5);
+            panel1.Controls.Add(label4);
+            panel1.Location = new Point(12, 12);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(1407, 120);
+            panel1.TabIndex = 17;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(3, 27);
+            label6.Name = "label6";
+            label6.Size = new Size(95, 15);
+            label6.TabIndex = 17;
+            label6.Text = "Disc set number:";
+            // 
+            // DiscSetLabel
+            // 
+            DiscSetLabel.AutoSize = true;
+            DiscSetLabel.Location = new Point(104, 27);
+            DiscSetLabel.Name = "DiscSetLabel";
+            DiscSetLabel.Size = new Size(24, 15);
+            DiscSetLabel.TabIndex = 18;
+            DiscSetLabel.Text = "1/1";
+            // 
+            // DiscNameLabel
+            // 
+            DiscNameLabel.AutoSize = true;
+            DiscNameLabel.Location = new Point(104, 12);
+            DiscNameLabel.Name = "DiscNameLabel";
+            DiscNameLabel.Size = new Size(59, 15);
+            DiscNameLabel.TabIndex = 19;
+            DiscNameLabel.Text = "TestName";
             // 
             // ViewInfo
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(894, 547);
+            AutoScroll = true;
+            ClientSize = new Size(1431, 1021);
+            Controls.Add(panel1);
             Controls.Add(tabControl1);
-            Controls.Add(DurationLabel);
-            Controls.Add(label5);
-            Controls.Add(ChaptersLabel);
-            Controls.Add(label4);
-            Controls.Add(comboBox2);
-            Controls.Add(label3);
-            Controls.Add(TitleList);
-            Controls.Add(label2);
-            Controls.Add(SourceFileLabel);
-            Controls.Add(label1);
             Name = "ViewInfo";
             Text = "ViewInfo";
             Load += ViewInfo_Load;
+            ((System.ComponentModel.ISupportInitialize)videoView1).EndInit();
+            AudioTab.ResumeLayout(false);
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
             tabControl1.ResumeLayout(false);
             SummaryTab.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)videoView1).EndInit();
-            DimensionsTab.ResumeLayout(false);
-            DimensionsTab.PerformLayout();
-            VideoTab.ResumeLayout(false);
-            VideoTab.PerformLayout();
-            AudioTab.ResumeLayout(false);
-            SubtitlesTab.ResumeLayout(false);
-            ChaptersTab.ResumeLayout(false);
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
-
-        private Label label1;
-        private Label SourceFileLabel;
         private Label label2;
         private ComboBox TitleList;
-        private Label label3;
-        private ComboBox comboBox2;
         private Label label4;
-        private Label ChaptersLabel;
         private Label label5;
-        private Label DurationLabel;
+        private LibVLCSharp.WinForms.VideoView videoView1;
+        private TabPage AudioTab;
+        private ListView TrackList;
         private TabControl tabControl1;
         private TabPage SummaryTab;
-        private TabPage DimensionsTab;
-        private TabPage FiltersTab;
-        private TabPage VideoTab;
-        private TabPage AudioTab;
-        private LibVLCSharp.WinForms.VideoView videoView1;
-        private Label label6;
-        private TabPage SubtitlesTab;
-        private TabPage ChaptersTab;
-        private Label AspectRatioLabel;
-        private Label label9;
-        private Label DisplaySizeLabel;
-        private Label label8;
-        private Label FPSLabel;
-        private Label HDRLabel;
-        private ListView AudioList;
-        private ColumnHeader SourceColumnHeader1;
-        private ColumnHeader CodeccolumnHeader1;
-        private ColumnHeader QualitycolumnHeader1;
-        private ColumnHeader ChannelsColumn;
-        private ColumnHeader SamplecolumnHeader1;
-        private ListView SubtitlesList;
+        private SplitContainer splitContainer1;
+        private TabPage tabPage1;
         private ColumnHeader columnHeader1;
         private ColumnHeader columnHeader2;
         private ColumnHeader columnHeader3;
         private ColumnHeader columnHeader4;
-        private ListView ChaptersList;
         private ColumnHeader columnHeader5;
         private ColumnHeader columnHeader6;
+        private ColumnHeader columnHeader12;
         private ColumnHeader columnHeader7;
+        private ColumnHeader columnHeader13;
+        private ColumnHeader columnHeader8;
+        private ColumnHeader columnHeader9;
+        private ColumnHeader columnHeader10;
+        private ColumnHeader columnHeader11;
+        private RichTextBox TrackProperties;
+        private Label label3;
+        private Label ContainerLabel;
+        private Label FileSizeLabel;
+        private Label DirectoryLabel;
+        private ImageList IconImageList;
+        private Label label1;
+        private Panel panel1;
+        private Label DiscNameLabel;
+        private Label DiscSetLabel;
+        private Label label6;
     }
 }
