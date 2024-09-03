@@ -109,6 +109,9 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
                                     this.SetNumber = value;
                                 }
                             }
+
+                            // Successfully loaded what was available
+                            return;
                         }
                     }
                 } catch (Exception ex)

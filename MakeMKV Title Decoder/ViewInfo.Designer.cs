@@ -25,14 +25,13 @@
         /// </summary>
         private void InitializeComponent() {
             components = new System.ComponentModel.Container();
-            ListViewItem listViewItem3 = new ListViewItem(new string[] { "1", "3", "4" }, -1);
-            ListViewItem listViewItem4 = new ListViewItem("2");
+            ListViewItem listViewItem1 = new ListViewItem(new string[] { "1", "3", "4" }, -1);
+            ListViewItem listViewItem2 = new ListViewItem("2");
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ViewInfo));
             label2 = new Label();
             TitleList = new ComboBox();
             label4 = new Label();
             label5 = new Label();
-            videoView1 = new LibVLCSharp.WinForms.VideoView();
             AudioTab = new TabPage();
             splitContainer1 = new SplitContainer();
             TrackList = new ListView();
@@ -53,6 +52,8 @@
             TrackProperties = new RichTextBox();
             tabControl1 = new TabControl();
             SummaryTab = new TabPage();
+            VideoPreview = new LibVLCSharp.WinForms.VideoView();
+            VideoPlayer = new VideoPlayer();
             tabPage1 = new TabPage();
             label3 = new Label();
             ContainerLabel = new Label();
@@ -60,10 +61,9 @@
             DirectoryLabel = new Label();
             label1 = new Label();
             panel1 = new Panel();
-            label6 = new Label();
-            DiscSetLabel = new Label();
             DiscNameLabel = new Label();
-            ((System.ComponentModel.ISupportInitialize)videoView1).BeginInit();
+            DiscSetLabel = new Label();
+            label6 = new Label();
             AudioTab.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -71,6 +71,7 @@
             splitContainer1.SuspendLayout();
             tabControl1.SuspendLayout();
             SummaryTab.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)VideoPreview).BeginInit();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -110,16 +111,6 @@
             label5.TabIndex = 9;
             label5.Text = "File size:";
             // 
-            // videoView1
-            // 
-            videoView1.BackColor = Color.Black;
-            videoView1.Dock = DockStyle.Fill;
-            videoView1.Location = new Point(3, 3);
-            videoView1.MediaPlayer = null;
-            videoView1.Name = "videoView1";
-            videoView1.Size = new Size(1393, 895);
-            videoView1.TabIndex = 0;
-            // 
             // AudioTab
             // 
             AudioTab.Controls.Add(splitContainer1);
@@ -155,7 +146,7 @@
             TrackList.Dock = DockStyle.Fill;
             TrackList.FullRowSelect = true;
             TrackList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            TrackList.Items.AddRange(new ListViewItem[] { listViewItem3, listViewItem4 });
+            TrackList.Items.AddRange(new ListViewItem[] { listViewItem1, listViewItem2 });
             TrackList.Location = new Point(0, 0);
             TrackList.MultiSelect = false;
             TrackList.Name = "TrackList";
@@ -278,21 +269,43 @@
             // 
             // SummaryTab
             // 
-            SummaryTab.Controls.Add(videoView1);
+            SummaryTab.Controls.Add(VideoPreview);
+            SummaryTab.Controls.Add(VideoPlayer);
             SummaryTab.Location = new Point(4, 24);
             SummaryTab.Name = "SummaryTab";
             SummaryTab.Padding = new Padding(3);
-            SummaryTab.Size = new Size(1399, 901);
+            SummaryTab.Size = new Size(1399, 843);
             SummaryTab.TabIndex = 0;
             SummaryTab.Text = "Preview";
             SummaryTab.UseVisualStyleBackColor = true;
+            // 
+            // VideoPreview
+            // 
+            VideoPreview.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            VideoPreview.BackColor = Color.Black;
+            VideoPreview.Location = new Point(3, 3);
+            VideoPreview.MediaPlayer = null;
+            VideoPreview.Name = "VideoPreview";
+            VideoPreview.Size = new Size(1390, 746);
+            VideoPreview.TabIndex = 1;
+            VideoPreview.Text = "videoView1";
+            // 
+            // VideoPlayer
+            // 
+            VideoPlayer.Dock = DockStyle.Fill;
+            VideoPlayer.Location = new Point(3, 3);
+            VideoPlayer.Name = "VideoPlayer";
+            VideoPlayer.Size = new Size(1393, 837);
+            VideoPlayer.TabIndex = 0;
+            VideoPlayer.VLC = null;
+            VideoPlayer.VlcViewer = VideoPreview;
             // 
             // tabPage1
             // 
             tabPage1.Location = new Point(4, 24);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(1399, 901);
+            tabPage1.Size = new Size(1399, 843);
             tabPage1.TabIndex = 5;
             tabPage1.Text = "Attachments";
             tabPage1.UseVisualStyleBackColor = true;
@@ -362,14 +375,14 @@
             panel1.Size = new Size(1407, 120);
             panel1.TabIndex = 17;
             // 
-            // label6
+            // DiscNameLabel
             // 
-            label6.AutoSize = true;
-            label6.Location = new Point(3, 27);
-            label6.Name = "label6";
-            label6.Size = new Size(95, 15);
-            label6.TabIndex = 17;
-            label6.Text = "Disc set number:";
+            DiscNameLabel.AutoSize = true;
+            DiscNameLabel.Location = new Point(104, 12);
+            DiscNameLabel.Name = "DiscNameLabel";
+            DiscNameLabel.Size = new Size(59, 15);
+            DiscNameLabel.TabIndex = 19;
+            DiscNameLabel.Text = "TestName";
             // 
             // DiscSetLabel
             // 
@@ -380,14 +393,14 @@
             DiscSetLabel.TabIndex = 18;
             DiscSetLabel.Text = "1/1";
             // 
-            // DiscNameLabel
+            // label6
             // 
-            DiscNameLabel.AutoSize = true;
-            DiscNameLabel.Location = new Point(104, 12);
-            DiscNameLabel.Name = "DiscNameLabel";
-            DiscNameLabel.Size = new Size(59, 15);
-            DiscNameLabel.TabIndex = 19;
-            DiscNameLabel.Text = "TestName";
+            label6.AutoSize = true;
+            label6.Location = new Point(3, 27);
+            label6.Name = "label6";
+            label6.Size = new Size(95, 15);
+            label6.TabIndex = 17;
+            label6.Text = "Disc set number:";
             // 
             // ViewInfo
             // 
@@ -399,8 +412,8 @@
             Controls.Add(tabControl1);
             Name = "ViewInfo";
             Text = "ViewInfo";
+            FormClosing += ViewInfo_FormClosing;
             Load += ViewInfo_Load;
-            ((System.ComponentModel.ISupportInitialize)videoView1).EndInit();
             AudioTab.ResumeLayout(false);
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
@@ -408,6 +421,7 @@
             splitContainer1.ResumeLayout(false);
             tabControl1.ResumeLayout(false);
             SummaryTab.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)VideoPreview).EndInit();
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             ResumeLayout(false);
@@ -418,11 +432,9 @@
         private ComboBox TitleList;
         private Label label4;
         private Label label5;
-        private LibVLCSharp.WinForms.VideoView videoView1;
         private TabPage AudioTab;
         private ListView TrackList;
         private TabControl tabControl1;
-        private TabPage SummaryTab;
         private SplitContainer splitContainer1;
         private TabPage tabPage1;
         private ColumnHeader columnHeader1;
@@ -449,5 +461,8 @@
         private Label DiscNameLabel;
         private Label DiscSetLabel;
         private Label label6;
+        private TabPage SummaryTab;
+        private LibVLCSharp.WinForms.VideoView VideoPreview;
+        private VideoPlayer VideoPlayer;
     }
 }
