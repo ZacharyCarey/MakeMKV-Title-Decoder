@@ -40,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DiscUtils" Version="0.16.13" />
     <PackageReference Include="JsonSerializable" Version="1.2.5" />
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.0" />

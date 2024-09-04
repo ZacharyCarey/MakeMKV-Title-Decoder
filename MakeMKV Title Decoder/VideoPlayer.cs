@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,25 +19,25 @@ namespace MakeMKV_Title_Decoder {
         public string? LoadedVideoPath { get; private set; }
 
         private LibVLC? vlc = null;
-        public LibVLC? VLC { 
-            get => vlc; 
+        public LibVLC? VLC {
+            get => vlc;
             set
             {
                 LoadVideo(null);
                 vlc = value;
                 LoadVideo(LoadedVideoPath);
-            } 
+            }
         }
 
         private VideoView? Viewer = null;
-        public VideoView? VlcViewer { 
-            get => Viewer; 
+        public VideoView? VlcViewer {
+            get => Viewer;
             set
             {
                 LoadVideo(null);
                 Viewer = value;
                 LoadVideo(LoadedVideoPath);
-            } 
+            }
         }
 
         public VideoPlayer() {
@@ -57,6 +58,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public void LoadVideo(string? path) {
+            timer1.Stop();
             if (Viewer != null && Viewer.MediaPlayer != null)
             {
                 var mp = Viewer.MediaPlayer;
@@ -81,7 +83,22 @@ namespace MakeMKV_Title_Decoder {
                 var player = new MediaPlayer(media);
                 Viewer.MediaPlayer = player;
                 player.Volume = this.VolumeTrackBar.Value;
+                timer1.Start();
+            } else if (path != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                if (vlc == null)
+                {
+                    Console.WriteLine("Tried to load video without first loading VLC.");
+                }
+                if (Viewer == null)
+                {
+                    Console.WriteLine("Tried to load video without first setting the viewer.");
+                }
+                Console.ResetColor();
             }
+
+            this.FileNotFoundLabel.Visible = (path == null) || (!File.Exists(path));
         }
 
         private void PlayBtn_Click(object sender, EventArgs e) {
@@ -121,7 +138,6 @@ namespace MakeMKV_Title_Decoder {
                 player.Volume = value;
             }
         }
-
         private void timer1_Tick(object sender, EventArgs e) {
             MediaPlayer? player = this.Viewer?.MediaPlayer;
             if (player != null && !VideoScrubTrackBar.Capture)

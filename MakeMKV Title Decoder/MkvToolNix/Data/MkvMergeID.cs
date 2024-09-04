@@ -25,7 +25,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         /// <summary>
         /// The identified file's name
         /// </summary>
-        public string? FileName = null;
+        public string FileName = "";
 
         public DataSize FileSize = new();
         public string FileDirectory;

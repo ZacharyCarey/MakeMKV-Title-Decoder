@@ -460,5 +460,33 @@ namespace MakeMKV_Title_Decoder
                 }
             }
         }
+
+        private void clipRenamerToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            {
+                openFileDialog.InitialDirectory = "F:\\Video\\backup";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    MkvToolNixDisc? disc = null;
+                    try
+                    {
+                        disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+                    } catch (Exception ex)
+                    {
+                        MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    if (disc == null)
+                    {
+                        MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    new ClipRenamer(disc).ShowDialog();
+                }
+            }
+        }
     }
 }
