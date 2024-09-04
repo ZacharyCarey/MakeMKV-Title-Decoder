@@ -35,6 +35,12 @@
             loadToolStripMenuItem = new ToolStripMenuItem();
             viewInfoToolStripMenuItem = new ToolStripMenuItem();
             testToolStripMenuItem = new ToolStripMenuItem();
+            renameToolStripMenuItem = new ToolStripMenuItem();
+            loadDiscToolStripMenuItem1 = new ToolStripMenuItem();
+            renamesToolStripMenuItem = new ToolStripMenuItem();
+            saveToolStripMenuItem = new ToolStripMenuItem();
+            loadToolStripMenuItem1 = new ToolStripMenuItem();
+            clipRenamerToolStripMenuItem1 = new ToolStripMenuItem();
             DriveSelectionPanel = new Panel();
             SelectFolderBtn = new Button();
             LoadedFileLabel = new Label();
@@ -52,7 +58,6 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             tabPage2 = new TabPage();
-            clipRenamerToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
@@ -74,7 +79,7 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem, viewInfoToolStripMenuItem, testToolStripMenuItem, clipRenamerToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { discToolStripMenuItem, renameDataToolStripMenuItem, viewInfoToolStripMenuItem, testToolStripMenuItem, renameToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(829, 24);
@@ -129,6 +134,48 @@
             testToolStripMenuItem.Size = new Size(39, 20);
             testToolStripMenuItem.Text = "Test";
             testToolStripMenuItem.Click += testToolStripMenuItem_Click;
+            // 
+            // renameToolStripMenuItem
+            // 
+            renameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadDiscToolStripMenuItem1, clipRenamerToolStripMenuItem1, renamesToolStripMenuItem });
+            renameToolStripMenuItem.Name = "renameToolStripMenuItem";
+            renameToolStripMenuItem.Size = new Size(62, 20);
+            renameToolStripMenuItem.Text = "Rename";
+            // 
+            // loadDiscToolStripMenuItem1
+            // 
+            loadDiscToolStripMenuItem1.Name = "loadDiscToolStripMenuItem1";
+            loadDiscToolStripMenuItem1.Size = new Size(180, 22);
+            loadDiscToolStripMenuItem1.Text = "Load Disc";
+            loadDiscToolStripMenuItem1.Click += loadDiscToolStripMenuItem1_Click;
+            // 
+            // renamesToolStripMenuItem
+            // 
+            renamesToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem, loadToolStripMenuItem1 });
+            renamesToolStripMenuItem.Name = "renamesToolStripMenuItem";
+            renamesToolStripMenuItem.Size = new Size(180, 22);
+            renamesToolStripMenuItem.Text = "Renames File";
+            // 
+            // saveToolStripMenuItem
+            // 
+            saveToolStripMenuItem.Name = "saveToolStripMenuItem";
+            saveToolStripMenuItem.Size = new Size(180, 22);
+            saveToolStripMenuItem.Text = "Save";
+            saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
+            // 
+            // loadToolStripMenuItem1
+            // 
+            loadToolStripMenuItem1.Name = "loadToolStripMenuItem1";
+            loadToolStripMenuItem1.Size = new Size(180, 22);
+            loadToolStripMenuItem1.Text = "Load";
+            loadToolStripMenuItem1.Click += loadToolStripMenuItem1_Click;
+            // 
+            // clipRenamerToolStripMenuItem1
+            // 
+            clipRenamerToolStripMenuItem1.Name = "clipRenamerToolStripMenuItem1";
+            clipRenamerToolStripMenuItem1.Size = new Size(180, 22);
+            clipRenamerToolStripMenuItem1.Text = "Clip Renamer";
+            clipRenamerToolStripMenuItem1.Click += clipRenamerToolStripMenuItem1_Click;
             // 
             // DriveSelectionPanel
             // 
@@ -302,13 +349,6 @@
             tabPage2.Text = "tabPage2";
             tabPage2.UseVisualStyleBackColor = true;
             // 
-            // clipRenamerToolStripMenuItem
-            // 
-            clipRenamerToolStripMenuItem.Name = "clipRenamerToolStripMenuItem";
-            clipRenamerToolStripMenuItem.Size = new Size(90, 20);
-            clipRenamerToolStripMenuItem.Text = "Clip Renamer";
-            clipRenamerToolStripMenuItem.Click += clipRenamerToolStripMenuItem_Click;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -359,6 +399,11 @@
         private TabPage tabPage2;
         private ToolStripMenuItem testToolStripMenuItem;
         private ToolStripMenuItem viewInfoToolStripMenuItem;
-        private ToolStripMenuItem clipRenamerToolStripMenuItem;
+        private ToolStripMenuItem renameToolStripMenuItem;
+        private ToolStripMenuItem loadDiscToolStripMenuItem1;
+        private ToolStripMenuItem clipRenamerToolStripMenuItem1;
+        private ToolStripMenuItem renamesToolStripMenuItem;
+        private ToolStripMenuItem saveToolStripMenuItem;
+        private ToolStripMenuItem loadToolStripMenuItem1;
     }
 }

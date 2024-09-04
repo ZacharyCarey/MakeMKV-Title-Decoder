@@ -53,6 +53,9 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
+        MkvToolNixDisc? disc = null;
+        RenameData2 renames = new();
+
         public Form1() {
             InitializeComponent();
         }
@@ -461,17 +464,18 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void clipRenamerToolStripMenuItem_Click(object sender, EventArgs e) {
+        #region V2
+        private void loadDiscToolStripMenuItem1_Click(object sender, EventArgs e) {
             using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
                 openFileDialog.InitialDirectory = "F:\\Video\\backup";
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    MkvToolNixDisc? disc = null;
+
                     try
                     {
-                        disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+                        this.disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
                     } catch (Exception ex)
                     {
                         MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -483,10 +487,71 @@ namespace MakeMKV_Title_Decoder
                         MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-
-                    new ClipRenamer(disc).ShowDialog();
                 }
             }
         }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (SaveFileDialog dialog = new())
+            {
+                dialog.Filter = "JSON files (*.json)|*.json";
+                dialog.RestoreDirectory = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    var path = dialog.FileName;
+                    try
+                    {
+                        File.Delete(path);
+                    } catch (Exception) { }
+
+                    try
+                    {
+                        Json.Write(this.renames, path);
+                        Console.WriteLine("Saved JSON file.");
+                    } catch (Exception ex)
+                    {
+                        MessageBox.Show("Failed to save JSON: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void loadToolStripMenuItem1_Click(object sender, EventArgs e) {
+            using (OpenFileDialog dialog = new())
+            {
+                dialog.Filter = "JSON files (*.json)|*.json";
+                dialog.RestoreDirectory = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    using (var stream = dialog.OpenFile())
+                    {
+                        RenameData2 data = new();
+
+                        try
+                        {
+                            Json.Read(stream, data);
+                            Console.WriteLine("Loaded JSON file.");
+                            this.renames = data;
+                        } catch (Exception ex)
+                        {
+                            MessageBox.Show("Failed to read file: " + ex.Message, "Failed to read file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void clipRenamerToolStripMenuItem1_Click(object sender, EventArgs e) {
+            if (disc == null)
+            {
+                MessageBox.Show("Please load a disc first.");
+                return;
+            }
+            new ClipRenamer(renames, disc).ShowDialog();
+        }
+        #endregion
     }
 }

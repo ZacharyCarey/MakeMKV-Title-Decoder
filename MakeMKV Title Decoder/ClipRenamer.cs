@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.MkvToolNix.Data;
+﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,10 +17,10 @@ namespace MakeMKV_Title_Decoder {
         const string DeleteIconKey = "dialog-cancel.png";
 
         public readonly MkvToolNixDisc Disc;
-        public Dictionary<MkvMergeID, string> Renames = new();
-        public HashSet<MkvMergeID> Deletions = new();
+        public readonly RenameData2 Renames;
 
-        public ClipRenamer(MkvToolNixDisc disc) {
+        public ClipRenamer(RenameData2 renames, MkvToolNixDisc disc) {
+            this.Renames = renames;
             this.Disc = disc;
 
             InitializeComponent();
@@ -30,8 +31,6 @@ namespace MakeMKV_Title_Decoder {
             ClipsList.Items.Clear();
             foreach (var clip in disc.Streams)
             {
-                this.Renames[clip] = "";
-
                 ListViewItem keepIconItem = new("", KeepIconKey);
                 keepIconItem.Tag = clip;
                 this.ClipsList.Items.Add(keepIconItem);
@@ -41,6 +40,8 @@ namespace MakeMKV_Title_Decoder {
 
                 ListViewItem.ListViewSubItem renameItem = new(keepIconItem, "");
                 keepIconItem.SubItems.Add(renameItem);
+
+                RefreshClipListItem(keepIconItem, clip);
             }
         }
 
@@ -49,8 +50,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void SelectClip(MkvMergeID? clip) {
-            this.NameTextBox.Text = (clip == null) ? "" : Renames[clip];
-            this.DeleteCheckBox.Checked = (clip == null) ? false : this.Deletions.Contains(clip);
+            this.NameTextBox.Text = (clip == null) ? "" : (Renames.GetUserGivenName(clip) ?? "");
 
             this.PropertiesPanel.Enabled = (clip != null);
             if (clip == null)
@@ -63,8 +63,10 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void RefreshClipListItem(ListViewItem row, MkvMergeID data) {
-            row.ImageKey = (this.Deletions.Contains(data) ? DeleteIconKey : KeepIconKey);
-            row.SubItems[2].Text = this.Renames[data];
+            string name = (this.Renames.GetUserGivenName(data) ?? "");
+
+            row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
+            row.SubItems[2].Text = name;
         }
 
 
@@ -93,16 +95,21 @@ namespace MakeMKV_Title_Decoder {
             MkvMergeID? selection = (MkvMergeID?)ClipsList.SelectedItems[0].Tag;
             if (selection != null)
             {
-                this.Renames[selection] = this.NameTextBox.Text;
-                if (this.DeleteCheckBox.Checked)
+                string? name = this.NameTextBox.Text;
+                if (string.IsNullOrWhiteSpace(this.NameTextBox.Text))
                 {
-                    this.Deletions.Add(selection);
-                } else
-                {
-                    this.Deletions.Remove(selection);
+                    name = null;
                 }
+
+                this.Renames.SetUserGivenName(selection, name);
                 RefreshClipListItem(ClipsList.SelectedItems[0], selection);
             }
+        }
+
+        private void compareToolStripMenuItem_Click(object sender, EventArgs e) {
+            // TODO make it smart enough to handle changes to Renames while open
+            // This can likely be done with a "onChange" event in renames
+            new VideoCompareForm(this.Renames, this.Disc).ShowDialog();
         }
     }
 }

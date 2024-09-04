@@ -40,6 +40,31 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
+        private VideoPlayer? SyncPlayer = null;
+        private bool IsPrimarySync = false;
+        public VideoPlayer? Sync {
+            get => SyncPlayer;
+            set
+            {
+                if (SyncPlayer != null)
+                {
+                    SyncPlayer.SyncPlayer = null;
+                    SyncPlayer.LoadVideo(null);
+                }
+                this.SyncPlayer = value;
+                this.LoadVideo(null);
+                if (value != null)
+                {
+                    value.SyncPlayer = this;
+                    this.IsPrimarySync = true;
+                    value.IsPrimarySync = false;
+                }
+            }
+        }
+
+        private bool IsSyncMaster => (this.SyncPlayer != null) && IsPrimarySync;
+        private bool IsSyncSlave => (this.SyncPlayer != null) && !IsPrimarySync;
+
         public VideoPlayer() {
             InitializeComponent();
         }
@@ -83,7 +108,10 @@ namespace MakeMKV_Title_Decoder {
                 var player = new MediaPlayer(media);
                 Viewer.MediaPlayer = player;
                 player.Volume = this.VolumeTrackBar.Value;
-                timer1.Start();
+                if (IsSyncMaster)
+                {
+                    timer1.Start();
+                }
             } else if (path != null)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -103,30 +131,44 @@ namespace MakeMKV_Title_Decoder {
 
         private void PlayBtn_Click(object sender, EventArgs e) {
             Viewer?.MediaPlayer?.Play();
+            this.SyncPlayer?.Viewer?.MediaPlayer?.Play();
         }
 
         private void PauseBtn_Click(object sender, EventArgs e) {
             Viewer?.MediaPlayer?.Pause();
+            this.SyncPlayer?.Viewer?.MediaPlayer?.Pause();
         }
 
         private void ReloadBtn_Click(object sender, EventArgs e) {
-            string? path = LoadedVideoPath;
+            string? path = this.LoadedVideoPath;
+            string? syncPath = this.SyncPlayer?.LoadedVideoPath;
+
             LoadVideo(null);
+            this.SyncPlayer?.LoadVideo(null);
+
             if (path != null)
             {
                 LoadVideo(path);
-                PlayBtn_Click(null, null);
             }
+            if (this.SyncPlayer != null && syncPath != null)
+            {
+                this.SyncPlayer.LoadVideo(syncPath);
+            }
+
+            PlayBtn_Click(sender, e);
         }
 
         private void VideoScrubTrackBar_Scroll(object sender, EventArgs e) {
-            float value = (float)VideoScrubTrackBar.Value / VideoScrubTrackBar.Maximum;
+            double percent = (float)VideoScrubTrackBar.Value / VideoScrubTrackBar.Maximum;
             var player = Viewer?.MediaPlayer;
             if (player != null)
             {
-                player.Position = value;
-                this.CurrentTimeLabel.Text = TimeSpan.FromMilliseconds(player.Position * player.Length).ToString(TimeSpanFormat);
-                this.TotalTimeLabel.Text = TimeSpan.FromMilliseconds(player.Length).ToString(TimeSpanFormat);
+                double milliseconds = player.Length * percent;
+                ScrollToTimestamp(milliseconds);
+                if (this.SyncPlayer != null)
+                {
+                    this.SyncPlayer.ScrollToTimestamp(milliseconds);
+                }
             }
         }
 
@@ -139,17 +181,47 @@ namespace MakeMKV_Title_Decoder {
             }
         }
         private void timer1_Tick(object sender, EventArgs e) {
-            MediaPlayer? player = this.Viewer?.MediaPlayer;
-            if (player != null && !VideoScrubTrackBar.Capture)
+            bool captured = VideoScrubTrackBar.Capture;
+            if (IsSyncMaster)
+            {
+                captured |= this.SyncPlayer.VideoScrubTrackBar.Capture;
+            }
+
+            if (!captured)
             {
                 this.VideoScrubTrackBar.Invoke(() =>
                 {
-                    float pos = Math.Min(Math.Max(0f, player.Position), 1f);
-
-                    this.VideoScrubTrackBar.Value = (int)(pos * this.VideoScrubTrackBar.Maximum);
-                    this.CurrentTimeLabel.Text = TimeSpan.FromMilliseconds(pos * player.Length).ToString(TimeSpanFormat);
-                    this.TotalTimeLabel.Text = TimeSpan.FromMilliseconds(player.Length).ToString(TimeSpanFormat);
+                    UpdateTimeLabels(true);
+                    if (IsSyncMaster)
+                    {
+                        this.SyncPlayer.UpdateTimeLabels(true);
+                    }
                 });
+            }
+        }
+
+        private void ScrollToTimestamp(double milliseconds) {
+            if (Viewer != null && Viewer.MediaPlayer != null)
+            {
+                double percent = milliseconds / Viewer.MediaPlayer.Length;
+                percent = Math.Clamp(percent, 0.0, 1.0);
+                Viewer.MediaPlayer.Position = (float)percent;
+                UpdateTimeLabels();
+            }
+        }
+
+        private void UpdateTimeLabels(bool UpdateScrubBar = false) {
+            if (this.Viewer != null && this.Viewer.MediaPlayer != null)
+            {
+                MediaPlayer player = this.Viewer.MediaPlayer;
+                float pos = Math.Clamp(player.Position, 0f, 1f);
+
+                if (UpdateScrubBar)
+                {
+                    this.VideoScrubTrackBar.Value = (int)(pos * this.VideoScrubTrackBar.Maximum);
+                }
+                this.CurrentTimeLabel.Text = TimeSpan.FromMilliseconds(pos * player.Length).ToString(TimeSpanFormat);
+                this.TotalTimeLabel.Text = TimeSpan.FromMilliseconds(player.Length).ToString(TimeSpanFormat);
             }
         }
     }

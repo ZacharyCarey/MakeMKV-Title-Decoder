@@ -39,10 +39,11 @@
             VideoView1 = new LibVLCSharp.WinForms.VideoView();
             VideoPreview = new VideoPlayer();
             PropertiesPanel = new Panel();
-            DeleteCheckBox = new CheckBox();
             ApplyBtn = new Button();
             NameTextBox = new TextBox();
             label1 = new Label();
+            menuStrip1 = new MenuStrip();
+            compareToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -53,6 +54,7 @@
             splitContainer2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)VideoView1).BeginInit();
             PropertiesPanel.SuspendLayout();
+            menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // ClipsList
@@ -65,7 +67,7 @@
             ClipsList.Location = new Point(0, 0);
             ClipsList.MultiSelect = false;
             ClipsList.Name = "ClipsList";
-            ClipsList.Size = new Size(282, 694);
+            ClipsList.Size = new Size(282, 670);
             ClipsList.SmallImageList = ImageList1;
             ClipsList.TabIndex = 2;
             ClipsList.UseCompatibleStateImageBehavior = false;
@@ -98,7 +100,7 @@
             // splitContainer1
             // 
             splitContainer1.Dock = DockStyle.Fill;
-            splitContainer1.Location = new Point(0, 0);
+            splitContainer1.Location = new Point(0, 24);
             splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -108,7 +110,7 @@
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(splitContainer2);
-            splitContainer1.Size = new Size(1125, 694);
+            splitContainer1.Size = new Size(1125, 670);
             splitContainer1.SplitterDistance = 282;
             splitContainer1.TabIndex = 3;
             // 
@@ -127,8 +129,8 @@
             // splitContainer2.Panel2
             // 
             splitContainer2.Panel2.Controls.Add(PropertiesPanel);
-            splitContainer2.Size = new Size(839, 694);
-            splitContainer2.SplitterDistance = 482;
+            splitContainer2.Size = new Size(839, 670);
+            splitContainer2.SplitterDistance = 558;
             splitContainer2.TabIndex = 0;
             // 
             // VideoView1
@@ -138,7 +140,7 @@
             VideoView1.Location = new Point(0, 3);
             VideoView1.MediaPlayer = null;
             VideoView1.Name = "VideoView1";
-            VideoView1.Size = new Size(836, 386);
+            VideoView1.Size = new Size(836, 462);
             VideoView1.TabIndex = 1;
             VideoView1.Text = "videoView1";
             // 
@@ -147,7 +149,7 @@
             VideoPreview.Dock = DockStyle.Fill;
             VideoPreview.Location = new Point(0, 0);
             VideoPreview.Name = "VideoPreview";
-            VideoPreview.Size = new Size(839, 482);
+            VideoPreview.Size = new Size(839, 558);
             VideoPreview.TabIndex = 0;
             VideoPreview.VLC = null;
             VideoPreview.VlcViewer = null;
@@ -156,25 +158,14 @@
             // 
             PropertiesPanel.AutoScroll = true;
             PropertiesPanel.BorderStyle = BorderStyle.Fixed3D;
-            PropertiesPanel.Controls.Add(DeleteCheckBox);
             PropertiesPanel.Controls.Add(ApplyBtn);
             PropertiesPanel.Controls.Add(NameTextBox);
             PropertiesPanel.Controls.Add(label1);
             PropertiesPanel.Dock = DockStyle.Fill;
             PropertiesPanel.Location = new Point(0, 0);
             PropertiesPanel.Name = "PropertiesPanel";
-            PropertiesPanel.Size = new Size(839, 208);
+            PropertiesPanel.Size = new Size(839, 108);
             PropertiesPanel.TabIndex = 0;
-            // 
-            // DeleteCheckBox
-            // 
-            DeleteCheckBox.AutoSize = true;
-            DeleteCheckBox.Location = new Point(3, 32);
-            DeleteCheckBox.Name = "DeleteCheckBox";
-            DeleteCheckBox.Size = new Size(59, 19);
-            DeleteCheckBox.TabIndex = 3;
-            DeleteCheckBox.Text = "Delete";
-            DeleteCheckBox.UseVisualStyleBackColor = true;
             // 
             // ApplyBtn
             // 
@@ -202,12 +193,30 @@
             label1.TabIndex = 0;
             label1.Text = "Name:";
             // 
+            // menuStrip1
+            // 
+            menuStrip1.Items.AddRange(new ToolStripItem[] { compareToolStripMenuItem });
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Size = new Size(1125, 24);
+            menuStrip1.TabIndex = 4;
+            menuStrip1.Text = "menuStrip1";
+            // 
+            // compareToolStripMenuItem
+            // 
+            compareToolStripMenuItem.Name = "compareToolStripMenuItem";
+            compareToolStripMenuItem.Size = new Size(68, 20);
+            compareToolStripMenuItem.Text = "Compare";
+            compareToolStripMenuItem.Click += compareToolStripMenuItem_Click;
+            // 
             // ClipRenamer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1125, 694);
             Controls.Add(splitContainer1);
+            Controls.Add(menuStrip1);
+            MainMenuStrip = menuStrip1;
             Name = "ClipRenamer";
             Text = "ClipRenamer";
             FormClosing += ClipRenamer_FormClosing;
@@ -223,7 +232,10 @@
             ((System.ComponentModel.ISupportInitialize)VideoView1).EndInit();
             PropertiesPanel.ResumeLayout(false);
             PropertiesPanel.PerformLayout();
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -239,7 +251,8 @@
         private Button ApplyBtn;
         private TextBox NameTextBox;
         private Label label1;
-        private CheckBox DeleteCheckBox;
         private LibVLCSharp.WinForms.VideoView VideoView1;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem compareToolStripMenuItem;
     }
 }
