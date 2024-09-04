@@ -28,9 +28,8 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             this.Playlists = playlists;
         }
 
-        private static void ParseIdentify(List<MkvMergeID> result, string filePath, int index, int length, uint offset, uint total, IProgress<SimpleProgress>? progress) {
-            string fileName = Path.GetFileName(filePath);
-            MkvMergeID? identification = MkvToolNixInterface.Identify(filePath);
+        private static void ParseIdentify(string root, string directory, string fileName, List<MkvMergeID> result, int index, int length, uint offset, uint total, IProgress<SimpleProgress>? progress) {
+            MkvMergeID? identification = MkvToolNixInterface.Identify(root, directory, fileName);
             if (identification == null)
             {
                 // TODO move to logger??
@@ -130,20 +129,24 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         public static MkvToolNixDisc? Open(string path, IProgress<SimpleProgress>? progress = null) {
             List<MkvMergeID> streams = new();
             List<MkvMergeID> playlists = new();
-            string[] streamFilePaths = Directory.GetFiles(Path.Combine(path, "BDMV", "STREAM"));
-            string[] playlistFilePaths = Directory.GetFiles(Path.Combine(path, "BDMV", "PLAYLIST"));
+            string streamDir = Path.Combine("BDMV", "STREAM");
+            string playlistDir = Path.Combine("BDMV", "PLAYLIST");
+            string[] streamFilePaths = Directory.GetFiles(Path.Combine(path, streamDir));
+            string[] playlistFilePaths = Directory.GetFiles(Path.Combine(path, playlistDir));
             uint total = (uint)streamFilePaths.Length + (uint)playlistFilePaths.Length;
             uint offset = 0;
 
             for(int i = 0; i < streamFilePaths.Length; i++)
             {
-                ParseIdentify(streams, streamFilePaths[i], i, streamFilePaths.Length, offset, total, progress);
+                string fileName = Path.GetFileName(streamFilePaths[i]);
+                ParseIdentify(path, streamDir, fileName, streams, i, streamFilePaths.Length, offset, total, progress);
             }
             offset += (uint)streamFilePaths.Length;
             // TODO add optional "info text" to SimpleProgress that allows us to show the current filename in TaskProgress form
             for(int i = 0; i < playlistFilePaths.Length; i++)
             {
-                ParseIdentify(playlists, playlistFilePaths[i], i, playlistFilePaths.Length, offset, total, progress);
+                string fileName = Path.GetFileName(playlistFilePaths[i]);
+                ParseIdentify(path, playlistDir, fileName, playlists, i, playlistFilePaths.Length, offset, total, progress);
             }
             offset += (uint)playlistFilePaths.Length;
 

@@ -108,7 +108,7 @@ namespace MakeMKV_Title_Decoder {
                 var player = new MediaPlayer(media);
                 Viewer.MediaPlayer = player;
                 player.Volume = this.VolumeTrackBar.Value;
-                if (IsSyncMaster)
+                if ((this.SyncPlayer == null) || IsSyncMaster)
                 {
                     timer1.Start();
                 }

@@ -72,9 +72,9 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
             return null; //ParseCommand<MkvInfo>("mkvinfo.exe", filePath);
         }
 
-        public static MkvMergeID? Identify(string filePath) {
-            MkvMergeID data = new MkvMergeID(filePath);
-            bool result = ParseCommand<MkvMergeID>(data, "mkvmerge.exe", "--identify", "--identification-format", "json", filePath);
+        public static MkvMergeID? Identify(string root, string directory, string fileName) {
+            MkvMergeID data = new MkvMergeID(root, directory, fileName);
+            bool result = ParseCommand<MkvMergeID>(data, "mkvmerge.exe", "--identify", "--identification-format", "json", Path.Combine(root, directory, fileName));
             if (result)
             {
                 return data;

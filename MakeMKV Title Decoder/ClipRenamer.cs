@@ -58,8 +58,9 @@ namespace MakeMKV_Title_Decoder {
                 this.VideoPreview.LoadVideo(null);
             } else
             {
-                this.VideoPreview.LoadVideo(Path.Combine(clip.FileDirectory, clip.FileName));
+                this.VideoPreview.LoadVideo(clip.GetFullPath(this.Disc));
             }
+            //this.VideoView1.MediaPlayer.AudioTrackCount;
         }
 
         private void RefreshClipListItem(ListViewItem row, MkvMergeID data) {

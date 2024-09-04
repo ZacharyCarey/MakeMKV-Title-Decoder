@@ -70,12 +70,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void SelectClip(VideoPlayer player, MkvMergeID? clip) {
-            string? path = null;
-            if (clip != null)
-            {
-                path = Path.Combine(clip.FileDirectory, clip.FileName);
-            }
-            player.LoadVideo(path);
+            player.LoadVideo(clip?.GetFullPath(this.Disc));
         }
 
         private void RefreshSelectedItem(ListView list, VideoPlayer player) {

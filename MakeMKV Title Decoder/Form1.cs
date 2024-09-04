@@ -429,7 +429,7 @@ namespace MakeMKV_Title_Decoder
                     //BlurayBackup? backup = BlurayBackup.FromBackupFolder(openFileDialog.SelectedPath);
                     //var viewer = new TaskProgressViewer<Task, SimpleProgress>(x => BD_DISC.LoadBackupFolder(openFileDialog.SelectedPath, x));
                     //viewer.ShowDialog();
-                    var data = MkvToolNixInterface.Identify(Path.Combine(openFileDialog.SelectedPath, "BDMV", "STREAM", "00339.m2ts"));
+                    //var data = MkvToolNixInterface.Identify(Path.Combine(openFileDialog.SelectedPath, "BDMV", "STREAM", "00339.m2ts"));
 
                 }
             }
@@ -476,6 +476,7 @@ namespace MakeMKV_Title_Decoder
                     try
                     {
                         this.disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+                        this.renames = new();
                     } catch (Exception ex)
                     {
                         MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);

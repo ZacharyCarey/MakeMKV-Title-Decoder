@@ -44,16 +44,29 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         public List<string> Errors = new();
         public List<string> Warnings = new();
 
-        public MkvMergeID(string FilePath) {
+        public MkvMergeID(string root, string directory, string fileName) {
+            this.FileDirectory = directory;
+            this.FileName = fileName;
             try
             {
-                this.FileDirectory = Path.GetDirectoryName(FilePath) ?? "N/A";
-                this.FileSize = new DataSize(new FileInfo(FilePath).Length, Unit.None);
+                string path = Path.Combine(root, directory, fileName);
+                this.FileSize = new DataSize(new FileInfo(path).Length, Unit.None);
             } catch (Exception)
             {
-                this.FileDirectory = "N/A";
                 this.FileSize = new();
             }
+        }
+
+        public string GetFullPath(MkvToolNixDisc disc) {
+            try
+            {
+                return Path.Combine(disc.RootPath, this.FileDirectory, this.FileName);
+            } catch(Exception)
+            {
+            }
+
+            // Full path didnt work, just return the file name as a backup
+            return this.FileName;
         }
 
         public bool Parse(IEnumerable<string> std) {
@@ -96,14 +109,14 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             this.Chapters.LoadFromJson(obj["chapters"]);
             this.Container = MkvToolNixUtils.ParseOptionalObject<MkvContainer>(obj["container"]);
             this.Errors.LoadFromJson(obj["errors"]);
-            this.FileName = MkvToolNixUtils.ParseOptional<JsonString>(obj["file_name"]) ?? (string?)null;
+            /*this.FileName = MkvToolNixUtils.ParseOptional<JsonString>(obj["file_name"]) ?? (string?)null;
             if (FileName != null)
             {
                 try
                 {
                     this.FileName = Path.GetFileName(this.FileName);
                 } catch (Exception) { }
-            }
+            }*/
 
             this.GlobalTags.LoadFromJson(obj["global_tags"]);
             this.IdentificationFormatVersion = MkvToolNixUtils.ParseOptional<JsonInteger>(obj["identification_format_version"]);
