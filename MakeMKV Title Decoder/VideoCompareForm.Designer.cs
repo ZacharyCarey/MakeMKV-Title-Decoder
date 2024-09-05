@@ -77,8 +77,8 @@
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(splitContainer3);
-            splitContainer1.Size = new Size(1072, 473);
-            splitContainer1.SplitterDistance = 543;
+            splitContainer1.Size = new Size(1647, 529);
+            splitContainer1.SplitterDistance = 834;
             splitContainer1.TabIndex = 0;
             // 
             // splitContainer2
@@ -95,8 +95,8 @@
             // 
             splitContainer2.Panel2.Controls.Add(VideoViewLeft);
             splitContainer2.Panel2.Controls.Add(VideoPlayerLeft);
-            splitContainer2.Size = new Size(543, 473);
-            splitContainer2.SplitterDistance = 181;
+            splitContainer2.Size = new Size(834, 529);
+            splitContainer2.SplitterDistance = 278;
             splitContainer2.TabIndex = 0;
             // 
             // ClipsListLeft
@@ -109,7 +109,7 @@
             ClipsListLeft.Location = new Point(0, 0);
             ClipsListLeft.MultiSelect = false;
             ClipsListLeft.Name = "ClipsListLeft";
-            ClipsListLeft.Size = new Size(181, 473);
+            ClipsListLeft.Size = new Size(278, 529);
             ClipsListLeft.SmallImageList = ImageList1;
             ClipsListLeft.TabIndex = 4;
             ClipsListLeft.UseCompatibleStateImageBehavior = false;
@@ -146,7 +146,7 @@
             VideoViewLeft.Location = new Point(0, 3);
             VideoViewLeft.MediaPlayer = null;
             VideoViewLeft.Name = "VideoViewLeft";
-            VideoViewLeft.Size = new Size(355, 380);
+            VideoViewLeft.Size = new Size(549, 436);
             VideoViewLeft.TabIndex = 1;
             VideoViewLeft.Text = "videoView1";
             // 
@@ -155,7 +155,7 @@
             VideoPlayerLeft.Dock = DockStyle.Fill;
             VideoPlayerLeft.Location = new Point(0, 0);
             VideoPlayerLeft.Name = "VideoPlayerLeft";
-            VideoPlayerLeft.Size = new Size(358, 473);
+            VideoPlayerLeft.Size = new Size(552, 529);
             VideoPlayerLeft.Sync = VideoPlayerRight;
             VideoPlayerLeft.TabIndex = 0;
             VideoPlayerLeft.VLC = null;
@@ -166,7 +166,7 @@
             VideoPlayerRight.Dock = DockStyle.Fill;
             VideoPlayerRight.Location = new Point(0, 0);
             VideoPlayerRight.Name = "VideoPlayerRight";
-            VideoPlayerRight.Size = new Size(348, 473);
+            VideoPlayerRight.Size = new Size(536, 529);
             VideoPlayerRight.Sync = VideoPlayerLeft;
             VideoPlayerRight.TabIndex = 1;
             VideoPlayerRight.VLC = null;
@@ -186,8 +186,8 @@
             // splitContainer3.Panel2
             // 
             splitContainer3.Panel2.Controls.Add(ClipsListRight);
-            splitContainer3.Size = new Size(525, 473);
-            splitContainer3.SplitterDistance = 348;
+            splitContainer3.Size = new Size(809, 529);
+            splitContainer3.SplitterDistance = 536;
             splitContainer3.TabIndex = 0;
             // 
             // VideoViewRight
@@ -197,7 +197,7 @@
             VideoViewRight.Location = new Point(3, 3);
             VideoViewRight.MediaPlayer = null;
             VideoViewRight.Name = "VideoViewRight";
-            VideoViewRight.Size = new Size(342, 380);
+            VideoViewRight.Size = new Size(530, 436);
             VideoViewRight.TabIndex = 2;
             VideoViewRight.Text = "videoView2";
             // 
@@ -211,7 +211,7 @@
             ClipsListRight.Location = new Point(0, 0);
             ClipsListRight.MultiSelect = false;
             ClipsListRight.Name = "ClipsListRight";
-            ClipsListRight.Size = new Size(173, 473);
+            ClipsListRight.Size = new Size(269, 529);
             ClipsListRight.SmallImageList = ImageList1;
             ClipsListRight.TabIndex = 4;
             ClipsListRight.UseCompatibleStateImageBehavior = false;
@@ -237,7 +237,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1072, 473);
+            ClientSize = new Size(1647, 529);
             Controls.Add(splitContainer1);
             Name = "VideoCompareForm";
             Text = "VideoCompareForm";

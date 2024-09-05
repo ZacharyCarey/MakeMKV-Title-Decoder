@@ -61,6 +61,23 @@ namespace MakeMKV_Title_Decoder {
                 this.VideoPreview.LoadVideo(clip.GetFullPath(this.Disc));
             }
             //this.VideoView1.MediaPlayer.AudioTrackCount;
+            //this.VideoView1.MediaPlayer.VideoTrackDescription[0].
+
+            this.VideoTrackList.Clear();
+            this.AudioTrackList.Clear();
+            if (clip != null)
+            {
+                foreach (var track in clip.Tracks)
+                {
+                    if (track.Type == MkvTrackType.Video)
+                    {
+                        this.VideoTrackList.Add(track, this.Renames);
+                    } else if (track.Type == MkvTrackType.Audio)
+                    {
+                        this.AudioTrackList.Add(track, this.Renames);
+                    }
+                }
+            }
         }
 
         private void RefreshClipListItem(ListViewItem row, MkvMergeID data) {
@@ -111,6 +128,16 @@ namespace MakeMKV_Title_Decoder {
             // TODO make it smart enough to handle changes to Renames while open
             // This can likely be done with a "onChange" event in renames
             new VideoCompareForm(this.Renames, this.Disc).ShowDialog();
+        }
+
+        private void AudioTrackList_OnSelectionChanged(MkvTrack? track) {
+            var player = this.VideoView1.MediaPlayer;
+            if (player != null && track != null)
+            {
+                player.SetAudioTrack(player.AudioTrackDescription[track.ID].Id);
+                //int count = player.AudioTrackCount;
+                //var description = player.AudioTrackDescription;
+            }
         }
     }
 }
