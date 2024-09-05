@@ -144,10 +144,10 @@ namespace MakeMKV_Title_Decoder {
             switch (type)
             {
                 case MkvTrackType.Video:
-                    this.VideoPreview.VideoTrack = track?.Index ?? -1;
+                    this.VideoPreview.VideoTrack = track?.Properties?.Number ?? -1;
                     break;
                 case MkvTrackType.Audio:
-                    this.VideoPreview.AudioTrack = track?.Index ?? -1;
+                    this.VideoPreview.AudioTrack = track?.Properties?.Number ?? -1;
                     break;
             }
         }

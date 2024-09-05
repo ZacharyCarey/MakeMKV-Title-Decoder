@@ -242,7 +242,7 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
-        private void UpdateTrack(MediaPlayer player, ref int defaultTrack, long trackIndex, int currentTrack, TrackDescription[] tracks, Func<int, bool> setTrackFunc) {
+        private void UpdateTrack(MediaPlayer player, ref int defaultTrack, long trackId, int currentTrack, TrackDescription[] tracks, Func<int, bool> setTrackFunc) {
             if (defaultTrack < 0)
             {
                 if (currentTrack >= 0)
@@ -256,10 +256,18 @@ namespace MakeMKV_Title_Decoder {
             }
             
             int vlcID = defaultTrack;
-            if (trackIndex >= 0 && trackIndex < tracks.Length)
+            /*if (trackId >= 0 && trackId < tracks.Length - 1)
             {
-                trackIndex++; // In VLC, index 0 is where 'disabled' is stored
-                vlcID = tracks[trackIndex].Id;
+                trackId++; // In VLC, index 0 is where 'disabled' is stored
+                vlcID = tracks[trackId].Id;
+            } else if (trackId >= tracks.Length - 1 && tracks.Length >= 1)
+            {
+                // Disable the track to show there's an error
+                vlcID = tracks[0].Id;
+            }*/
+            if (trackId >= 0)
+            {
+                vlcID = (int)trackId;
             }
 
             if (vlcID != currentTrack)
