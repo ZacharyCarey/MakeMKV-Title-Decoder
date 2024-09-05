@@ -11,56 +11,43 @@ namespace MakeMKV_Title_Decoder.Data {
 
     public class RenameData2 : IJsonSerializable {
         public const string Version = "1.0";
-        public SerializableDictionary<UserGivenName> UserGivenNames = new();
+        public SerializableDictionary<ClipRename> ClipRenames = new();
 
         public RenameData2() {
 
         }
 
-        private UserGivenName? TryGetUserNames(MkvMergeID file) {
+        public ClipRename? GetClipRename(MkvMergeID file, bool createNewIfNeeded = false) {
             string key = Path.Combine(file.FileDirectory, file.FileName);
-            if (this.UserGivenNames.ContainsKey(key))
+            if (this.ClipRenames.ContainsKey(key))
             {
-                return this.UserGivenNames[key];
+                return this.ClipRenames[key];
             } else
             {
-                return null;
-            }
-        }
-
-        public void SetUserGivenName(MkvMergeID file, string? NewName) {
-            string key = Path.Combine(file.FileDirectory, file.FileName);
-            UserGivenName? obj = TryGetUserNames(file);
-            if (NewName != null)
-            {
-                if (obj == null)
+                if (createNewIfNeeded)
                 {
-                    obj = new UserGivenName();
-                    this.UserGivenNames[key] = obj;
-                }
-                obj.Name = NewName;
-            } else
-            {
-                if (obj != null)
+                    ClipRename result = new();
+                    this.ClipRenames[key] = result;
+                    return result;
+                } else
                 {
-                    obj.Name = null;
-                    if (obj.Reduce())
-                    {
-                        this.UserGivenNames.Remove(key);
-                    }
+                    return null;
                 }
             }
-        }
-
-        public string? GetUserGivenName(MkvMergeID file) {
-            return TryGetUserNames(file)?.Name;
         }
 
         public JsonData SaveToJson() {
             JsonObject obj = new();
 
             obj["version"] = new JsonString(Version);
-            obj["User Names"] = UserGivenNames.SaveToJson();
+
+            JsonObject clips = new();
+            foreach (var pair in this.ClipRenames)
+            {
+                var json = pair.Value.SaveToJson();
+                if (json != null) clips[pair.Key] = json;
+            }
+            if (clips.Items.Count() > 0) obj["User Names"] = clips;
 
             return obj;
         }
@@ -74,21 +61,43 @@ namespace MakeMKV_Title_Decoder.Data {
                 throw new Exception("Unable to read this version of the file. Please upgrade the file to a newer version.");
             }
 
-            this.UserGivenNames.LoadFromJson(obj["User Names"]);
+            this.ClipRenames.LoadFromJson(obj["User Names"] ?? new JsonObject());
         }
     }
 
-    public class UserGivenName : IJsonSerializable {
-        public string? Name = null;
+    public class ClipRename : IJsonSerializable {
+        public string? Name { get; set; } = null;
+        public SerializableDictionary<TrackRename> TrackRenames = new();
 
-        public bool Reduce() {
-            return this.Name == null;
+        public void SetName(string? NewName) {
+            this.Name = NewName;
         }
+
+        public TrackRename? GetTrackRename(MkvTrack track, bool createNewIfNeeded = false) {
+            string key = track.ID.ToString();
+            if (this.TrackRenames.ContainsKey(key))
+            {
+                return this.TrackRenames[key];
+            } else
+            {
+                if (createNewIfNeeded)
+                {
+                    TrackRename result = new();
+                    this.TrackRenames[key] = result;
+                    return result;
+                } else
+                {
+                    return null;
+                }
+            }
+        }
+
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Name = (JsonString)obj["Name"];
+            this.Name = (JsonString?)obj["Name"];
+            this.TrackRenames.LoadFromJson(obj["Tracks"] ?? new JsonObject());
         }
 
         public JsonData SaveToJson() {
@@ -96,7 +105,65 @@ namespace MakeMKV_Title_Decoder.Data {
 
             if (this.Name != null) obj["Name"] = new JsonString(this.Name);
 
-            return obj;
+            JsonObject tracks = new();
+            foreach(var pair in this.TrackRenames)
+            {
+                var json = pair.Value.SaveToJson();
+                if (json != null) tracks[pair.Key] = json;
+            }
+            if (tracks.Items.Count() > 0) obj["Tracks"] = tracks;
+
+            if (obj.Items.Count() == 0)
+            {
+                return null;
+            } else
+            {
+                return obj;
+            }
         }
+    }
+
+    public class TrackRename : IJsonSerializable {
+
+        public string? Name = null;
+        public bool? CommentaryFlag = null;
+        public bool? DefaultFlag = null;
+
+        public void SetName(string? NewName) {
+            this.Name = NewName;
+        }
+
+        public void SetCommentaryFlag(bool? val) {
+            this.CommentaryFlag = val;
+        }
+
+        public void SetDefaultFlag(bool? val) {
+            this.DefaultFlag = val;
+        }
+
+        public void LoadFromJson(JsonData Data) {
+            JsonObject obj = (JsonObject)Data;
+
+            this.Name = (JsonString?)obj["Name"];
+            this.CommentaryFlag = (JsonBool?)obj["Commentary Flag"];
+            this.DefaultFlag = (JsonBool?)obj["Default Track Flag"];
+        }
+
+        public JsonData SaveToJson() {
+            JsonObject obj = new();
+
+            if (this.Name != null) obj["Name"] = new JsonString(this.Name);
+            if (this.CommentaryFlag != null) obj["Commentary Flag"] = new JsonBool(this.CommentaryFlag.Value);
+            if (this.DefaultFlag != null) obj["Default Track Flag"] = new JsonBool(this.DefaultFlag.Value);
+
+            if (obj.Items.Count() == 0)
+            {
+                return null;
+            } else
+            {
+                return obj;
+            }
+        }
+
     }
 }

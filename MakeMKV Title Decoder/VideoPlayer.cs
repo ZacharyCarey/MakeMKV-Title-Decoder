@@ -1,4 +1,5 @@
 ﻿using LibVLCSharp.Shared;
+using LibVLCSharp.Shared.Structures;
 using LibVLCSharp.WinForms;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,12 @@ namespace MakeMKV_Title_Decoder {
         const string TimeSpanFormat = "hh':'mm':'ss";
 
         public string? LoadedVideoPath { get; private set; }
+
+        private int DefaultVideoTrack = -1;
+        public long VideoTrack { get; set; } = -1;
+
+        private int DefaultAudioTrack = -1;
+        public long AudioTrack { get; set; } = -1;
 
         private LibVLC? vlc = null;
         public LibVLC? VLC {
@@ -96,6 +103,10 @@ namespace MakeMKV_Title_Decoder {
             this.VideoScrubTrackBar.Enabled = en;
             this.PlayBtn.Enabled = en;
             this.PauseBtn.Enabled = en;
+            this.DefaultAudioTrack = -1;
+            this.DefaultVideoTrack = -1;
+            this.AudioTrack = -1;
+            this.VideoTrack = -1;
 
             this.VideoScrubTrackBar.Value = 0;
             CurrentTimeLabel.Text = new TimeSpan().ToString(TimeSpanFormat);
@@ -198,6 +209,12 @@ namespace MakeMKV_Title_Decoder {
                     }
                 });
             }
+
+            UpdateTracks();
+            if (IsSyncMaster)
+            {
+                this.SyncPlayer.UpdateTracks();
+            }
         }
 
         private void ScrollToTimestamp(double milliseconds) {
@@ -222,6 +239,41 @@ namespace MakeMKV_Title_Decoder {
                 }
                 this.CurrentTimeLabel.Text = TimeSpan.FromMilliseconds(pos * player.Length).ToString(TimeSpanFormat);
                 this.TotalTimeLabel.Text = TimeSpan.FromMilliseconds(player.Length).ToString(TimeSpanFormat);
+            }
+        }
+
+        private void UpdateTrack(MediaPlayer player, ref int defaultTrack, long trackIndex, int currentTrack, TrackDescription[] tracks, Func<int, bool> setTrackFunc) {
+            if (defaultTrack < 0)
+            {
+                if (currentTrack >= 0)
+                {
+                    defaultTrack = currentTrack;
+                } else
+                {
+                    // Dont change the current track if the default hasn't been found yet
+                    return;
+                }
+            }
+            
+            int vlcID = defaultTrack;
+            if (trackIndex >= 0 && trackIndex < tracks.Length)
+            {
+                trackIndex++; // In VLC, index 0 is where 'disabled' is stored
+                vlcID = tracks[trackIndex].Id;
+            }
+
+            if (vlcID != currentTrack)
+            {
+                setTrackFunc(vlcID);
+            }
+        }
+
+        private void UpdateTracks() {
+            var player = Viewer?.MediaPlayer;
+            if (player != null)
+            {
+                UpdateTrack(player, ref this.DefaultAudioTrack, this.AudioTrack, player.AudioTrack, player.AudioTrackDescription, player.SetAudioTrack);
+                UpdateTrack(player, ref this.DefaultVideoTrack, this.VideoTrack, player.VideoTrack, player.VideoTrackDescription, player.SetVideoTrack);
             }
         }
     }

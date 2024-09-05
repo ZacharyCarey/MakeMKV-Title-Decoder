@@ -69,7 +69,7 @@ namespace MakeMKV_Title_Decoder {
             this.SelectedIndexChanged += Event_SelectedIndexChanged;
         }
 
-        public void Add(MkvTrack track, RenameData2 renames) {
+        public void Add(MkvMergeID clip, MkvTrack track, RenameData2 renames) {
             PropertyItem source = new();
             source.Tag = track;
             this.Items.Add(source);
@@ -82,20 +82,37 @@ namespace MakeMKV_Title_Decoder {
                 source.SubItems.Add(item);
             }
 
-            Update(track, renames);
+            Update(clip, track, renames);
         }
 
-        public void Update(MkvTrack track, RenameData2 renames) {
+        public void Update(MkvMergeID clip, MkvTrack track, RenameData2 renames) {
             PropertyItem item = QuickLookup[track];
+            var data = renames.GetClipRename(clip)?.GetTrackRename(track);
+
+            List<string> trackProperties = new();
+            switch(track.Type)
+            {
+                case MkvTrackType.Video:
+                    var size = track.Properties?.PixelDimensions;
+                    if (size != null) trackProperties.Add($"{size} pixels");
+                    break;
+                case MkvTrackType.Audio:
+                    var freq = track.Properties?.AudioSamplingFrequency;
+                    if (freq != null) trackProperties.Add($"{freq} Hz");
+
+                    var channels = track.Properties?.AudioChannels;
+                    if (channels != null) trackProperties.Add($"{channels} channels");
+                    break;
+            }
 
             item.Text = track.Codec;
-            item.SubItems[1].Text = ""; // name
-            item.SubItems[2].Text = track.Properties?.PixelDimensions ?? ""; // properties
+            item.SubItems[1].Text = data?.Name; // name
+            item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
             item.SubItems[3].Text = track.Properties?.Language ?? ""; // lang
             item.SubItems[4].Tag = GetBoolIcon(track.Properties?.EnabledTrack ?? true); // enabled
-            item.SubItems[5].Tag = GetBoolIcon(track.Properties?.DefaultTrack); // default
-            item.SubItems[6].Tag = GetBoolIcon(track.Properties?.ForcedTrack); // forced
-            item.SubItems[7].Tag = GetBoolIcon(track.Properties?.FlagCommentary); // commentary
+            item.SubItems[5].Tag = GetBoolIcon((data?.DefaultFlag) ?? (track.Properties?.DefaultTrack ?? true)); // default
+            item.SubItems[6].Tag = GetBoolIcon(track.Properties?.ForcedTrack ?? false); // forced
+            item.SubItems[7].Tag = GetBoolIcon((data?.CommentaryFlag) ?? (track.Properties?.FlagCommentary ?? false)); // commentary
         }
 
         public new void Clear() {

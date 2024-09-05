@@ -40,6 +40,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         public List<MkvTrackTag> TrackTags = new();
 
         public List<MkvTrack> Tracks = new();
+        private Dictionary<MkvTrackType, long> trackIndexCount = new();
 
         public List<string> Errors = new();
         public List<string> Warnings = new();
@@ -123,6 +124,18 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             this.TrackTags.LoadFromJson(obj["track_tags"]);
             this.Tracks.LoadFromJson(obj["tracks"]);
             this.Warnings.LoadFromJson(obj["warnings"]);
+
+            foreach(var track in this.Tracks)
+            {
+                if (track != null)
+                {
+                    if (!this.trackIndexCount.TryGetValue(track.Type, out track.Index))
+                    {
+                        track.Index = 0;
+                    }
+                    this.trackIndexCount[track.Type] = (track.Index + 1);
+                }
+            }
         }
 
         public JsonData SaveToJson() {
@@ -509,7 +522,9 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
         /// <summary>
         /// Required.
         /// </summary>
-        public long ID = 0;
+        public long ID = -1;
+
+        public long Index = -1;
 
         /// <summary>
         /// Required.

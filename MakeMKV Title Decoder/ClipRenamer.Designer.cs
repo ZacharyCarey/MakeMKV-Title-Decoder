@@ -35,7 +35,6 @@
             columnHeader2 = new ColumnHeader();
             ImageList1 = new ImageList(components);
             splitContainer1 = new SplitContainer();
-            splitContainer3 = new SplitContainer();
             PropertiesPanel = new Panel();
             ApplyBtn = new Button();
             NameTextBox = new TextBox();
@@ -45,27 +44,25 @@
             VideoPreview = new VideoPlayer();
             splitContainer4 = new SplitContainer();
             VideoTrackList = new TrackList();
-            panel1 = new Panel();
-            button1 = new Button();
-            checkBox1 = new CheckBox();
-            textBox1 = new TextBox();
+            VideoTrackPanel = new Panel();
+            VideoTrackApply = new Button();
+            VideoTrackCommentary = new CheckBox();
+            VideoTrackName = new TextBox();
             label2 = new Label();
-            panel2 = new Panel();
-            button2 = new Button();
-            checkBox2 = new CheckBox();
-            textBox2 = new TextBox();
-            label3 = new Label();
             AudioTrackList = new TrackList();
+            AudioTrackPanel = new Panel();
+            AudioTrackApply = new Button();
+            AudioTrackCommentary = new CheckBox();
+            AudioTrackName = new TextBox();
+            label3 = new Label();
             menuStrip1 = new MenuStrip();
             compareToolStripMenuItem = new ToolStripMenuItem();
+            VideoTrackDefault = new CheckBox();
+            AudioTrackDefault = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)splitContainer3).BeginInit();
-            splitContainer3.Panel1.SuspendLayout();
-            splitContainer3.Panel2.SuspendLayout();
-            splitContainer3.SuspendLayout();
             PropertiesPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer2).BeginInit();
             splitContainer2.Panel1.SuspendLayout();
@@ -76,8 +73,8 @@
             splitContainer4.Panel1.SuspendLayout();
             splitContainer4.Panel2.SuspendLayout();
             splitContainer4.SuspendLayout();
-            panel1.SuspendLayout();
-            panel2.SuspendLayout();
+            VideoTrackPanel.SuspendLayout();
+            AudioTrackPanel.SuspendLayout();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -91,7 +88,7 @@
             ClipsList.Location = new Point(0, 0);
             ClipsList.MultiSelect = false;
             ClipsList.Name = "ClipsList";
-            ClipsList.Size = new Size(334, 735);
+            ClipsList.Size = new Size(370, 977);
             ClipsList.SmallImageList = ImageList1;
             ClipsList.TabIndex = 2;
             ClipsList.UseCompatibleStateImageBehavior = false;
@@ -130,50 +127,30 @@
             // 
             // splitContainer1.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(splitContainer3);
+            splitContainer1.Panel1.Controls.Add(ClipsList);
+            splitContainer1.Panel1.Controls.Add(PropertiesPanel);
             // 
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(splitContainer2);
-            splitContainer1.Size = new Size(1715, 1047);
-            splitContainer1.SplitterDistance = 338;
+            splitContainer1.Size = new Size(1901, 1047);
+            splitContainer1.SplitterDistance = 374;
             splitContainer1.TabIndex = 3;
-            // 
-            // splitContainer3
-            // 
-            splitContainer3.BorderStyle = BorderStyle.Fixed3D;
-            splitContainer3.Dock = DockStyle.Fill;
-            splitContainer3.Location = new Point(0, 0);
-            splitContainer3.Name = "splitContainer3";
-            splitContainer3.Orientation = Orientation.Horizontal;
-            // 
-            // splitContainer3.Panel1
-            // 
-            splitContainer3.Panel1.Controls.Add(ClipsList);
-            // 
-            // splitContainer3.Panel2
-            // 
-            splitContainer3.Panel2.Controls.Add(PropertiesPanel);
-            splitContainer3.Size = new Size(338, 1047);
-            splitContainer3.SplitterDistance = 739;
-            splitContainer3.TabIndex = 0;
             // 
             // PropertiesPanel
             // 
-            PropertiesPanel.AutoScroll = true;
-            PropertiesPanel.BorderStyle = BorderStyle.Fixed3D;
             PropertiesPanel.Controls.Add(ApplyBtn);
             PropertiesPanel.Controls.Add(NameTextBox);
             PropertiesPanel.Controls.Add(label1);
-            PropertiesPanel.Dock = DockStyle.Fill;
-            PropertiesPanel.Location = new Point(0, 0);
+            PropertiesPanel.Dock = DockStyle.Bottom;
+            PropertiesPanel.Location = new Point(0, 977);
             PropertiesPanel.Name = "PropertiesPanel";
-            PropertiesPanel.Size = new Size(334, 300);
+            PropertiesPanel.Size = new Size(370, 66);
             PropertiesPanel.TabIndex = 0;
             // 
             // ApplyBtn
             // 
-            ApplyBtn.Location = new Point(3, 72);
+            ApplyBtn.Location = new Point(3, 32);
             ApplyBtn.Name = "ApplyBtn";
             ApplyBtn.Size = new Size(75, 23);
             ApplyBtn.TabIndex = 2;
@@ -186,7 +163,7 @@
             NameTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             NameTextBox.Location = new Point(51, 3);
             NameTextBox.Name = "NameTextBox";
-            NameTextBox.Size = new Size(278, 23);
+            NameTextBox.Size = new Size(318, 23);
             NameTextBox.TabIndex = 1;
             // 
             // label1
@@ -213,29 +190,31 @@
             // splitContainer2.Panel2
             // 
             splitContainer2.Panel2.Controls.Add(splitContainer4);
-            splitContainer2.Size = new Size(1373, 1047);
-            splitContainer2.SplitterDistance = 842;
+            splitContainer2.Size = new Size(1523, 1047);
+            splitContainer2.SplitterDistance = 933;
             splitContainer2.TabIndex = 0;
             // 
             // VideoView1
             // 
-            VideoView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoView1.BackColor = Color.Black;
-            VideoView1.Location = new Point(0, 3);
+            VideoView1.Dock = DockStyle.Fill;
+            VideoView1.Location = new Point(0, 0);
             VideoView1.MediaPlayer = null;
             VideoView1.Name = "VideoView1";
-            VideoView1.Size = new Size(835, 947);
+            VideoView1.Size = new Size(929, 947);
             VideoView1.TabIndex = 1;
             VideoView1.Text = "videoView1";
             // 
             // VideoPreview
             // 
-            VideoPreview.Dock = DockStyle.Fill;
-            VideoPreview.Location = new Point(0, 0);
+            VideoPreview.AudioTrack = -1L;
+            VideoPreview.Dock = DockStyle.Bottom;
+            VideoPreview.Location = new Point(0, 947);
             VideoPreview.Name = "VideoPreview";
-            VideoPreview.Size = new Size(838, 1043);
+            VideoPreview.Size = new Size(929, 96);
             VideoPreview.Sync = null;
             VideoPreview.TabIndex = 0;
+            VideoPreview.VideoTrack = -1L;
             VideoPreview.VLC = null;
             VideoPreview.VlcViewer = null;
             // 
@@ -250,71 +229,74 @@
             // splitContainer4.Panel1
             // 
             splitContainer4.Panel1.Controls.Add(VideoTrackList);
-            splitContainer4.Panel1.Controls.Add(panel1);
+            splitContainer4.Panel1.Controls.Add(VideoTrackPanel);
             // 
             // splitContainer4.Panel2
             // 
-            splitContainer4.Panel2.Controls.Add(panel2);
             splitContainer4.Panel2.Controls.Add(AudioTrackList);
-            splitContainer4.Size = new Size(527, 1047);
-            splitContainer4.SplitterDistance = 550;
+            splitContainer4.Panel2.Controls.Add(AudioTrackPanel);
+            splitContainer4.Size = new Size(586, 1047);
+            splitContainer4.SplitterDistance = 317;
             splitContainer4.TabIndex = 0;
             // 
             // VideoTrackList
             // 
-            VideoTrackList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             VideoTrackList.DeleteIconKey = "dialog-cancel.png";
+            VideoTrackList.Dock = DockStyle.Fill;
             VideoTrackList.FullRowSelect = true;
             VideoTrackList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             VideoTrackList.KeepIconKey = "dialog-ok-apply.png";
-            VideoTrackList.Location = new Point(3, 3);
+            VideoTrackList.Location = new Point(0, 0);
             VideoTrackList.MultiSelect = false;
             VideoTrackList.Name = "VideoTrackList";
             VideoTrackList.OwnerDraw = true;
-            VideoTrackList.Size = new Size(517, 450);
+            VideoTrackList.Size = new Size(582, 203);
             VideoTrackList.SmallImageList = ImageList1;
             VideoTrackList.TabIndex = 1;
             VideoTrackList.UseCompatibleStateImageBehavior = false;
             VideoTrackList.View = View.Details;
+            VideoTrackList.OnSelectionChanged += VideoTrackList_OnSelectionChanged;
             // 
-            // panel1
+            // VideoTrackPanel
             // 
-            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            panel1.Controls.Add(button1);
-            panel1.Controls.Add(checkBox1);
-            panel1.Controls.Add(textBox1);
-            panel1.Controls.Add(label2);
-            panel1.Location = new Point(3, 459);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(517, 84);
-            panel1.TabIndex = 0;
+            VideoTrackPanel.Controls.Add(VideoTrackDefault);
+            VideoTrackPanel.Controls.Add(VideoTrackApply);
+            VideoTrackPanel.Controls.Add(VideoTrackCommentary);
+            VideoTrackPanel.Controls.Add(VideoTrackName);
+            VideoTrackPanel.Controls.Add(label2);
+            VideoTrackPanel.Dock = DockStyle.Bottom;
+            VideoTrackPanel.Location = new Point(0, 203);
+            VideoTrackPanel.Name = "VideoTrackPanel";
+            VideoTrackPanel.Size = new Size(582, 110);
+            VideoTrackPanel.TabIndex = 0;
             // 
-            // button1
+            // VideoTrackApply
             // 
-            button1.Location = new Point(3, 57);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 5;
-            button1.Text = "Apply";
-            button1.UseVisualStyleBackColor = true;
+            VideoTrackApply.Location = new Point(3, 82);
+            VideoTrackApply.Name = "VideoTrackApply";
+            VideoTrackApply.Size = new Size(75, 23);
+            VideoTrackApply.TabIndex = 5;
+            VideoTrackApply.Text = "Apply";
+            VideoTrackApply.UseVisualStyleBackColor = true;
+            VideoTrackApply.Click += VideoTrackApply_Click;
             // 
-            // checkBox1
+            // VideoTrackCommentary
             // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(3, 32);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(96, 19);
-            checkBox1.TabIndex = 4;
-            checkBox1.Text = "Commentary";
-            checkBox1.UseVisualStyleBackColor = true;
+            VideoTrackCommentary.AutoSize = true;
+            VideoTrackCommentary.Location = new Point(3, 57);
+            VideoTrackCommentary.Name = "VideoTrackCommentary";
+            VideoTrackCommentary.Size = new Size(96, 19);
+            VideoTrackCommentary.TabIndex = 4;
+            VideoTrackCommentary.Text = "Commentary";
+            VideoTrackCommentary.UseVisualStyleBackColor = true;
             // 
-            // textBox1
+            // VideoTrackName
             // 
-            textBox1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            textBox1.Location = new Point(51, 3);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(463, 23);
-            textBox1.TabIndex = 3;
+            VideoTrackName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            VideoTrackName.Location = new Point(51, 3);
+            VideoTrackName.Name = "VideoTrackName";
+            VideoTrackName.Size = new Size(528, 23);
+            VideoTrackName.TabIndex = 3;
             // 
             // label2
             // 
@@ -325,44 +307,64 @@
             label2.TabIndex = 2;
             label2.Text = "Name:";
             // 
-            // panel2
+            // AudioTrackList
             // 
-            panel2.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            panel2.Controls.Add(button2);
-            panel2.Controls.Add(checkBox2);
-            panel2.Controls.Add(textBox2);
-            panel2.Controls.Add(label3);
-            panel2.Location = new Point(3, 402);
-            panel2.Name = "panel2";
-            panel2.Size = new Size(517, 84);
-            panel2.TabIndex = 3;
+            AudioTrackList.DeleteIconKey = "dialog-cancel.png";
+            AudioTrackList.Dock = DockStyle.Fill;
+            AudioTrackList.FullRowSelect = true;
+            AudioTrackList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            AudioTrackList.KeepIconKey = "dialog-ok-apply.png";
+            AudioTrackList.Location = new Point(0, 0);
+            AudioTrackList.MultiSelect = false;
+            AudioTrackList.Name = "AudioTrackList";
+            AudioTrackList.OwnerDraw = true;
+            AudioTrackList.Size = new Size(582, 611);
+            AudioTrackList.SmallImageList = ImageList1;
+            AudioTrackList.TabIndex = 2;
+            AudioTrackList.UseCompatibleStateImageBehavior = false;
+            AudioTrackList.View = View.Details;
+            AudioTrackList.OnSelectionChanged += AudioTrackList_OnSelectionChanged;
             // 
-            // button2
+            // AudioTrackPanel
             // 
-            button2.Location = new Point(3, 57);
-            button2.Name = "button2";
-            button2.Size = new Size(75, 23);
-            button2.TabIndex = 5;
-            button2.Text = "Apply";
-            button2.UseVisualStyleBackColor = true;
+            AudioTrackPanel.Controls.Add(AudioTrackDefault);
+            AudioTrackPanel.Controls.Add(AudioTrackApply);
+            AudioTrackPanel.Controls.Add(AudioTrackCommentary);
+            AudioTrackPanel.Controls.Add(AudioTrackName);
+            AudioTrackPanel.Controls.Add(label3);
+            AudioTrackPanel.Dock = DockStyle.Bottom;
+            AudioTrackPanel.Location = new Point(0, 611);
+            AudioTrackPanel.Name = "AudioTrackPanel";
+            AudioTrackPanel.Size = new Size(582, 111);
+            AudioTrackPanel.TabIndex = 3;
             // 
-            // checkBox2
+            // AudioTrackApply
             // 
-            checkBox2.AutoSize = true;
-            checkBox2.Location = new Point(3, 32);
-            checkBox2.Name = "checkBox2";
-            checkBox2.Size = new Size(96, 19);
-            checkBox2.TabIndex = 4;
-            checkBox2.Text = "Commentary";
-            checkBox2.UseVisualStyleBackColor = true;
+            AudioTrackApply.Location = new Point(3, 82);
+            AudioTrackApply.Name = "AudioTrackApply";
+            AudioTrackApply.Size = new Size(75, 23);
+            AudioTrackApply.TabIndex = 5;
+            AudioTrackApply.Text = "Apply";
+            AudioTrackApply.UseVisualStyleBackColor = true;
+            AudioTrackApply.Click += AudioTrackApply_Click;
             // 
-            // textBox2
+            // AudioTrackCommentary
             // 
-            textBox2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            textBox2.Location = new Point(51, 3);
-            textBox2.Name = "textBox2";
-            textBox2.Size = new Size(784, 23);
-            textBox2.TabIndex = 3;
+            AudioTrackCommentary.AutoSize = true;
+            AudioTrackCommentary.Location = new Point(3, 57);
+            AudioTrackCommentary.Name = "AudioTrackCommentary";
+            AudioTrackCommentary.Size = new Size(96, 19);
+            AudioTrackCommentary.TabIndex = 4;
+            AudioTrackCommentary.Text = "Commentary";
+            AudioTrackCommentary.UseVisualStyleBackColor = true;
+            // 
+            // AudioTrackName
+            // 
+            AudioTrackName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            AudioTrackName.Location = new Point(51, 3);
+            AudioTrackName.Name = "AudioTrackName";
+            AudioTrackName.Size = new Size(528, 23);
+            AudioTrackName.TabIndex = 3;
             // 
             // label3
             // 
@@ -373,30 +375,12 @@
             label3.TabIndex = 2;
             label3.Text = "Name:";
             // 
-            // AudioTrackList
-            // 
-            AudioTrackList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            AudioTrackList.DeleteIconKey = "dialog-cancel.png";
-            AudioTrackList.FullRowSelect = true;
-            AudioTrackList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            AudioTrackList.KeepIconKey = "dialog-ok-apply.png";
-            AudioTrackList.Location = new Point(2, 3);
-            AudioTrackList.MultiSelect = false;
-            AudioTrackList.Name = "AudioTrackList";
-            AudioTrackList.OwnerDraw = true;
-            AudioTrackList.Size = new Size(517, 396);
-            AudioTrackList.SmallImageList = ImageList1;
-            AudioTrackList.TabIndex = 2;
-            AudioTrackList.UseCompatibleStateImageBehavior = false;
-            AudioTrackList.View = View.Details;
-            AudioTrackList.OnSelectionChanged += AudioTrackList_OnSelectionChanged;
-            // 
             // menuStrip1
             // 
             menuStrip1.Items.AddRange(new ToolStripItem[] { compareToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1715, 24);
+            menuStrip1.Size = new Size(1901, 24);
             menuStrip1.TabIndex = 4;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -407,11 +391,31 @@
             compareToolStripMenuItem.Text = "Compare";
             compareToolStripMenuItem.Click += compareToolStripMenuItem_Click;
             // 
+            // VideoTrackDefault
+            // 
+            VideoTrackDefault.AutoSize = true;
+            VideoTrackDefault.Location = new Point(3, 32);
+            VideoTrackDefault.Name = "VideoTrackDefault";
+            VideoTrackDefault.Size = new Size(64, 19);
+            VideoTrackDefault.TabIndex = 6;
+            VideoTrackDefault.Text = "Default";
+            VideoTrackDefault.UseVisualStyleBackColor = true;
+            // 
+            // AudioTrackDefault
+            // 
+            AudioTrackDefault.AutoSize = true;
+            AudioTrackDefault.Location = new Point(3, 32);
+            AudioTrackDefault.Name = "AudioTrackDefault";
+            AudioTrackDefault.Size = new Size(64, 19);
+            AudioTrackDefault.TabIndex = 7;
+            AudioTrackDefault.Text = "Default";
+            AudioTrackDefault.UseVisualStyleBackColor = true;
+            // 
             // ClipRenamer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1715, 1071);
+            ClientSize = new Size(1901, 1071);
             Controls.Add(splitContainer1);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
@@ -423,10 +427,6 @@
             splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
-            splitContainer3.Panel1.ResumeLayout(false);
-            splitContainer3.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)splitContainer3).EndInit();
-            splitContainer3.ResumeLayout(false);
             PropertiesPanel.ResumeLayout(false);
             PropertiesPanel.PerformLayout();
             splitContainer2.Panel1.ResumeLayout(false);
@@ -438,10 +438,10 @@
             splitContainer4.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer4).EndInit();
             splitContainer4.ResumeLayout(false);
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
-            panel2.ResumeLayout(false);
-            panel2.PerformLayout();
+            VideoTrackPanel.ResumeLayout(false);
+            VideoTrackPanel.PerformLayout();
+            AudioTrackPanel.ResumeLayout(false);
+            AudioTrackPanel.PerformLayout();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);
@@ -464,19 +464,20 @@
         private LibVLCSharp.WinForms.VideoView VideoView1;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem compareToolStripMenuItem;
-        private SplitContainer splitContainer3;
         private SplitContainer splitContainer4;
-        private Panel panel1;
-        private TextBox textBox1;
+        private Panel VideoTrackPanel;
+        private TextBox VideoTrackName;
         private Label label2;
-        private CheckBox checkBox1;
-        private Button button1;
+        private CheckBox VideoTrackCommentary;
+        private Button VideoTrackApply;
         private TrackList VideoTrackList;
-        private Panel panel2;
-        private Button button2;
-        private CheckBox checkBox2;
-        private TextBox textBox2;
+        private Panel AudioTrackPanel;
+        private Button AudioTrackApply;
+        private CheckBox AudioTrackCommentary;
+        private TextBox AudioTrackName;
         private Label label3;
         private TrackList AudioTrackList;
+        private CheckBox VideoTrackDefault;
+        private CheckBox AudioTrackDefault;
     }
 }

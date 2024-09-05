@@ -63,7 +63,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void RefreshClipListItem(ListViewItem row, MkvMergeID data) {
-            string name = (this.Renames.GetUserGivenName(data) ?? "");
+            string name = (this.Renames.GetClipRename(data)?.Name ?? "");
 
             row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
             row.SubItems[2].Text = name;
