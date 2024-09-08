@@ -58,16 +58,26 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             }
         }
 
+        public string GetRelativePath() {
+            try
+            {
+                return Path.Combine(this.FileDirectory, this.FileName);
+            } catch(Exception)
+            {
+                // Full path didnt work, just return the file name as a backup
+                return this.FileName;
+            }
+        }
+
         public string GetFullPath(MkvToolNixDisc disc) {
             try
             {
                 return Path.Combine(disc.RootPath, this.FileDirectory, this.FileName);
             } catch(Exception)
             {
+                // Full path didnt work, just return the file name as a backup
+                return this.FileName;
             }
-
-            // Full path didnt work, just return the file name as a backup
-            return this.FileName;
         }
 
         public bool Parse(IEnumerable<string> std) {

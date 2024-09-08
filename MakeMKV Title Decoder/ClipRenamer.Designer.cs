@@ -45,20 +45,20 @@
             splitContainer4 = new SplitContainer();
             VideoTrackList = new TrackList();
             VideoTrackPanel = new Panel();
+            VideoTrackDefault = new CheckBox();
             VideoTrackApply = new Button();
             VideoTrackCommentary = new CheckBox();
             VideoTrackName = new TextBox();
             label2 = new Label();
             AudioTrackList = new TrackList();
             AudioTrackPanel = new Panel();
+            AudioTrackDefault = new CheckBox();
             AudioTrackApply = new Button();
             AudioTrackCommentary = new CheckBox();
             AudioTrackName = new TextBox();
             label3 = new Label();
             menuStrip1 = new MenuStrip();
             compareToolStripMenuItem = new ToolStripMenuItem();
-            VideoTrackDefault = new CheckBox();
-            AudioTrackDefault = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -117,6 +117,11 @@
             ImageList1.TransparentColor = Color.Transparent;
             ImageList1.Images.SetKeyName(0, "dialog-ok-apply.png");
             ImageList1.Images.SetKeyName(1, "dialog-cancel.png");
+            ImageList1.Images.SetKeyName(2, "tool-animator.png");
+            ImageList1.Images.SetKeyName(3, "audio-headphones.png");
+            ImageList1.Images.SetKeyName(4, "text.png");
+            ImageList1.Images.SetKeyName(5, "clock.png");
+            ImageList1.Images.SetKeyName(6, "application-octet-stream.png");
             // 
             // splitContainer1
             // 
@@ -241,6 +246,7 @@
             // 
             // VideoTrackList
             // 
+            VideoTrackList.ColumnPadding = 0;
             VideoTrackList.DeleteIconKey = "dialog-cancel.png";
             VideoTrackList.Dock = DockStyle.Fill;
             VideoTrackList.FullRowSelect = true;
@@ -269,6 +275,16 @@
             VideoTrackPanel.Name = "VideoTrackPanel";
             VideoTrackPanel.Size = new Size(582, 110);
             VideoTrackPanel.TabIndex = 0;
+            // 
+            // VideoTrackDefault
+            // 
+            VideoTrackDefault.AutoSize = true;
+            VideoTrackDefault.Location = new Point(3, 32);
+            VideoTrackDefault.Name = "VideoTrackDefault";
+            VideoTrackDefault.Size = new Size(64, 19);
+            VideoTrackDefault.TabIndex = 6;
+            VideoTrackDefault.Text = "Default";
+            VideoTrackDefault.UseVisualStyleBackColor = true;
             // 
             // VideoTrackApply
             // 
@@ -309,6 +325,7 @@
             // 
             // AudioTrackList
             // 
+            AudioTrackList.ColumnPadding = 0;
             AudioTrackList.DeleteIconKey = "dialog-cancel.png";
             AudioTrackList.Dock = DockStyle.Fill;
             AudioTrackList.FullRowSelect = true;
@@ -337,6 +354,16 @@
             AudioTrackPanel.Name = "AudioTrackPanel";
             AudioTrackPanel.Size = new Size(582, 111);
             AudioTrackPanel.TabIndex = 3;
+            // 
+            // AudioTrackDefault
+            // 
+            AudioTrackDefault.AutoSize = true;
+            AudioTrackDefault.Location = new Point(3, 32);
+            AudioTrackDefault.Name = "AudioTrackDefault";
+            AudioTrackDefault.Size = new Size(64, 19);
+            AudioTrackDefault.TabIndex = 7;
+            AudioTrackDefault.Text = "Default";
+            AudioTrackDefault.UseVisualStyleBackColor = true;
             // 
             // AudioTrackApply
             // 
@@ -390,26 +417,6 @@
             compareToolStripMenuItem.Size = new Size(68, 20);
             compareToolStripMenuItem.Text = "Compare";
             compareToolStripMenuItem.Click += compareToolStripMenuItem_Click;
-            // 
-            // VideoTrackDefault
-            // 
-            VideoTrackDefault.AutoSize = true;
-            VideoTrackDefault.Location = new Point(3, 32);
-            VideoTrackDefault.Name = "VideoTrackDefault";
-            VideoTrackDefault.Size = new Size(64, 19);
-            VideoTrackDefault.TabIndex = 6;
-            VideoTrackDefault.Text = "Default";
-            VideoTrackDefault.UseVisualStyleBackColor = true;
-            // 
-            // AudioTrackDefault
-            // 
-            AudioTrackDefault.AutoSize = true;
-            AudioTrackDefault.Location = new Point(3, 32);
-            AudioTrackDefault.Name = "AudioTrackDefault";
-            AudioTrackDefault.Size = new Size(64, 19);
-            AudioTrackDefault.TabIndex = 7;
-            AudioTrackDefault.Text = "Default";
-            AudioTrackDefault.UseVisualStyleBackColor = true;
             // 
             // ClipRenamer
             // 

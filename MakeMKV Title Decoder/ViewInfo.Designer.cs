@@ -244,6 +244,7 @@
             IconImageList.Images.SetKeyName(3, "clock.png");
             IconImageList.Images.SetKeyName(4, "dialog-ok-apply.png");
             IconImageList.Images.SetKeyName(5, "dialog-cancel.png");
+            IconImageList.Images.SetKeyName(6, "application-octet-stream.png");
             // 
             // TrackProperties
             // 
@@ -292,11 +293,14 @@
             // 
             // VideoPlayer
             // 
+            VideoPlayer.AudioTrack = -1L;
             VideoPlayer.Dock = DockStyle.Fill;
             VideoPlayer.Location = new Point(3, 3);
             VideoPlayer.Name = "VideoPlayer";
             VideoPlayer.Size = new Size(1393, 837);
+            VideoPlayer.Sync = null;
             VideoPlayer.TabIndex = 0;
+            VideoPlayer.VideoTrack = -1L;
             VideoPlayer.VLC = null;
             VideoPlayer.VlcViewer = VideoPreview;
             // 

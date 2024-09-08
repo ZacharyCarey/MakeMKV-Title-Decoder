@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder {
-    internal class PlaylistCreater {
+    internal class Mpu3PlaylistCreater {
 
         List<string> files = new();
 

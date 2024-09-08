@@ -153,6 +153,20 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             var result = new MkvToolNixDisc(path, streams.ToArray(), playlists.ToArray());
             result.ParseDiscInfo();
 
+            foreach(var playlist in result.Playlists)
+            {
+                if (playlist?.Container?.Properties != null)
+                {
+                    for (int i = 0; i < playlist.Container.Properties.PlaylistFiles.Count; i++)
+                    {
+                        try
+                        {
+                            playlist.Container.Properties.PlaylistFiles[i] = Path.GetRelativePath(result.RootPath, playlist.Container.Properties.PlaylistFiles[i]);
+                        } catch (Exception) { }
+                    }
+                }
+            }
+
             return result;
         }
 

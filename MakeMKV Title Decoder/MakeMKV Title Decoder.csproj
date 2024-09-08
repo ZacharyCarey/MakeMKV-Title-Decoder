@@ -44,6 +44,7 @@
     <PackageReference Include="JsonSerializable" Version="1.2.5" />
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.20" />
   </ItemGroup>
 

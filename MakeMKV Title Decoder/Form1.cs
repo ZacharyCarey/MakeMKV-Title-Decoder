@@ -420,7 +420,8 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void testToolStripMenuItem_Click(object sender, EventArgs e) {
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+
+            /*using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
                 openFileDialog.InitialDirectory = "F:\\Video\\backup";
 
@@ -432,8 +433,9 @@ namespace MakeMKV_Title_Decoder
                     //var data = MkvToolNixInterface.Identify(Path.Combine(openFileDialog.SelectedPath, "BDMV", "STREAM", "00339.m2ts"));
 
                 }
-            }
+            }*/
             //new ClipRenamer().ShowDialog();
+            
         }
 
         private void viewInfoToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -554,5 +556,12 @@ namespace MakeMKV_Title_Decoder
             new ClipRenamer(renames, disc).ShowDialog();
         }
         #endregion
+
+        private void playlistCreatorToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (this.disc != null)
+            {
+                new PlaylistCreatorForm(this.disc, this.renames).ShowDialog();
+            }
+        }
     }
 }

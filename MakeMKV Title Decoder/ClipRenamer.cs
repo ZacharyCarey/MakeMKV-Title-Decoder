@@ -152,10 +152,10 @@ namespace MakeMKV_Title_Decoder {
             }
         }
 
-        private void VideoTrackList_OnSelectionChanged(MkvTrack? track) {
-            this.SelectedVideoTrack = track;
+        private void VideoTrackList_OnSelectionChanged(TrackListData? track) {
+            this.SelectedVideoTrack = track?.Track;
             SelectTrack(
-                track, 
+                track?.Track, 
                 MkvTrackType.Video, 
                 VideoTrackPanel, 
                 VideoTrackName, 
@@ -164,10 +164,10 @@ namespace MakeMKV_Title_Decoder {
             );
         }
 
-        private void AudioTrackList_OnSelectionChanged(MkvTrack? track) {
-            this.SelectedAudioTrack = track;
+        private void AudioTrackList_OnSelectionChanged(TrackListData? track) {
+            this.SelectedAudioTrack = track?.Track;
             SelectTrack(
-                track, 
+                track?.Track, 
                 MkvTrackType.Audio, 
                 AudioTrackPanel, 
                 AudioTrackName, 
