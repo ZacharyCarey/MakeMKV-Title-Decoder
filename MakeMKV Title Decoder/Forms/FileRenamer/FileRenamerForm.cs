@@ -368,7 +368,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             return id;
         }
 
-        private bool IsError(Playlist playlist) {
+        private bool IsError(PlaylistOld playlist) {
             TmdbID? id = playlist.OutputFile.ShowID;
             if (id == null) return true;
             if (id.Type == ShowType.TV)
@@ -407,7 +407,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             var selectedItem = this.PlaylistListBox1.SelectedItem;
             if (selectedItem != null)
             {
-                Playlist playlist = selectedItem.Playlist;
+                PlaylistOld playlist = selectedItem.Playlist;
 
                 playlist.OutputFile.ShowName = this.ShowNameTextBox.Text;
                 playlist.OutputFile.MultiVersion = (this.MultiVersionCheckBox.Checked ? this.MultiVersionTextBox.Text : null);
@@ -529,7 +529,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
                 }
 
                 var playlist = selected.Playlist;
-                MkvToolNixInterface.Merge(this.Disc, playlist, outputFile);
+                // TODO MkvToolNixInterface.Merge(this.Disc, playlist, outputFile);
             }
         }
 

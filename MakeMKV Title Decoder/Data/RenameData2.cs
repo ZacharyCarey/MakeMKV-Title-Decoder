@@ -15,7 +15,7 @@ namespace MakeMKV_Title_Decoder.Data {
     public class RenameData2 : IJsonSerializable {
         public const string Version = "1.0";
         public SerializableDictionary<ClipRename> ClipRenames = new();
-        public SerializableList<Playlist> Playlists = new();
+        public SerializableList<PlaylistOld> Playlists = new();
 
         public RenameData2() {
 
@@ -182,10 +182,85 @@ namespace MakeMKV_Title_Decoder.Data {
 
     public class Playlist : IJsonSerializable {
 
+        public string? Title = null;
+        public OutputName OutputFile = new();
+        public SerializableList<PlaylistFile> Files = new();
+
+        public void LoadFromJson(JsonData Data) {
+            throw new NotImplementedException();
+        }
+
+        public JsonData SaveToJson() {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PlaylistFile : IJsonSerializable {
+
+        public string? Source;
+        public SerializableList<PlaylistTrack> Tracks = new();
+
+        public void LoadFromJson(JsonData Data) {
+            throw new NotImplementedException();
+        }
+
+        public JsonData SaveToJson() {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PlaylistTrack : IJsonSerializable {
+
+        /// <summary>
+        /// Primary method of identifying the track
+        /// </summary>
+        public long? UID;
+
+        /// <summary>
+        /// Secondary method of identifying the track
+        /// </summary>
+        public string? Codec;
+
+        /// <summary>
+        /// Third method of identifying the track, as provided by MkvToolNix
+        /// </summary>
+        public long? ID;
+
+        public bool? Copy;
+
+        public SerializableList<TrackID> Sync = new();
+        public string? Name;
+        public bool? Commentary;
+        public TrackID? AppendedTo = null;
+
+        public void LoadFromJson(JsonData Data) {
+            throw new NotImplementedException();
+        }
+
+        public JsonData SaveToJson() {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class TrackID : IJsonSerializable {
+        public int? FileIndex;
+        public int? TrackIndex;
+
+        public void LoadFromJson(JsonData Data) {
+            throw new NotImplementedException();
+        }
+
+        public JsonData SaveToJson() {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PlaylistOld : IJsonSerializable {
+
         public string? Name;
         public OutputName OutputFile = new();
         public string? PrimarySource;
-        public SerializableList<PlaylistTrack> Tracks = new();
+        public SerializableList<PlaylistTrackOld> Tracks = new();
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
@@ -227,7 +302,7 @@ namespace MakeMKV_Title_Decoder.Data {
         }
     }
 
-    public class PlaylistTrack : IJsonSerializable {
+    public class PlaylistTrackOld : IJsonSerializable {
         /// <summary>
         /// Root level tracks MUST be PrimarySource tracks
         /// </summary>
@@ -256,7 +331,7 @@ namespace MakeMKV_Title_Decoder.Data {
         /// <summary>
         /// Only contains items for primary source tracks.
         /// </summary>
-        public SerializableList<PlaylistTrack> AppendedTracks = new();
+        public SerializableList<PlaylistTrackOld> AppendedTracks = new();
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;

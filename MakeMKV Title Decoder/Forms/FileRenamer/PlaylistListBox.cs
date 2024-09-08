@@ -7,10 +7,10 @@ using MakeMKV_Title_Decoder.Data;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
     public class PlaylistListItem {
-        public Playlist Playlist;
+        public PlaylistOld Playlist;
         public string? Icon = null;
 
-        public PlaylistListItem(Playlist playlist) {
+        public PlaylistListItem(PlaylistOld playlist) {
             this.Playlist = playlist;
         }
 
@@ -47,7 +47,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             this.Items.Add(item);
         }
 
-        public void Add(Playlist playlist) {
+        public void Add(PlaylistOld playlist) {
             this.Items.Add(new PlaylistListItem(playlist));
         }
 
@@ -59,7 +59,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             this.Items.Clear();
         }
 
-        public PlaylistListItem? FindItem(Playlist playlist) {
+        public PlaylistListItem? FindItem(PlaylistOld playlist) {
             foreach (var obj in this.Items)
             {
                 PlaylistListItem item = (PlaylistListItem)obj;

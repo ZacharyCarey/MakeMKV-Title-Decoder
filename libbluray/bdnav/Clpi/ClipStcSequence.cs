@@ -11,6 +11,7 @@ namespace libbluray.bdnav.Clpi {
         public UInt32 spn_stc_start;
         public UInt32 presentation_start_time;
         public UInt32 presentation_end_time;
+        public TimeSpan Length => TimeSpan.FromMilliseconds((presentation_end_time - presentation_start_time) / 45);
 
         public bool Parse(BitStream bits) {
             this.pcr_pid = bits.Read<UInt16>();

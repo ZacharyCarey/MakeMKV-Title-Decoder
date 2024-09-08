@@ -223,7 +223,7 @@ namespace MakeMKV_Title_Decoder {
         private void ImportPlaylists_Click(object sender, EventArgs e) {
             foreach (var playlist in this.Disc.Playlists)
             {
-                Playlist renamePlaylist = new();
+                PlaylistOld renamePlaylist = new();
                 LoadedPlaylist loadedPlaylist = new(renamePlaylist, null, playlist.FileName);
 
                 foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
@@ -274,7 +274,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void NewPlaylistButton_Click(object sender, EventArgs e) {
-            var playlist = new Playlist();
+            var playlist = new PlaylistOld();
             this.Renames.Playlists.Add(playlist);
             this.PlaylistsListBox.Add(new LoadedPlaylist(playlist, null, "Empty Playlist"));
         }

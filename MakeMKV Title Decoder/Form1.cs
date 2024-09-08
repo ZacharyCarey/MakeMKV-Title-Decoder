@@ -429,7 +429,127 @@ namespace MakeMKV_Title_Decoder
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    MkvToolNixInterface.MergeAsync(this.disc, null, Path.Combine(openFileDialog.SelectedPath, "Test.mkv"));
+                    var playlist = new Playlist {
+                        Title = "RWBY Test",
+                        Files = new() {
+                            new PlaylistFile() {
+                                Source = "BDMV\\STREAM\\00004.m2ts",
+                                Tracks = new() {
+                                    new PlaylistTrack() {
+                                        ID = 0,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Name = "Wassup",
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 1,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Name = "IM IMMUNE",
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 2,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 3,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    }
+                                }
+                            },
+                            new PlaylistFile() {
+                                Source = "BDMV\\STREAM\\00015.m2ts",
+                                Tracks = new() {
+                                    new PlaylistTrack() {
+                                        ID = 0,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 0,
+                                            TrackIndex = 0
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 1,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 0,
+                                            TrackIndex = 1
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 2,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 3,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    }
+                                },
+                            },
+                            new PlaylistFile() {
+                                Source = "BDMV\\STREAM\\00004.m2ts",
+                                Tracks = new() {
+                                    new PlaylistTrack() {
+                                        ID = 0,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 1,
+                                            TrackIndex = 0
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 1,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 1,
+                                            TrackIndex = 1
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 2,
+                                        Copy = true,
+                                        Sync = new(){ 
+                                            new TrackID() {
+                                                FileIndex = 1,
+                                                TrackIndex = 2
+                                            }
+                                        },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 0,
+                                            TrackIndex = 2
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 3,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    MkvToolNixInterface.MergeAsync(this.disc, playlist, Path.Combine(openFileDialog.SelectedPath, "Test.mkv"));
                 }
             }
         }

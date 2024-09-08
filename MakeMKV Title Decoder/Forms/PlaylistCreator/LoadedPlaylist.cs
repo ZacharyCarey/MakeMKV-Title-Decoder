@@ -109,13 +109,13 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
         }
         #endregion
 
-        public Playlist RenameData;
+        public PlaylistOld RenameData;
         public AppendedFile? PrimarySource = null;
         public IEnumerable<AppendedFile> AppendedFiles => _AllFiles.Where(x => x != this.PrimarySource);
         public List<AppendedTrack> SourceTracks = new();
         public string Name;
 
-        public LoadedPlaylist(Playlist renameData, MkvMergeID? file, string name) {
+        public LoadedPlaylist(PlaylistOld renameData, MkvMergeID? file, string name) {
             this.RenameData = renameData;
             if (file != null) this.PrimarySource = CreateFile(file);//GetFileOrCreate(file);
             this.Name = name;
@@ -285,7 +285,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             RenameData.Tracks.Clear();
             foreach(AppendedTrack sourceTrack in this.SourceTracks)
             {
-                PlaylistTrack source = new PlaylistTrack();
+                PlaylistTrackOld source = new PlaylistTrackOld();
                 RenameData.Tracks.Add(source);
 
                 source.Source = sourceTrack.Source.Source.GetRelativePath();
@@ -296,7 +296,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
 
                 foreach(AppendedTrack subTrack in sourceTrack.AppendedTracks)
                 {
-                    PlaylistTrack track = new PlaylistTrack();
+                    PlaylistTrackOld track = new PlaylistTrackOld();
                     source.AppendedTracks.Add(track);
 
                     track.Source = subTrack.Source.Source.GetRelativePath();
@@ -308,7 +308,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             }
         }
 
-        public static LoadedPlaylist? LoadFromRenames(MkvToolNixDisc disc, Playlist playlist) {
+        public static LoadedPlaylist? LoadFromRenames(MkvToolNixDisc disc, PlaylistOld playlist) {
             LoadedPlaylist? result = null;
             // Try to find primary source
             if (playlist.PrimarySource == null) return null;
@@ -338,7 +338,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             return result;
         }
 
-        private static AppendedTrack? LoadTrack(MkvToolNixDisc disc, LoadedPlaylist playlist, PlaylistTrack playlistTrack, bool isPrimary) {
+        private static AppendedTrack? LoadTrack(MkvToolNixDisc disc, LoadedPlaylist playlist, PlaylistTrackOld playlistTrack, bool isPrimary) {
             MkvMergeID? sourceFile = null;
             MkvTrack? sourceTrack = null;
             Color color;
