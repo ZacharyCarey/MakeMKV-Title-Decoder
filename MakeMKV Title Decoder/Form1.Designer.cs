@@ -41,6 +41,7 @@
             renamesToolStripMenuItem = new ToolStripMenuItem();
             saveToolStripMenuItem = new ToolStripMenuItem();
             loadToolStripMenuItem1 = new ToolStripMenuItem();
+            playlistCreatorToolStripMenuItem = new ToolStripMenuItem();
             DriveSelectionPanel = new Panel();
             SelectFolderBtn = new Button();
             LoadedFileLabel = new Label();
@@ -58,7 +59,7 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             tabPage2 = new TabPage();
-            playlistCreatorToolStripMenuItem = new ToolStripMenuItem();
+            fileRenamerToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             DriveSelectionPanel.SuspendLayout();
             DriveBtnPanel.SuspendLayout();
@@ -138,7 +139,7 @@
             // 
             // renameToolStripMenuItem
             // 
-            renameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadDiscToolStripMenuItem1, clipRenamerToolStripMenuItem1, renamesToolStripMenuItem, playlistCreatorToolStripMenuItem });
+            renameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadDiscToolStripMenuItem1, clipRenamerToolStripMenuItem1, renamesToolStripMenuItem, playlistCreatorToolStripMenuItem, fileRenamerToolStripMenuItem });
             renameToolStripMenuItem.Name = "renameToolStripMenuItem";
             renameToolStripMenuItem.Size = new Size(62, 20);
             renameToolStripMenuItem.Text = "Rename";
@@ -177,6 +178,13 @@
             loadToolStripMenuItem1.Size = new Size(100, 22);
             loadToolStripMenuItem1.Text = "Load";
             loadToolStripMenuItem1.Click += loadToolStripMenuItem1_Click;
+            // 
+            // playlistCreatorToolStripMenuItem
+            // 
+            playlistCreatorToolStripMenuItem.Name = "playlistCreatorToolStripMenuItem";
+            playlistCreatorToolStripMenuItem.Size = new Size(180, 22);
+            playlistCreatorToolStripMenuItem.Text = "Playlist Creator";
+            playlistCreatorToolStripMenuItem.Click += playlistCreatorToolStripMenuItem_Click;
             // 
             // DriveSelectionPanel
             // 
@@ -350,12 +358,12 @@
             tabPage2.Text = "tabPage2";
             tabPage2.UseVisualStyleBackColor = true;
             // 
-            // playlistCreatorToolStripMenuItem
+            // fileRenamerToolStripMenuItem
             // 
-            playlistCreatorToolStripMenuItem.Name = "playlistCreatorToolStripMenuItem";
-            playlistCreatorToolStripMenuItem.Size = new Size(180, 22);
-            playlistCreatorToolStripMenuItem.Text = "Playlist Creator";
-            playlistCreatorToolStripMenuItem.Click += playlistCreatorToolStripMenuItem_Click;
+            fileRenamerToolStripMenuItem.Name = "fileRenamerToolStripMenuItem";
+            fileRenamerToolStripMenuItem.Size = new Size(180, 22);
+            fileRenamerToolStripMenuItem.Text = "File Renamer";
+            fileRenamerToolStripMenuItem.Click += fileRenamerToolStripMenuItem_Click;
             // 
             // Form1
             // 
@@ -414,5 +422,6 @@
         private ToolStripMenuItem saveToolStripMenuItem;
         private ToolStripMenuItem loadToolStripMenuItem1;
         private ToolStripMenuItem playlistCreatorToolStripMenuItem;
+        private ToolStripMenuItem fileRenamerToolStripMenuItem;
     }
 }

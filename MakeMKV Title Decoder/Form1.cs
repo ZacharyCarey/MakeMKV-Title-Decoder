@@ -2,6 +2,8 @@ using JsonSerializable;
 using libbluray.disc;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Forms.FileRenamer;
+using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
 using MakeMKV_Title_Decoder.MakeMKV;
 using MakeMKV_Title_Decoder.MakeMKV.Data;
 using MakeMKV_Title_Decoder.MkvToolNix;
@@ -421,21 +423,15 @@ namespace MakeMKV_Title_Decoder
 
         private void testToolStripMenuItem_Click(object sender, EventArgs e) {
 
-            /*using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
                 openFileDialog.InitialDirectory = "F:\\Video\\backup";
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    //BlurayBackup? backup = BlurayBackup.FromBackupFolder(openFileDialog.SelectedPath);
-                    //var viewer = new TaskProgressViewer<Task, SimpleProgress>(x => BD_DISC.LoadBackupFolder(openFileDialog.SelectedPath, x));
-                    //viewer.ShowDialog();
-                    //var data = MkvToolNixInterface.Identify(Path.Combine(openFileDialog.SelectedPath, "BDMV", "STREAM", "00339.m2ts"));
-
+                    MkvToolNixInterface.MergeAsync(this.disc, null, Path.Combine(openFileDialog.SelectedPath, "Test.mkv"));
                 }
-            }*/
-            //new ClipRenamer().ShowDialog();
-            
+            }
         }
 
         private void viewInfoToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -561,6 +557,13 @@ namespace MakeMKV_Title_Decoder
             if (this.disc != null)
             {
                 new PlaylistCreatorForm(this.disc, this.renames).ShowDialog();
+            }
+        }
+
+        private void fileRenamerToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (this.disc != null)
+            {
+                new FileRenamerForm(this.disc, this.renames).ShowDialog();
             }
         }
     }

@@ -1,4 +1,6 @@
 ﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Forms.FileRenamer;
+using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
 using MakeMKV_Title_Decoder.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
@@ -107,7 +109,7 @@ namespace MakeMKV_Title_Decoder.Data {
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Name = (JsonString?)obj["Name"];
+            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
             this.TrackRenames.LoadFromJson(obj["Tracks"] ?? new JsonObject());
         }
 
@@ -155,9 +157,9 @@ namespace MakeMKV_Title_Decoder.Data {
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Name = (JsonString?)obj["Name"];
-            this.CommentaryFlag = (JsonBool?)obj["Commentary Flag"];
-            this.DefaultFlag = (JsonBool?)obj["Default Track Flag"];
+            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
+            this.CommentaryFlag = obj.Load<JsonBool>("Commentary Flag")?.Value ?? null;
+            this.DefaultFlag = obj.Load<JsonBool>("Default Track Flag")?.Value ?? null;
         }
 
         public JsonData SaveToJson() {
@@ -181,26 +183,23 @@ namespace MakeMKV_Title_Decoder.Data {
     public class Playlist : IJsonSerializable {
 
         public string? Name;
-        public OutputName? OutputFile;
+        public OutputName OutputFile = new();
         public string? PrimarySource;
         public SerializableList<PlaylistTrack> Tracks = new();
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Name = (JsonString?)obj["Name"];
+            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
 
             var data = obj["Output Name"];
-            if (data == null)
+            this.OutputFile = new();
+            if (data != null)
             {
-                this.OutputFile = null;
-            } else
-            {
-                this.OutputFile = new();
                 this.OutputFile.LoadFromJson(data);
             }
 
-            this.PrimarySource = (JsonString?)obj["Primary Source"];
+            this.PrimarySource = obj.Load<JsonString>("Primary Source")?.Value ?? null;
 
             this.Tracks.LoadFromJson(obj["Tracks"] ?? new JsonArray());
         }
@@ -262,11 +261,11 @@ namespace MakeMKV_Title_Decoder.Data {
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Source = (JsonString?)obj["Source"];
-            this.UID = (JsonInteger?)obj["UID"] ?? null;
-            this.Codec = (JsonString?)obj["Codec"];
-            this.ID = (JsonInteger?)obj["ID"] ?? null;
-            this.Enabled = (JsonBool?)obj["Enabled"] ?? null;
+            this.Source = obj.Load<JsonString>("Source")?.Value ?? null;
+            this.UID = obj.Load<JsonInteger>("UID")?.Value ?? null;
+            this.Codec = obj.Load<JsonString>("Codec")?.Value ?? null;
+            this.ID = obj.Load<JsonInteger>("ID")?.Value ?? null;
+            this.Enabled = obj.Load<JsonBool>("Enabled")?.Value ?? null;
 
             this.AppendedTracks.LoadFromJson(obj["Appended Tracks"] ?? new JsonArray());
         }
@@ -295,17 +294,49 @@ namespace MakeMKV_Title_Decoder.Data {
 
     public class OutputName : IJsonSerializable {
 
-        public string? Name;
+        public TmdbID? ShowID;
+        public string? ShowName;
+
+        // For multiple versions of the same episode, which version is this one?
+        public string? MultiVersion;
+        public FeatureType? FeatureType;
+        public string? ExtraName;
+
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Name = (JsonString?)obj["Name"];
+            var data = obj["ID"];
+            if (data == null) this.ShowID = null;
+            else
+            {
+                this.ShowID = new(ShowType.Movie, 0);
+                this.ShowID.LoadFromJson(data);
+            }
+
+            this.ShowName = obj.Load<JsonString>("Show Name")?.Value ?? null;
+            this.MultiVersion = obj.Load<JsonString>("Multi-Version")?.Value ?? null;
+
+            FeatureType result;
+            if (Enum.TryParse(obj.Load<JsonString>("Feature Type")?.Value ?? null, out result))
+            {
+                this.FeatureType = result;
+            } else
+            {
+                this.FeatureType = null;
+            }
+
+            this.ExtraName = obj.Load<JsonString>("Extra Name")?.Value ?? null;
         }
 
         public JsonData SaveToJson() {
             JsonObject obj = new();
-            if (Name != null) obj["Name"] = new JsonString(this.Name);
+
+            if (ShowID != null) obj["ID"] = ShowID.SaveToJson();
+            if (this.ShowName != null) obj["Show Name"] = new JsonString(this.ShowName);
+            if (this.MultiVersion != null) obj["Multi-Version"] = new JsonString(this.MultiVersion);
+            if (this.FeatureType != null) obj["Feature Type"] = new JsonString(this.FeatureType.ToString());
+            if (this.ExtraName != null) obj["Extra Name"] = new JsonString(this.ExtraName);
 
             if (obj.Items.Count() == 0) return null;
             else return obj;

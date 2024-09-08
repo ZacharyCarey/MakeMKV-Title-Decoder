@@ -80,7 +80,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix.Data {
             }
         }
 
-        public bool Parse(IEnumerable<string> std) {
+        public bool Parse(IEnumerable<string> std, IProgress<SimpleProgress>? progress = null) {
             try
             {
                 Stream stream = new SequentialStream(std);
