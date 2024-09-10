@@ -1,5 +1,5 @@
 ﻿using MakeMKV_Title_Decoder.Data;
-using MakeMKV_Title_Decoder.MkvToolNix.Data;
+using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
+namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
+{
     public class LoadedPlaylist {
         #region Color Management
         private List<Color> _ReusedColors = new();
@@ -341,7 +342,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             return false;
         }
 
-        public void Save(RenameData2 renames) {
+        public void Save(RenameData renames) {
             RenameData.Name = this.Name;
             RenameData.Files.Clear();
             RenameData.TrackOrder.Clear();
@@ -379,7 +380,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             }
         }
 
-        private void SaveTrack(Dictionary<AppendedFile, PlaylistFile> lookup, Dictionary<AppendedFile, int> fileIndexLookup, RenameData2 renames, AppendedTrack track, bool isAppended, List<TrackID> disabledTracks, ref TrackID lastEnabledTrack) {
+        private void SaveTrack(Dictionary<AppendedFile, PlaylistFile> lookup, Dictionary<AppendedFile, int> fileIndexLookup, RenameData renames, AppendedTrack track, bool isAppended, List<TrackID> disabledTracks, ref TrackID lastEnabledTrack) {
             var source = track.Track;
 
             TrackID trackId = new();

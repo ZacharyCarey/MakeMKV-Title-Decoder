@@ -1,8 +1,8 @@
 ﻿using JsonSerializable;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
-using MakeMKV_Title_Decoder.MkvToolNix;
-using MakeMKV_Title_Decoder.MkvToolNix.Data;
+using MakeMKV_Title_Decoder.libs.MkvToolNix;
+using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,7 +15,8 @@ using System.Windows.Forms;
 using static System.ComponentModel.Design.ObjectSelectorEditor;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
-namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
+namespace MakeMKV_Title_Decoder.Forms.FileRenamer
+{
     public partial class FileRenamerForm : Form {
         const string IconError = "dialog-error.png";
         const string IconGood = "dialog-ok-apply.png";
@@ -24,7 +25,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
         const string TmdbPrefix = "tmdbid=";
 
         private MkvToolNixDisc Disc;
-        private RenameData2 Renames;
+        private RenameData Renames;
 
         private string? OutputPath = null;
         private string? OutputFolderName = null;
@@ -38,7 +39,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
         private Dictionary<object, FeatureType> RadioButtonLookup;
         private Dictionary<FeatureType, RadioButton> RadioButtonReverseLookup;
 
-        public FileRenamerForm(MkvToolNixDisc disc, RenameData2 renames) {
+        public FileRenamerForm(MkvToolNixDisc disc, RenameData renames) {
             this.Disc = disc;
             this.Renames = renames;
 

@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Error.wav" />
-    <EmbeddedResource Include="Success.wav" />
+    <EmbeddedResource Include="Sounds\Error.wav" />
+    <EmbeddedResource Include="Sounds\Success.wav" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,10 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="DiscUtils" Version="0.16.13" />
     <PackageReference Include="JsonSerializable" Version="1.2.5" />
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
@@ -49,10 +45,30 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\libbluray\libbluray.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <None Update="libs\MkvToolNix\lib\mkvextract.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\mkvinfo.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\mkvmerge.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\mkvpropedit.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\bluray_dump.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\ebml_validator.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\hevcc_dump.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\xyzvc_dump.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="lib\mkvtoolnix\data\portable-app">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

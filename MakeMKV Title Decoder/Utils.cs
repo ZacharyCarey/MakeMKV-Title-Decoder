@@ -184,7 +184,7 @@ namespace MakeMKV_Title_Decoder {
                         posfix = name.Substring(i + 1);
                     }
 
-                    name = prefix + "_" + posfix;
+                    name = prefix + " " + posfix;
                 }
             }
 

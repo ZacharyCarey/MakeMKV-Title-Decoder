@@ -1,7 +1,8 @@
 ﻿using libbluray.bdnav.Mpls;
+using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
-using MakeMKV_Title_Decoder.MkvToolNix.Data;
+using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,7 +15,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace MakeMKV_Title_Decoder {
+namespace MakeMKV_Title_Decoder
+{
     public partial class PlaylistCreatorForm : Form {
 
         const int IndentedTrackPadding = 25;
@@ -40,9 +42,9 @@ namespace MakeMKV_Title_Decoder {
         }
 
         MkvToolNixDisc Disc;
-        RenameData2 Renames;
+        RenameData Renames;
 
-        public PlaylistCreatorForm(MkvToolNixDisc disc, RenameData2 renames) {
+        public PlaylistCreatorForm(MkvToolNixDisc disc, RenameData renames) {
             this.Disc = disc;
             this.Renames = renames;
 

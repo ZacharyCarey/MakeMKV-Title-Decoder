@@ -1,6 +1,8 @@
-﻿using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
+﻿using MakeMKV_Title_Decoder.Controls;
+using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
 
-namespace MakeMKV_Title_Decoder {
+namespace MakeMKV_Title_Decoder
+{
     partial class PlaylistCreatorForm {
         /// <summary>
         /// Required designer variable.
