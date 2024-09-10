@@ -15,7 +15,7 @@ namespace MakeMKV_Title_Decoder.Data {
     public class RenameData2 : IJsonSerializable {
         public const string Version = "1.0";
         public SerializableDictionary<ClipRename> ClipRenames = new();
-        public SerializableList<PlaylistOld> Playlists = new();
+        public SerializableList<Playlist> Playlists = new();
 
         public RenameData2() {
 
@@ -182,16 +182,76 @@ namespace MakeMKV_Title_Decoder.Data {
 
     public class Playlist : IJsonSerializable {
 
+        /// <summary>
+        /// Title that shows in VLC when played (i.e. title saved in file)
+        /// </summary>
         public string? Title = null;
+
+        /// <summary>
+        /// The user given name of the playlist for renaming purposes
+        /// </summary>
+        public string? Name = null;
+
+        /// <summary>
+        /// How the output file should be renamed based on season, episode, type, etc
+        /// </summary>
         public OutputName OutputFile = new();
+
+        /// <summary>
+        /// Source files added to the playlist
+        /// </summary>
         public SerializableList<PlaylistFile> Files = new();
 
+        // TODO should TrackID here be the filename, since index may not be known/needed until multiplexing?
+        /// <summary>
+        /// The order of the source file tracks as they should be organized in the mkv file
+        /// </summary>
+        public SerializableList<TrackID> TrackOrder = new(); 
+
         public void LoadFromJson(JsonData Data) {
-            throw new NotImplementedException();
+            JsonObject obj = (JsonObject)Data;
+
+            this.Title = obj.Load<JsonString>("Title")?.Value ?? null;
+            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
+
+            var data = obj["Output Name"];
+            this.OutputFile = new();
+            if (data != null)
+            {
+                this.OutputFile.LoadFromJson(data);
+            }
+
+            this.Files.LoadFromJson(obj["Files"] ?? new JsonArray());
+            this.TrackOrder.LoadFromJson(obj["Track Order"] ?? new JsonArray());
         }
 
         public JsonData SaveToJson() {
-            throw new NotImplementedException();
+            JsonObject obj = new();
+
+            if (this.Title != null) obj["Title"] = new JsonString(this.Title);
+            if (this.Name != null) obj["Name"] = new JsonString(this.Name);
+
+            JsonData data = this.OutputFile.SaveToJson();
+            if (data != null) obj["Output File"] = data;
+
+            JsonArray arr = new();
+            foreach(var item in this.Files)
+            {
+                data = item.SaveToJson();
+                if (data != null) arr.Add(data);
+            }
+            if(arr.Any()) obj["Files"] = arr;
+
+            arr = new();
+            foreach(var item in this.TrackOrder)
+            {
+                data = item.SaveToJson();
+                if (data != null) arr.Add(data);
+            }
+            if(arr.Any()) obj["Track Order"] = arr;
+
+            if (obj.Items.Count() > 0) return obj;
+            else return null;
         }
     }
 
@@ -200,12 +260,38 @@ namespace MakeMKV_Title_Decoder.Data {
         public string? Source;
         public SerializableList<PlaylistTrack> Tracks = new();
 
+        public SerializableList<PlaylistFile> AppendedFiles = new();
+
         public void LoadFromJson(JsonData Data) {
-            throw new NotImplementedException();
+            JsonObject obj = (JsonObject)Data;
+
+            this.Source = obj.Load<JsonString>("Source")?.Value ?? null;
+            this.Tracks.LoadFromJson(obj["Tracks"] ?? new JsonArray());
+            this.AppendedFiles.LoadFromJson(obj["Appended Files"] ?? new JsonArray());
         }
 
         public JsonData SaveToJson() {
-            throw new NotImplementedException();
+            JsonObject obj = new();
+
+            if (Source != null) obj["Source"] = new JsonString(Source);
+
+            JsonArray arr = new();
+            foreach(var track in this.Tracks)
+            {
+                JsonData? data = track.SaveToJson();
+                if (data != null) arr.Add(data);
+            }
+            if(arr.Any()) obj["Tracks"] = arr;
+
+            arr = new();
+            foreach(var file in this.AppendedFiles)
+            {
+                JsonData? data = file.SaveToJson();
+                if (data != null) arr.Add(data);
+            }
+            if (arr.Any()) obj["Appended Files"] = arr;
+
+            return obj;
         }
     }
 
@@ -226,19 +312,79 @@ namespace MakeMKV_Title_Decoder.Data {
         /// </summary>
         public long? ID;
 
+        /// <summary>
+        /// whether or not the track should be copied to the output.
+        /// Could also be called enable/disable
+        /// </summary>
         public bool? Copy;
 
+        /// <summary>
+        /// If the previous track is missing/disabled/empty, this is used to
+        /// point to all of those tracks so the appropriate empty time can be
+        /// calculated (by parsing cpli files)
+        /// </summary>
         public SerializableList<TrackID> Sync = new();
+
+        /// <summary>
+        /// The user-given name to apply to the track
+        /// </summary>
         public string? Name;
+
+        /// <summary>
+        /// If the track has the commentary flag
+        /// </summary>
         public bool? Commentary;
-        public TrackID? AppendedTo = null;
+
+        /// <summary>
+        /// The previous track that this track is appended to. There can be missing/disabled
+        /// tracks between this and the previous track so long as the 'sync' attribute is set
+        /// </summary>
+        public TrackID? AppendedTo = null; 
 
         public void LoadFromJson(JsonData Data) {
-            throw new NotImplementedException();
+            JsonObject obj = (JsonObject)Data;
+
+            this.UID = obj.Load<JsonInteger>("UID")?.Value ?? null;
+            this.Codec = obj.Load<JsonString>("Codec")?.Value ?? null;
+            this.ID = obj.Load<JsonInteger>("ID")?.Value ?? null;
+            this.Copy = obj.Load<JsonBool>("Copy")?.Value ?? null;
+            this.Sync.LoadFromJson(obj["Sync"] ?? new JsonArray());
+            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
+            this.Commentary = obj.Load<JsonBool>("Commentary")?.Value ?? null;
+
+            JsonData? data = obj["Append To"];
+            if (data == null) AppendedTo = null;
+            else
+            {
+                this.AppendedTo = new();
+                this.AppendedTo.LoadFromJson(data);
+            }
         }
 
         public JsonData SaveToJson() {
-            throw new NotImplementedException();
+            JsonObject obj = new();
+            
+            if (this.UID != null) obj["UID"] = new JsonInteger(this.UID.Value);
+            if (this.Codec != null) obj["Codec"] = new JsonString(this.Codec);
+            if (this.ID != null) obj["ID"] = new JsonInteger(this.ID.Value);
+            if (this.Copy != null) obj["Copy"] = new JsonBool(this.Copy.Value);
+
+            JsonArray arr = new();
+            foreach(var sync in this.Sync)
+            {
+                JsonData? d = sync.SaveToJson();
+                if (d != null) arr.Add(d);
+            }
+            if(arr.Any()) obj["Sync"] = arr;
+
+            if (this.Name != null) obj["Name"] = new JsonString(this.Name);
+            if (this.Commentary != null) obj["Commentary"] = new JsonBool(this.Commentary.Value);
+
+            JsonData? data = this.AppendedTo?.SaveToJson();
+            if (data != null) obj["Append To"] = data;
+
+            if (obj.Items.Count() == 0) return null;
+            else return obj;
         }
     }
 
@@ -247,120 +393,17 @@ namespace MakeMKV_Title_Decoder.Data {
         public int? TrackIndex;
 
         public void LoadFromJson(JsonData Data) {
-            throw new NotImplementedException();
-        }
-
-        public JsonData SaveToJson() {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class PlaylistOld : IJsonSerializable {
-
-        public string? Name;
-        public OutputName OutputFile = new();
-        public string? PrimarySource;
-        public SerializableList<PlaylistTrackOld> Tracks = new();
-
-        public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
-
-            var data = obj["Output Name"];
-            this.OutputFile = new();
-            if (data != null)
-            {
-                this.OutputFile.LoadFromJson(data);
-            }
-
-            this.PrimarySource = obj.Load<JsonString>("Primary Source")?.Value ?? null;
-
-            this.Tracks.LoadFromJson(obj["Tracks"] ?? new JsonArray());
+            this.FileIndex = (int?)(obj.Load<JsonInteger>("File Index")?.Value ?? null);
+            this.TrackIndex = (int?)(obj.Load<JsonInteger>("Track Index")?.Value ?? null);
         }
 
         public JsonData SaveToJson() {
             JsonObject obj = new();
 
-            if (Name != null) obj["Name"] = new JsonString(this.Name);
-
-            JsonData? data = this.OutputFile?.SaveToJson();
-            if (data != null) obj["Output Name"] = data;
-
-            if (PrimarySource != null) obj["Primary Source"] = new JsonString(PrimarySource);
-
-            JsonArray tracks = new();
-            foreach (var track in this.Tracks)
-            {
-                var json = track.SaveToJson();
-                if (json != null) tracks.Add(json);
-            }
-            if (tracks.Count() > 0) obj["Tracks"] = tracks;
-
-            if (obj.Items.Count() == 0) return null;
-            else return obj;
-        }
-    }
-
-    public class PlaylistTrackOld : IJsonSerializable {
-        /// <summary>
-        /// Root level tracks MUST be PrimarySource tracks
-        /// </summary>
-        public string? Source;
-
-        /// <summary>
-        /// Primary method of identifying the track
-        /// </summary>
-        public long? UID;
-
-        /// <summary>
-        /// Secondary method of identifying the track
-        /// </summary>
-        public string? Codec;
-
-        /// <summary>
-        /// Third method of identifying the track, as provided by MkvToolNix
-        /// </summary>
-        public long? ID;
-
-        /// <summary>
-        /// Primary source tracks that are disabled will disable all appended tracks
-        /// </summary>
-        public bool? Enabled;
-
-        /// <summary>
-        /// Only contains items for primary source tracks.
-        /// </summary>
-        public SerializableList<PlaylistTrackOld> AppendedTracks = new();
-
-        public void LoadFromJson(JsonData Data) {
-            JsonObject obj = (JsonObject)Data;
-
-            this.Source = obj.Load<JsonString>("Source")?.Value ?? null;
-            this.UID = obj.Load<JsonInteger>("UID")?.Value ?? null;
-            this.Codec = obj.Load<JsonString>("Codec")?.Value ?? null;
-            this.ID = obj.Load<JsonInteger>("ID")?.Value ?? null;
-            this.Enabled = obj.Load<JsonBool>("Enabled")?.Value ?? null;
-
-            this.AppendedTracks.LoadFromJson(obj["Appended Tracks"] ?? new JsonArray());
-        }
-
-        public JsonData SaveToJson() {
-            JsonObject obj = new();
-
-            if (Source != null) obj["Source"] = new JsonString(this.Source);
-            if (UID != null) obj["UID"] = new JsonInteger(this.UID.Value);
-            if (Codec != null) obj["Codec"] = new JsonString(this.Codec);
-            if (ID != null) obj["ID"] = new JsonInteger(this.ID.Value);
-            if (Enabled != null) obj["Enabled"] = new JsonBool(this.Enabled.Value);
-
-            JsonArray tracks = new();
-            foreach (var track in this.AppendedTracks)
-            {
-                var json = track.SaveToJson();
-                if (json != null) tracks.Add(json);
-            }
-            if (tracks.Count() > 0) obj["Appended Tracks"] = tracks;
+            if (this.FileIndex != null) obj["File Index"] = new JsonInteger(this.FileIndex.Value);
+            if (this.TrackIndex != null) obj["Track Index"] = new JsonInteger(this.TrackIndex.Value);
 
             if (obj.Items.Count() == 0) return null;
             else return obj;

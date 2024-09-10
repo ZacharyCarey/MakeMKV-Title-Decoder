@@ -2,7 +2,9 @@
 using MakeMKV_Title_Decoder.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -56,23 +58,10 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
 
         #region File Management
         private List<AppendedFile> _AllFiles = new();
-        //private Dictionary<MkvMergeID, AppendedFile> _FileLookup = new();
-
-        /*private AppendedFile? GetFile(MkvMergeID clip) {
-            AppendedFile result;
-            if (!_FileLookup.TryGetValue(clip, out result))
-            {
-                return null;
-            } else
-            {
-                return result;
-            }
-        }*/
 
         private AppendedFile CreateFile(MkvMergeID clip) {
             var result = new AppendedFile(clip, GetNextColor());
             _AllFiles.Add(result);
-            //_FileLookup[clip] = result;
             return result;
         }
 
@@ -92,93 +81,132 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
 
         private bool RemoveFile(AppendedFile clip) {
             AppendedFile file = clip;
-            //if (_FileLookup.TryGetValue(clip, out file))
-            //{
-                _AllFiles.Remove(file);
-                //_FileLookup.Remove(clip);
-                this.ReturnColor(file.Color);
-                return true;
-            //}
-
-            //return false;
+            _AllFiles.Remove(file);
+            //_FileLookup.Remove(clip);
+            this.ReturnColor(file.Color);
+            return true;
         }
 
         private void ResetFiles() {
             _AllFiles.Clear();
-            //_FileLookup.Clear();
         }
         #endregion
 
-        public PlaylistOld RenameData;
-        public AppendedFile? PrimarySource = null;
-        public IEnumerable<AppendedFile> AppendedFiles => _AllFiles.Where(x => x != this.PrimarySource);
+        public Playlist RenameData;
+        public List<AppendedFile> SourceFiles = new();
+        //public IEnumerable<AppendedFile> AppendedFiles => _AllFiles.Where(x => x != this.PrimarySource);
         public List<AppendedTrack> SourceTracks = new();
-        public string Name;
+        public string? Name;
 
-        public LoadedPlaylist(PlaylistOld renameData, MkvMergeID? file, string name) {
+        public LoadedPlaylist(Playlist renameData, string? name) {
             this.RenameData = renameData;
-            if (file != null) this.PrimarySource = CreateFile(file);//GetFileOrCreate(file);
             this.Name = name;
         }
 
-        private AppendedFile AddSourceFile(AppendedFile file) {
-            if (this.PrimarySource == null)
+        private void AddSourceFile(AppendedFile file) {
+            this.SourceFiles.Add(file);
+            this.SourceTracks.AddRange(file.Source.Tracks.Select(x => new AppendedTrack(file, x, file.Color)));
+        }
+
+        private void AddAppendedFile(AppendedFile sourceFile, AppendedFile file) {
+            if (!this.SourceFiles.Contains(sourceFile)) throw new Exception();
+            sourceFile.AppendedFiles.Add(file);
+
+            // Best effort to match tracks
+            // TODO use better algorithm i.e. try to match up track types
+            if (file.Source.Tracks.Count > 0)
             {
-                this.PrimarySource = file;
-                // Add primary tracks
-                foreach (var track in file.Source.Tracks)
+                int index = 0;
+                AppendedTrack? lastTrack = null;
+                foreach (var track in SourceTracks.Where(x => x.Source == sourceFile))
                 {
-                    AppendedTrack sourceTrack = new AppendedTrack(file, track, file.Color);
-                    this.SourceTracks.Add(sourceTrack);
+                    lastTrack = track;
+                    track.AppendedTracks.Add(new AppendedTrack(file, file.Source.Tracks[index], file.Color));
+
+                    index++;
+                    if (index >= file.Source.Tracks.Count)
+                    {
+                        break;
+                    }
                 }
-            } else
-            {
-                // Best effort to match tracks
-                // TODO use better algorithm i.e. try to match up track types
-                for (int i = 0; i < file.Source.Tracks.Count; i++)
+                if (index < file.Source.Tracks.Count)
                 {
-                    AppendedTrack appendTrack = new AppendedTrack(file, file.Source.Tracks[i], file.Color);
-                    if (i < this.SourceTracks.Count)
+                    // Just throw all remaining tracks into the last track that was found
+                    if (lastTrack != null)
                     {
-                        this.SourceTracks[i].AppendedTracks.Add(appendTrack);
-                    } else
-                    {
-                        // Dump all extra tracks into the last track.
-                        this.SourceTracks.Last().AppendedTracks.Add(appendTrack);
+                        lastTrack.AppendedTracks.AddRange(file.Source.Tracks.Skip(index).Select(x => new AppendedTrack(file, x, file.Color)));
                     }
                 }
             }
-            return file;
         }
 
         public AppendedFile AddSourceFile(MkvMergeID file) {
             var appendedFile = CreateFile(file);
-            return AddSourceFile(appendedFile);
+            AddSourceFile(appendedFile);
+            return appendedFile;
+        }
+
+        public AppendedFile AddAppendedFile(AppendedFile parent, MkvMergeID file) {
+            var appendedFile = CreateFile(file);
+            this.AddAppendedFile(parent, appendedFile);
+            return appendedFile;
         }
 
         public AppendedFile ImportSourceFile(MkvMergeID file) {
             var appendedFile = GetFileOrCreate(file);
-            return AddSourceFile(appendedFile);
+            AddSourceFile(appendedFile);
+            return appendedFile;
         }
 
-        public void DeleteSourceFileAndTracks(AppendedFile file) {
-            if (file == this.PrimarySource)
-            {
-                // Delete everything
-                ResetColors();
-                ResetFiles();
-                SourceTracks.Clear();
-            } else
-            {
-                // Delete relevent tracks
-                foreach(var sourceTrack in this.SourceTracks)
-                {
-                    sourceTrack.AppendedTracks.RemoveAll(x => x.Source == file);
-                }
+        public AppendedFile ImportAppendedFile(AppendedFile parent, MkvMergeID file) {
+            var appendedFile = GetFileOrCreate(file);
+            AddAppendedFile(parent, appendedFile);
+            return appendedFile;
+        }
 
-                // Delete from files
-                this.RemoveFile(file);
+        public void DeleteFileAndTracks(AppendedFile file) {
+            // Cleanup any appended files (if needed)
+            foreach(var appended in file.AppendedFiles)
+            {
+                DeleteFileAndTracks(appended);
             }
+
+            // Remove from source files (if needed)
+            this.SourceFiles.Remove(file);
+
+            // remove from appended files (if needed)
+            foreach(var source in this.SourceFiles)
+            {
+                source.AppendedFiles.Remove(file);
+            }
+
+            // Successfully removed all file references
+
+            // Cleanup any appended tracks
+            foreach(var source in this.SourceTracks)
+            {
+                source.AppendedTracks.RemoveAll(x => x.Source == file);
+            }
+
+            // Cleanup any source tracks
+            foreach(var source in this.SourceTracks)
+            {
+                if (source.Source == file)
+                {
+                    // Just dump the appended tracks in the first available
+                    if (source.AppendedTracks.Any())
+                    {
+                        AppendedTrack? otherSource = this.SourceTracks.Where(x => x.Source != file).FirstOrDefault();
+                        if (otherSource == null) throw new Exception("Could not find another source to move appended tracks. This should not happen");
+
+                        otherSource.AppendedTracks.AddRange(source.AppendedTracks);
+                    }
+                }
+            }
+            this.SourceTracks.RemoveAll(x => x.Source == file);
+
+            // Manage internal state
+            this.RemoveFile(file);
         }
 
         /*public AppendedTrack? GetTrack(MkvTrack track) {
@@ -207,202 +235,328 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             listB[indexB] = temp;
         }
 
-        public int MoveTrackUp(AppendedTrack track) {
+        public bool MoveTrackUp(AppendedTrack track) {
             for(int sourceIndex = 0; sourceIndex < this.SourceTracks.Count; sourceIndex++)
             {
                 AppendedTrack sourceTrack = this.SourceTracks[sourceIndex];
-                for (int trackIndex = 0; trackIndex < sourceTrack.AppendedTracks.Count; trackIndex++)
+                if (sourceTrack == track)
                 {
-                    AppendedTrack subTrack = sourceTrack.AppendedTracks[trackIndex];
-                    if (subTrack == track)
+                    // Attempt to move!
+                    if (sourceIndex >= 1)
                     {
-                        // Attempt to move
-                        if (trackIndex >= 1)
+                        Swap(this.SourceTracks, sourceIndex - 1, this.SourceTracks, sourceIndex);
+                        return true;
+                    } else
+                    {
+                        // We are at the top of the list, it cant be moved!
+                        return false;
+                    }
+
+                } else
+                {
+                    // Try to find in sub-tracks
+                    for (int trackIndex = 0; trackIndex < sourceTrack.AppendedTracks.Count; trackIndex++)
+                    {
+                        AppendedTrack subTrack = sourceTrack.AppendedTracks[trackIndex];
+                        if (subTrack == track)
                         {
-                            Swap(sourceTrack.AppendedTracks, trackIndex - 1, sourceTrack.AppendedTracks, trackIndex);
-                            return -1;
-                        } else
-                        {
-                            // Try to move to a higher source track
-                            if (sourceIndex >= 1)
+                            // Attempt to move
+                            if (trackIndex >= 1)
                             {
-                                // Remove from this list and add it to the higher one
-                                sourceTrack.AppendedTracks.Remove(subTrack);
-                                this.SourceTracks[sourceIndex - 1].AppendedTracks.Add(subTrack);
-                                return -1;
+                                Swap(sourceTrack.AppendedTracks, trackIndex - 1, sourceTrack.AppendedTracks, trackIndex);
+                                return true;
                             } else
                             {
-                                // We are at the top of the list, it cant be moved!
-                                return 0;
+                                // Try to move to a higher source track
+                                if (sourceIndex >= 1)
+                                {
+                                    // Remove from this list and add it to the higher one
+                                    sourceTrack.AppendedTracks.Remove(subTrack);
+                                    this.SourceTracks[sourceIndex - 1].AppendedTracks.Add(subTrack);
+                                    return true;
+                                } else
+                                {
+                                    // We are at the top of the list, it cant be moved!
+                                    return false;
+                                }
                             }
                         }
                     }
                 }
             }
 
-            return 0;
+            // Could not find requested track
+            return false;
         }
 
-        public int MoveTrackDown(AppendedTrack track) {
+        public bool MoveTrackDown(AppendedTrack track) {
             for (int sourceIndex = 0; sourceIndex < this.SourceTracks.Count; sourceIndex++)
             {
                 AppendedTrack sourceTrack = this.SourceTracks[sourceIndex];
-                for (int trackIndex = 0; trackIndex < sourceTrack.AppendedTracks.Count; trackIndex++)
+                if (sourceTrack == track)
                 {
-                    AppendedTrack subTrack = sourceTrack.AppendedTracks[trackIndex];
-                    if (subTrack == track)
+                    // Attempt to move!
+                    if (sourceIndex < this.SourceTracks.Count - 1)// Not the last item in the list
                     {
-                        // Attempt to move
-                        if (trackIndex < sourceTrack.AppendedTracks.Count - 1) // Not the last item in the list
+                        Swap(this.SourceTracks, sourceIndex, this.SourceTracks, sourceIndex + 1);
+                        return true;
+                    } else
+                    {
+                        // We are at the bottom of the list, it cant be moved!
+                        return false;
+                    }
+                } else
+                {
+                    // Try searching in sub-tracks
+                    for (int trackIndex = 0; trackIndex < sourceTrack.AppendedTracks.Count; trackIndex++)
+                    {
+                        AppendedTrack subTrack = sourceTrack.AppendedTracks[trackIndex];
+                        if (subTrack == track)
                         {
-                            Swap(sourceTrack.AppendedTracks, trackIndex, sourceTrack.AppendedTracks, trackIndex + 1);
-                            return 1;
-                        } else
-                        {
-                            // Try to move to a lower source track
-                            if (sourceIndex < this.SourceTracks.Count - 1) // Not the last source in the list
+                            // Attempt to move
+                            if (trackIndex < sourceTrack.AppendedTracks.Count - 1) // Not the last item in the list
                             {
-                                // Remove from this list and add it to the beginning of the next one
-                                sourceTrack.AppendedTracks.Remove(subTrack);
-                                this.SourceTracks[sourceIndex + 1].AppendedTracks.Insert(0, subTrack);
-                                return 1;
+                                Swap(sourceTrack.AppendedTracks, trackIndex, sourceTrack.AppendedTracks, trackIndex + 1);
+                                return true;
                             } else
                             {
-                                // We are at the bottom of the list, it cant be moved!
-                                return 0;
+                                // Try to move to a lower source track
+                                if (sourceIndex < this.SourceTracks.Count - 1) // Not the last source in the list
+                                {
+                                    // Remove from this list and add it to the beginning of the next one
+                                    sourceTrack.AppendedTracks.Remove(subTrack);
+                                    this.SourceTracks[sourceIndex + 1].AppendedTracks.Insert(0, subTrack);
+                                    return true;
+                                } else
+                                {
+                                    // We are at the bottom of the list, it cant be moved!
+                                    return false;
+                                }
                             }
                         }
                     }
                 }
             }
 
-            return 0;
+            return false;
         }
 
-        public void Save() {
+        public void Save(RenameData2 renames) {
             RenameData.Name = this.Name;
-            RenameData.PrimarySource = this.PrimarySource?.Source?.GetRelativePath();
-            RenameData.Tracks.Clear();
-            foreach(AppendedTrack sourceTrack in this.SourceTracks)
+            RenameData.Files.Clear();
+            RenameData.TrackOrder.Clear();
+
+            // Save all the files first
+            Dictionary<AppendedFile, PlaylistFile> lookup = new();
+            Dictionary<AppendedFile, int> fileIndexLookup = new();
+            int lastIndex = 0;
+            foreach(var source in this.SourceFiles)
             {
-                PlaylistTrackOld source = new PlaylistTrackOld();
-                RenameData.Tracks.Add(source);
+                var sourcePlaylist = new PlaylistFile();
+                lookup[source] = sourcePlaylist;
+                RenameData.Files.Add(sourcePlaylist);
+                fileIndexLookup[source] = lastIndex++;
 
-                source.Source = sourceTrack.Source.Source.GetRelativePath();
-                source.UID = sourceTrack.Track?.Properties?.Number ?? -1;
-                source.Codec = sourceTrack.Track?.Codec ?? "";
-                source.ID = sourceTrack.Track.ID;
-                source.Enabled = sourceTrack.Enabled;
+                sourcePlaylist.Source = source.Source.GetRelativePath();
 
-                foreach(AppendedTrack subTrack in sourceTrack.AppendedTracks)
+                foreach(var appended in source.AppendedFiles)
                 {
-                    PlaylistTrackOld track = new PlaylistTrackOld();
-                    source.AppendedTracks.Add(track);
+                    var appendedPlaylist = new PlaylistFile();
+                    lookup[appended] = appendedPlaylist;
+                    sourcePlaylist.AppendedFiles.Add(appendedPlaylist);
+                    fileIndexLookup[appended] = lastIndex++;
 
-                    track.Source = subTrack.Source.Source.GetRelativePath();
-                    track.UID = subTrack.Track?.Properties?.Number ?? -1;
-                    track.Codec = subTrack.Track?.Codec ?? "";
-                    track.ID = subTrack.Track.ID;
-                    track.Enabled = subTrack.Enabled;
+                    appendedPlaylist.Source = appended.Source.GetRelativePath();
                 }
+            }
+
+            // Now go through all the tracks
+            List<TrackID> disabledTracks = new();
+            TrackID lastEnabledTrack = new TrackID();
+            foreach (var sourceTrack in this.SourceTracks)
+            {
+                SaveTrack(lookup, fileIndexLookup, renames, sourceTrack, false, disabledTracks, ref lastEnabledTrack);
             }
         }
 
-        public static LoadedPlaylist? LoadFromRenames(MkvToolNixDisc disc, PlaylistOld playlist) {
-            LoadedPlaylist? result = null;
-            // Try to find primary source
-            if (playlist.PrimarySource == null) return null;
-            foreach (var clip in disc.Streams)
+        private void SaveTrack(Dictionary<AppendedFile, PlaylistFile> lookup, Dictionary<AppendedFile, int> fileIndexLookup, RenameData2 renames, AppendedTrack track, bool isAppended, List<TrackID> disabledTracks, ref TrackID lastEnabledTrack) {
+            var source = track.Track;
+
+            TrackID trackId = new();
+            trackId.FileIndex = fileIndexLookup[track.Source];
+            trackId.TrackIndex = (int)track.Track.ID;
+            if (!isAppended)
             {
-                if (clip.GetRelativePath() == playlist.PrimarySource)
-                {
-                    result = new LoadedPlaylist(playlist, clip, playlist.Name ?? "?");
-                    break;
-                }
+                RenameData.TrackOrder.Add(trackId);
             }
 
-            if (result != null)
+            // This will hold all of the track data
+            var trackRename = renames.GetClipRename(track.Source.Source)?.GetTrackRename(source);
+            var playlist = new PlaylistTrack() {
+                UID = source.Properties?.Number,
+                Codec = source.Codec,
+                ID = source.ID,
+                Copy = track.Enabled,
+                Name = trackRename?.Name,
+                Commentary = trackRename?.CommentaryFlag
+            };
+
+            // Add to the source file that owns it
+            lookup[track.Source].Tracks.Add(playlist);
+
+            if (!isAppended)
             {
-                foreach (var primaryTrack in playlist.Tracks)
-                {
-                    var track = LoadTrack(disc, result, primaryTrack, true);
-                    if (track != null && track.Source.Source.GetRelativePath() == result.PrimarySource.Source.GetRelativePath())
+                // We want to save sub-tracks for accurate reloading later
+                //if (track.Enabled)
+                //{
+                    // create internal state for appended tracks
+                    disabledTracks = new();
+                    TrackID lastTrack = trackId;
+
+                    // Save all appended tracks
+                    foreach (var appendedTrack in track.AppendedTracks)
                     {
-                        result.SourceTracks.Add(track);
-                    } else
-                    {
-                        // TODO error reporting
+                        SaveTrack(lookup, fileIndexLookup, renames, appendedTrack, true, disabledTracks, ref lastTrack);
                     }
+                //}
+            } else
+            {
+                if (track.Enabled)
+                {
+                    // Mark which track it is appended to
+                    playlist.AppendedTo = lastEnabledTrack;
+
+                    // Update sync info as needed
+                    playlist.Sync.Clear();
+                    playlist.Sync.AddRange(disabledTracks);
+
+                    // Update for the next track
+                    disabledTracks.Clear();
+                    lastEnabledTrack = trackId;
+                } else
+                {
+                    // We want to mark how disabled tracks are appended so the file can be properly reloaded 
+                    playlist.AppendedTo = lastEnabledTrack;
+
+                    // Update internal state for next track
+                    disabledTracks.Add(trackId);
                 }
             }
-            return result;
         }
 
-        private static AppendedTrack? LoadTrack(MkvToolNixDisc disc, LoadedPlaylist playlist, PlaylistTrackOld playlistTrack, bool isPrimary) {
-            MkvMergeID? sourceFile = null;
-            MkvTrack? sourceTrack = null;
-            Color color;
-
-            // Find source file
-            if (playlistTrack.Source == null) return null;
-            foreach (var clip in disc.Streams)
+        private static MkvMergeID? FindFile(MkvToolNixDisc disc, string relativePath) {
+            foreach(var stream in disc.Streams)
             {
-                if (clip != null && clip.GetRelativePath() == playlistTrack.Source)
+                if (stream.GetRelativePath() == relativePath)
                 {
-                    sourceFile = clip;
-                    break;
+                    return stream;
                 }
             }
-            if (sourceFile == null) return null;
+            return null;
+        }
 
-            // Find source track, first by matching UID
-            if (playlistTrack.UID == null) return null;
-            List<MkvTrack> matchingTracks = sourceFile.Tracks.Where(x => x.Properties?.Number == playlistTrack.UID).ToList();
+        private static MkvTrack? FindTrack(MkvMergeID stream, PlaylistTrack filter) {
+            // TODO better matching algorithm
+            List<MkvTrack> matchingTracks = stream.Tracks.Where(x => x.Properties?.Number == filter.UID).ToList();
             if (matchingTracks.Count > 1)
             {
                 // Multiple matches, try to match codec name next
-                if (playlistTrack.Codec == null) return null;
-                matchingTracks = matchingTracks.Where(x => x.Codec == playlistTrack.Codec).ToList();
+                if (filter.Codec == null) return null;
+                matchingTracks = matchingTracks.Where(x => x.Codec == filter.Codec).ToList();
                 if (matchingTracks.Count > 1)
                 {
                     // Multiple matches, try to match using MkvToolNix track ID
-                    if (playlistTrack.ID == null) return null;
-                    matchingTracks = matchingTracks.Where(x => x.ID == playlistTrack.ID).ToList();
+                    if (filter.ID == null) return null;
+                    matchingTracks = matchingTracks.Where(x => x.ID == filter.ID).ToList();
                 }
             }
             if (matchingTracks.Count >= 1)
             {
                 // We tried our best to match, just take the first result if there are more than 1
-                sourceTrack = matchingTracks[0];
+                return matchingTracks[0];
             }
-            if (sourceTrack == null) return null;
+            return null;
+        }
 
-            // Get the color based on the selected source file
-            var file = playlist.GetFileOrCreate(sourceFile);
-            color = file.Color;
+        public static LoadedPlaylist? LoadFromRenames(MkvToolNixDisc disc, Playlist playlist) {
+            LoadedPlaylist result = new(playlist, playlist.Name);
 
-            // Finally create the track
-            var result = new AppendedTrack(file, sourceTrack, color);
-            result.Enabled = playlistTrack.Enabled ?? true;
-
-            // Now load any appended tracks, if needed
-            if (isPrimary)
+            List<PlaylistFile> allFiles = new();
+            Dictionary<PlaylistFile, AppendedFile> lookup = new();
+            Dictionary<AppendedFile, List<AppendedTrack>> trackLookup = new();
+            Dictionary<PlaylistTrack, AppendedTrack> breadcrumb = new();
+            foreach(var sourceFile in playlist.Files)
             {
-                foreach (var track in playlistTrack.AppendedTracks)
+                var file = result.CreateFile(FindFile(disc, sourceFile.Source)); // TODO error handling
+                lookup[sourceFile] = file;
+                trackLookup[file] = new();
+                result.SourceFiles.Add(file);
+                allFiles.Add(sourceFile);
+                foreach(var appendedFile in sourceFile.AppendedFiles)
                 {
-                    if (track != null)
+                    var appended = result.CreateFile(FindFile(disc, appendedFile.Source)); // TODO error handling
+                    lookup[appendedFile] = appended;
+                    trackLookup[appended] = new();
+                    file.AppendedFiles.Add(appended);
+                    allFiles.Add(appendedFile);
+                }
+            }
+
+            // Now attempt to add the tracks
+            foreach(var playlistSourceFile in playlist.Files)
+            {
+                foreach(var playlistSourceTrack in playlistSourceFile.Tracks)
+                {
+                    LoadTrack(result, disc, lookup, trackLookup, breadcrumb, allFiles, playlistSourceFile, playlistSourceTrack, true);
+                }
+
+                foreach(var playlistAppendedFile in playlistSourceFile.AppendedFiles)
+                {
+                    foreach (var playlistAppendedTrack in playlistAppendedFile.Tracks)
                     {
-                        var loadedTrack = LoadTrack(disc, playlist, track, false);
-                        if (loadedTrack != null)
-                        {
-                            // TODO report loading error
-                            result.AppendedTracks.Add(loadedTrack);
-                        }
+                        LoadTrack(result, disc, lookup, trackLookup, breadcrumb, allFiles, playlistAppendedFile, playlistAppendedTrack, false);
                     }
                 }
             }
 
+            if (playlist.TrackOrder.Any())
+            {
+                List<AppendedTrack> newSourceTracks = new();
+                foreach(var order in playlist.TrackOrder)
+                {
+                    PlaylistFile playlistFile = allFiles[(int)order.FileIndex];
+                    AppendedTrack track = trackLookup[lookup[playlistFile]][(int)order.TrackIndex];
+                    if (!result.SourceTracks.Contains(track)) throw new Exception();
+                }
+            }
+
+            // TODO check for other tracks from source that were not listed to be imported in playlist
+
             return result;
+        }
+
+        private static void LoadTrack(LoadedPlaylist result, MkvToolNixDisc disc, Dictionary<PlaylistFile, AppendedFile> lookup, Dictionary<AppendedFile, List<AppendedTrack>> trackLookup, Dictionary<PlaylistTrack, AppendedTrack>  breadcrumb, List<PlaylistFile> allFiles, PlaylistFile playlistFile, PlaylistTrack playlistTrack, bool isSource) {
+            var sourceFile = lookup[playlistFile];
+            var track = new AppendedTrack(sourceFile, FindTrack(sourceFile.Source, playlistTrack), sourceFile.Color); // TODO error handling
+            track.Enabled = playlistTrack.Copy ?? true;
+            trackLookup[sourceFile].Add(track);
+            
+            if (isSource)
+            {
+                if (playlistTrack.AppendedTo != null) throw new Exception(); // TODO error handling
+                result.SourceTracks.Add(track);
+                breadcrumb[playlistTrack] = track;
+            } else
+            {
+                TrackID appendedID = playlistTrack.AppendedTo;
+                PlaylistFile appendedFile = allFiles[(int)appendedID.FileIndex];
+                AppendedTrack appendedTrack = breadcrumb[appendedFile.Tracks[(int)appendedID.TrackIndex]]; //trackLookup[lookup[appendedFile]][(int)appendedID.TrackIndex];
+
+                appendedTrack.AppendedTracks.Add(track);
+                if (playlistTrack.Copy ?? true) breadcrumb[playlistTrack] = track;
+
+                if (!appendedTrack.Enabled) track.Enabled = false;
+            }
         }
 
         public override string ToString() {

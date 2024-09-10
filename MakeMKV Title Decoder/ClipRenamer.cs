@@ -70,6 +70,7 @@ namespace MakeMKV_Title_Decoder {
 
             this.VideoTrackList.Clear();
             this.AudioTrackList.Clear();
+            this.OtherTrackList.Clear();
             VideoTrackList_OnSelectionChanged(null);
             AudioTrackList_OnSelectionChanged(null);
             if (clip != null)
@@ -82,6 +83,9 @@ namespace MakeMKV_Title_Decoder {
                     } else if (track.Type == MkvTrackType.Audio)
                     {
                         this.AudioTrackList.Add(clip, track, this.Renames);
+                    } else
+                    {
+                        this.OtherTrackList.Add(clip, track, this.Renames);
                     }
                 }
             }
@@ -155,11 +159,11 @@ namespace MakeMKV_Title_Decoder {
         private void VideoTrackList_OnSelectionChanged(TrackListData? track) {
             this.SelectedVideoTrack = track?.Track;
             SelectTrack(
-                track?.Track, 
-                MkvTrackType.Video, 
-                VideoTrackPanel, 
-                VideoTrackName, 
-                VideoTrackCommentary, 
+                track?.Track,
+                MkvTrackType.Video,
+                VideoTrackPanel,
+                VideoTrackName,
+                VideoTrackCommentary,
                 VideoTrackDefault
             );
         }
@@ -167,10 +171,10 @@ namespace MakeMKV_Title_Decoder {
         private void AudioTrackList_OnSelectionChanged(TrackListData? track) {
             this.SelectedAudioTrack = track?.Track;
             SelectTrack(
-                track?.Track, 
-                MkvTrackType.Audio, 
-                AudioTrackPanel, 
-                AudioTrackName, 
+                track?.Track,
+                MkvTrackType.Audio,
+                AudioTrackPanel,
+                AudioTrackName,
                 AudioTrackCommentary,
                 AudioTrackDefault
             );
@@ -211,6 +215,10 @@ namespace MakeMKV_Title_Decoder {
                 this.AudioTrackCommentary.Checked,
                 this.AudioTrackDefault.Checked
             );
+        }
+
+        private void VideoTrackList_SelectedIndexChanged(object sender, EventArgs e) {
+
         }
     }
 }

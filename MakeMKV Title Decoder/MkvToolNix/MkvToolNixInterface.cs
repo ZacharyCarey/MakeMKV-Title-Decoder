@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 namespace MakeMKV_Title_Decoder.MkvToolNix
 {
     internal interface MkvToolNixData {
-        bool Parse(IEnumerable<string> std, IProgress<SimpleProgress>? progress = null);
+        bool Parse(IEnumerable<string> std, IProgress<SimpleProgress>? progress = null, object? tag = null);
     }
 
 
@@ -77,7 +77,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
         }
 
         // TODO just pass the process as a parameter
-        private static bool ParseCommandForceArgs<T>(T data, IProgress<SimpleProgress>? progress, string exeName, string args) where T : class, MkvToolNixData {
+        private static bool ParseCommandForceArgs<T>(T data, IProgress<SimpleProgress>? progress, string exeName, string args, object? tag) where T : class, MkvToolNixData {
             var process = RunCommandForceArg(exeName, args);
             if (process == null)
             {
@@ -86,7 +86,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
 
             try
             {
-                bool result = data.Parse(ReadAllStdOut(process), progress);
+                bool result = data.Parse(ReadAllStdOut(process), progress, tag);
                 process.WaitForExit();
                 return result;
             } catch (Exception ex)
@@ -131,20 +131,21 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
             }
         }
 
-        public static void Merge(MkvToolNixDisc disc, Playlist playlist, string outputFile, IProgress<SimpleProgress>? progress = null) {
+        public static void Merge(MkvToolNixDisc disc, Playlist playlist, string outputFile, IProgress<SimpleProgress>? progress = null, SimpleProgress? totalProgress = null) {
             TestData data = new();
 
 
             //string args = $"--title \"Test Title\" -o \"{outputFile}\" --track-name 5:\"Director Commentary\" {Path.Combine(disc.RootPath, "BDMV", "STREAM", "00001.m2ts")}";
-            //bool result = ParseCommandForceArgs<TestData>(data, progress, "mkvmerge.exe", args);
-            bool result = ParseCommandForceArgs<TestData>(data, progress, "mkvmerge.exe", GetMergeCommand(disc, playlist, outputFile));
+            string cmd = GetMergeCommand(disc, playlist, outputFile);
+            Console.WriteLine(cmd); // TODO put in ParseCommandForceArgs?
+            bool result = ParseCommandForceArgs<TestData>(data, progress, "mkvmerge.exe", cmd, totalProgress);
         }
 
-        public static void MergeAsync(MkvToolNixDisc disc, Playlist playlist, string outputFile) {
+        public static void MergeAsync(MkvToolNixDisc disc, Playlist playlist, string outputFile, SimpleProgress? totalProgress = null) {
             var progressForm = new TaskProgressViewer<Task, SimpleProgress>(
                 (IProgress<SimpleProgress> progress) =>
                 {
-                    return Task.Run(() => Merge(disc, playlist, outputFile, progress));
+                    return Task.Run(() => Merge(disc, playlist, outputFile, progress, totalProgress));
                 }
             );
             progressForm.ShowDialog();
@@ -153,29 +154,55 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
         private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, string outputFile) {
             List<string> args = new();
             List<MkvAppend> appendedTracks = new();
-            List<string> files = playlist.Files.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks)).ToList();
+            List<PlaylistFile> allFiles = FindFiles(playlist).ToList();
+            IEnumerable<string> files = playlist.Files.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks, false, allFiles));
+
+            args.Add($"-o \"{outputFile}\"");
+            args.AddRange(files);
 
             if (playlist.Title != null)
             {
                 args.Add($"--title \"{playlist.Title}\"");
             }
+
+            if (playlist.TrackOrder != null)
+            {
+                args.Add($"--track-order");
+                args.Add(string.Join(",", playlist.TrackOrder.Select(x => $"{x.FileIndex}:{x.TrackIndex}")));
+            }
+
             if (appendedTracks.Count > 0)
             {
                 args.Add($"--append-to {string.Join(",", appendedTracks)}");
-            } 
-
-            args.Add($"-o \"{outputFile}\"");
-            args.Add(string.Join(" + ", files));
+            }
 
             string fullCommand = string.Join(" ", args);
             return fullCommand;
         }
 
-        private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, PlaylistFile file, List<MkvAppend> appendedTracks) {
+        private static IEnumerable<PlaylistFile> FindFiles(Playlist playlist) {
+            foreach(var file in playlist.Files)
+            {
+                yield return file;
+                foreach(var append in file.AppendedFiles)
+                {
+                    yield return append;
+                }
+            }
+        }
+
+        // TODO use the json file option to prevent console issues?
+        private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, PlaylistFile file, List<MkvAppend> appendedTracks, bool isAppended, List<PlaylistFile> allFiles) {
             List<string> args = new();
             List<long> audioTracks = new();
             List<long> videoTracks = new();
             List<long> subtitleTracks = new();
+
+            if (isAppended)
+            {
+                args.Add("+");
+            }
+
             foreach(PlaylistTrack track in file.Tracks)
             {
                 if (track.Copy ?? false)
@@ -206,7 +233,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
                         foreach(var sync in track.Sync)
                         {
                             //MkvTrack? syncTrack = FindTrack(disc, playlist.Files[sync.FileID.Value], playlist.Files[sync.FileID.Value].Tracks[sync.TrackID.Value]);
-                            MkvMergeID syncFile = FindSource(disc, playlist.Files[sync.FileIndex.Value]);
+                            MkvMergeID syncFile = FindSource(disc, allFiles[sync.FileIndex.Value]);
                             if (syncFile != null && syncFile.Container?.Properties?.Duration != null)
                             {
                                 delay += syncFile.Container.Properties.Duration.Value;
@@ -233,7 +260,7 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
                     if (track.AppendedTo != null)
                     {
                         MkvAppend append = new();
-                        append.SrcFile = playlist.Files.IndexOf(file);
+                        append.SrcFile = allFiles.IndexOf(file);
                         append.SrcTrack = (int)track.ID.Value;
                         append.DstFile = track.AppendedTo.FileIndex.Value;
                         append.DstTrack = track.AppendedTo.TrackIndex.Value;
@@ -258,6 +285,11 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
                 args.Add($"-S");
 
             args.Add(Path.Combine(disc.RootPath, file.Source));
+
+            if (!isAppended)
+            {
+                args.AddRange(file.AppendedFiles.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks, true, allFiles)));
+            }
 
             return string.Join(" ", args);
         }
@@ -309,8 +341,19 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
         }
     }
 
+    // TODO rename to MultiplexData? MergeData?
     public class TestData : MkvToolNixData {
-        public bool Parse(IEnumerable<string> std, IProgress<SimpleProgress>? progress = null) {
+
+        public List<string> Errors = new();
+        public bool FoundSuccess = false;
+
+        public bool Parse(IEnumerable<string> std, IProgress<SimpleProgress>? progress = null, object? tag = null) {
+            SimpleProgress? baseProgress = null;
+            if (tag != null && tag is SimpleProgress p)
+            {
+                baseProgress = p;
+            }
+
             Console.ForegroundColor = ConsoleColor.Cyan;
             foreach(var str in std)
             {
@@ -323,10 +366,43 @@ namespace MakeMKV_Title_Decoder.MkvToolNix
                     uint prog;
                     if (uint.TryParse(progText, out prog))
                     {
-                        progress.Report(new SimpleProgress(prog, 100));
+                        if (baseProgress != null)
+                        {
+                            progress.Report(new SimpleProgress(
+                                prog, 
+                                100,
+                                (baseProgress.Value.Total * 100) + prog,
+                                baseProgress.Value.TotalMax * 100
+                            ));
+                        } else
+                        {
+                            progress.Report(new SimpleProgress(prog, 100));
+                        }
                     }
                 }
+                if (str.StartsWith("Error: "))
+                {
+                    Errors.Add(str.Substring("Error: ".Length));
+                }
+                if (str.StartsWith("Multiplexing took"))
+                {
+                    this.FoundSuccess = true;
+                }
             }
+
+            if (this.Errors.Count > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                foreach(var err in Errors)
+                {
+                    Console.WriteLine(err);
+                }
+            } else if (this.FoundSuccess != true)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("No errors detected, but could not tell if operation was successfull.");
+            }
+
             Console.ResetColor();
             return true;
         }

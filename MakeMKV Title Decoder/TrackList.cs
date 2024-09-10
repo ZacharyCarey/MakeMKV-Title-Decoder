@@ -96,6 +96,7 @@ namespace MakeMKV_Title_Decoder {
 
         public TrackListData Add(MkvMergeID clip, MkvTrack track, RenameData2 renames, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null) {
             TrackListData data = new();
+            data.Track = track;
             PropertyItem source = new();
             source.IconColor = color;
             source.Padding = padding ?? 0;

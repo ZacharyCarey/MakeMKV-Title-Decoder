@@ -136,18 +136,13 @@ namespace MakeMKV_Title_Decoder {
             this.PlaylistFilesList.Items.Clear();
             if (selectedPlaylist != null)
             {
-                if (selectedPlaylist.PrimarySource != null)
+                foreach(var sourceFile in selectedPlaylist.SourceFiles)
                 {
-                    this.PlaylistFilesList.Items.Add(CreateClipEntry(selectedPlaylist.PrimarySource));
-                } else
-                {
-                    // Ensure state matches UI
-                    // selectedPlaylist.RemoveAllAppendedTracks;
-                }
-
-                foreach (var file in selectedPlaylist.AppendedFiles)
-                {
-                    this.PlaylistFilesList.Items.Add(CreateClipEntry(file, IndentedTrackPadding));
+                    this.PlaylistFilesList.Items.Add(CreateClipEntry(sourceFile));
+                    foreach(var appendedFile in sourceFile.AppendedFiles)
+                    {
+                        this.PlaylistFilesList.Items.Add(CreateClipEntry(appendedFile, IndentedTrackPadding));
+                    }
                 }
             }
 
@@ -223,9 +218,10 @@ namespace MakeMKV_Title_Decoder {
         private void ImportPlaylists_Click(object sender, EventArgs e) {
             foreach (var playlist in this.Disc.Playlists)
             {
-                PlaylistOld renamePlaylist = new();
-                LoadedPlaylist loadedPlaylist = new(renamePlaylist, null, playlist.FileName);
+                Playlist renamePlaylist = new();
+                LoadedPlaylist loadedPlaylist = new(renamePlaylist, playlist.FileName);
 
+                AppendedFile? rootFile = null;
                 foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
                 {
                     // Try to find file
@@ -244,27 +240,34 @@ namespace MakeMKV_Title_Decoder {
                         continue;
                     }
 
+                    // Only add files the user has renames i.e. dont add ignored files
                     if (Renames.GetClipRename(file) != null)
                     {
-                        // Only add files the user has renames i.e. dont add ignored files
-                        loadedPlaylist.ImportSourceFile(file);
+
+                        if (rootFile == null)
+                        {
+                            rootFile = loadedPlaylist.ImportSourceFile(file);
+                        } else
+                        {
+                            loadedPlaylist.ImportAppendedFile(rootFile, file);
+                        }
                     }
                 }
 
                 // If no valid source files (including ignored files) were found,
                 // dont even bother to import the playlist
-                if (loadedPlaylist.PrimarySource != null)
+                if (loadedPlaylist.SourceFiles.Count != 0)
                 {
                     this.Renames.Playlists.Add(renamePlaylist);
                     this.PlaylistsListBox.Add(loadedPlaylist);
 
                     // If only one file was found, just give it the same name as the source
-                    if (!loadedPlaylist.AppendedFiles.Any())
+                    /*if (loadedPlaylist.AppendedFiles.Any())
                     {
                         var rename = Renames.GetClipRename(loadedPlaylist.PrimarySource.Source);
                         if (rename != null && rename.Name != null) loadedPlaylist.Name = rename.Name;
-                    }
-                    loadedPlaylist.Save();
+                    }*/
+                    loadedPlaylist.Save(this.Renames);
 
                     CheckErrors(loadedPlaylist);
                 }
@@ -274,9 +277,9 @@ namespace MakeMKV_Title_Decoder {
         }
 
         private void NewPlaylistButton_Click(object sender, EventArgs e) {
-            var playlist = new PlaylistOld();
+            var playlist = new Playlist();
             this.Renames.Playlists.Add(playlist);
-            this.PlaylistsListBox.Add(new LoadedPlaylist(playlist, null, "Empty Playlist"));
+            this.PlaylistsListBox.Add(new LoadedPlaylist(playlist, "Empty Playlist"));
         }
 
         private void PlaylistSourceDeleteBtn_Click(object sender, EventArgs e) {
@@ -288,7 +291,7 @@ namespace MakeMKV_Title_Decoder {
                 {
                     if (MessageBox.Show("Deleting this file will delete all related tracks. Are you sure?", "Warning", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
                     {
-                        selectedPlaylist.DeleteSourceFileAndTracks(selectedItem);
+                        selectedPlaylist.DeleteFileAndTracks(selectedItem);
                         UpdatePlaylistUI();
                         UnsavedChangesIcon(selectedPlaylist);
                     }
@@ -328,10 +331,18 @@ namespace MakeMKV_Title_Decoder {
             if (selectedPlaylist != null && selectedTrack != null)
             {
                 var moved = selectedPlaylist.MoveTrackUp(selectedTrack);
-                if (moved != 0)
+                if (moved)
                 {
                     UpdatePlaylistUI();
-                    this.PlaylistTrackOrder.SelectedIndex = selectedIndex + moved;
+                    for(int i = 0; i < this.PlaylistTrackOrder.Items.Count; i++)
+                    {
+                        var track = (AppendedTrack?)PlaylistTrackOrder.Items[i].Tag;
+                        if (track == selectedTrack)
+                        {
+                            this.PlaylistTrackOrder.SelectedIndex = i;
+                            break;
+                        }
+                    }
                     UnsavedChangesIcon(selectedPlaylist);
                 }
             }
@@ -344,10 +355,18 @@ namespace MakeMKV_Title_Decoder {
             if (selectedPlaylist != null && selectedTrack != null)
             {
                 var moved = selectedPlaylist.MoveTrackDown(selectedTrack);
-                if (moved != 0)
+                if (moved)
                 {
                     UpdatePlaylistUI();
-                    this.PlaylistTrackOrder.SelectedIndex = selectedIndex + moved;
+                    for (int i = 0; i < this.PlaylistTrackOrder.Items.Count; i++)
+                    {
+                        var track = (AppendedTrack?)PlaylistTrackOrder.Items[i].Tag;
+                        if (track == selectedTrack)
+                        {
+                            this.PlaylistTrackOrder.SelectedIndex = i;
+                            break;
+                        }
+                    }
                     UnsavedChangesIcon(selectedPlaylist);
                 }
             }
@@ -413,7 +432,7 @@ namespace MakeMKV_Title_Decoder {
                 }
 
                 selectedItem.Playlist.Name = this.PlaylistNameTextBox.Text;
-                selectedItem.Playlist.Save();
+                selectedItem.Playlist.Save(this.Renames);
                 ClearUnsavedChangesIcon(selectedItem.Playlist);
                 this.PlaylistsListBox.Invalidate();
             }

@@ -411,6 +411,7 @@
             EpisodeTextBox.Name = "EpisodeTextBox";
             EpisodeTextBox.Size = new Size(153, 23);
             EpisodeTextBox.TabIndex = 9;
+            EpisodeTextBox.TextChanged += EpisodeTextBox_TextChanged;
             // 
             // TmdbBtn
             // 
@@ -428,6 +429,7 @@
             SeasonTextBox.Name = "SeasonTextBox";
             SeasonTextBox.Size = new Size(153, 23);
             SeasonTextBox.TabIndex = 8;
+            SeasonTextBox.TextChanged += SeasonTextBox_TextChanged;
             // 
             // label1
             // 
@@ -453,6 +455,7 @@
             IdTextBox.Name = "IdTextBox";
             IdTextBox.Size = new Size(153, 23);
             IdTextBox.TabIndex = 3;
+            IdTextBox.TextChanged += IdTextBox_TextChanged_1;
             // 
             // label3
             // 
