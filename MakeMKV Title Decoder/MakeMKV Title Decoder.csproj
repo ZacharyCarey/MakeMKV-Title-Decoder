@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Error.wav" />
-    <EmbeddedResource Include="Success.wav" />
+    <EmbeddedResource Include="Sounds\Error.wav" />
+    <EmbeddedResource Include="Sounds\Success.wav" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,16 +36,39 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="DiscUtils" Version="0.16.13" />
     <PackageReference Include="JsonSerializable" Version="1.2.5" />
-    <PackageReference Include="LibVLCSharp.WinForms" Version="3.8.5" />
+    <PackageReference Include="LibVLCSharp" Version="3.9.0" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.20" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="libs\MkvToolNix\lib\mkvextract.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\mkvinfo.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\mkvmerge.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\mkvpropedit.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\bluray_dump.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\ebml_validator.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\hevcc_dump.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\MkvToolNix\lib\tools\xyzvc_dump.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="lib\mkvtoolnix\data\portable-app">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

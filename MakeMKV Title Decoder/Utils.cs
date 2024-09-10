@@ -164,5 +164,42 @@ namespace MakeMKV_Title_Decoder {
                 sb.AppendLine("]");
             }
         }
+
+        public static string GetFileSafeName(string name) {
+            char[] fileChars = Path.GetInvalidFileNameChars();
+            char[] pathChars = Path.GetInvalidPathChars();
+            for(int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                if (fileChars.Contains(c) || pathChars.Contains(c))
+                {
+                    string prefix = "";
+                    string posfix = "";
+                    if (i > 0)
+                    {
+                        prefix = name.Substring(0, i);
+                    }
+                    if (i < name.Length)
+                    {
+                        posfix = name.Substring(i + 1);
+                    }
+
+                    name = prefix + " " + posfix;
+                }
+            }
+
+            return name;
+        }
+
+        public static T? Load<T>(this JsonObject obj, string key) where T : class {
+            JsonData? data = obj[key];
+            if (data != null && data is T type)
+            {
+                return type;
+            } else
+            {
+                return null;
+            }
+        }
     }
 }

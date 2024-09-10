@@ -1,55 +1,26 @@
 using JsonSerializable;
+using libbluray.disc;
 using LibVLCSharp.Shared;
 using MakeMKV_Title_Decoder.Data;
-using MakeMKV_Title_Decoder.Data.Bluray.BlurayIndex;
-using MakeMKV_Title_Decoder.MakeMKV;
-using MakeMKV_Title_Decoder.MakeMKV.Data;
+using MakeMKV_Title_Decoder.Forms.DiscBackup;
+using MakeMKV_Title_Decoder.Forms.FileRenamer;
+using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
+using MakeMKV_Title_Decoder.libs.MakeMKV;
+using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
+using MakeMKV_Title_Decoder.libs.MkvToolNix;
+using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Media;
 using System.Reflection;
 
 namespace MakeMKV_Title_Decoder
 {
-    public partial class Form1 : Form, IJsonSerializable {
-        string? _outputFolder = null;
-        string? OutputFolder {
-            get => _outputFolder;
-            set
-            {
-                _outputFolder = value;
-                this.LoadedFileLabel.Text = value ?? "N/A";
-            }
-        }
+    public partial class Form1 : Form {
 
-        MakeMkvInterface? MakeMkv = null;
-
-        const string HappySound = "Success.wav";
-        const string SadSound = "Error.wav";
-
-        List<DiscDrive> discDrives = new();
-
-        DiscDrive? _selectedDrive = null;
-        DiscDrive? selectedDrive {
-            get => _selectedDrive;
-            set
-            {
-                _selectedDrive = value;
-                this.DriveBtnPanel.Enabled = (_selectedDrive != null);
-            }
-        }
-
-        Disc? _loadedDisc = null;
-        Disc? loadedDisc {
-            get => _loadedDisc;
-            set
-            {
-                _loadedDisc = value;
-                this.RenameVideosBtn.Enabled = (_loadedDisc != null);
-            }
-        }
+        MkvToolNixDisc? disc = null;
+        RenameData renames = new();
 
         public Form1() {
             InitializeComponent();
@@ -59,232 +30,195 @@ namespace MakeMKV_Title_Decoder
             ConsoleLog.CreateLogger("Log.txt");
         }
 
-        private void PlaySound(string name) {
-            var assembly = Assembly.GetExecutingAssembly();
+        private void testToolStripMenuItem_Click(object sender, EventArgs e) {
 
-            /*foreach(string str in assembly.GetManifestResourceNames())
-            {
-                Console.WriteLine(str);
-            }*/
-            string file = "MakeMKV_Title_Decoder." + name;
-            using (Stream stream = assembly.GetManifestResourceStream(file))
-            {
-                SoundPlayer sound = new SoundPlayer(stream);
-                sound.Play();
-            }
-        }
-
-        public JsonData SaveToJson() {
-            JsonObject data = new();
-            data["Output Folder"] = new JsonString(this.OutputFolder);
-            data["Disc"] = this.loadedDisc?.SaveToJson() ?? null;
-            return data;
-        }
-
-        public void LoadFromJson(JsonData data) {
-            JsonObject obj = (JsonObject)data;
-
-            JsonData discData = obj["Disc"];
-            if (discData == null)
-            {
-                this.loadedDisc = null;
-            } else
-            {
-                this.loadedDisc = new();
-                this.loadedDisc.LoadFromJson(discData);
-            }
-
-            // Save output folder for later
-            this.OutputFolder = (JsonString)obj["Output Folder"];
-            Console.WriteLine($"Found output path: {this.OutputFolder ?? "null"}");
-        }
-
-        private bool getMakeMkv(out MakeMkvInterface mkv) {
-            if (MakeMkv == null)
-            {
-                MakeMkv = MakeMkvInterface.FindMakeMkvProcess();
-                if (MakeMkv == null)
-                {
-                    PlaySound(SadSound);
-                    MessageBox.Show("Failed to find MakeMKV.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    mkv = null;
-                    return false;
-                } else
-                {
-                    mkv = MakeMkv;
-                    return true;
-                }
-            } else
-            {
-                mkv = MakeMkv;
-                return true;
-            }
-        }
-
-        private void RefreshDrivesBtn_Click(object sender, EventArgs e) {
-            this.DriveSelectionPanel.Enabled = false;
-            MakeMkvInterface mkv;
-            if (!getMakeMkv(out mkv))
-            {
-                return;
-            }
-
-            List<DiscDrive>? drives = mkv.ReadDrives();
-            if (drives == null)
-            {
-                PlaySound(SadSound);
-                MessageBox.Show("Failed to read drives from MakeMKV", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            this.discDrives = drives;
-
-            DrivesComboBox.Items.Clear();
-            foreach (DiscDrive drive in drives)
-            {
-                DrivesComboBox.Items.Add(drive);
-            }
-            if (drives.Count > 0)
-            {
-                DrivesComboBox.SelectedIndex = 0;
-            }
-            this.DriveSelectionPanel.Enabled = true;
-        }
-
-        private void DrivesComboBox_SelectedIndexChanged(object sender, EventArgs e) {
-            int index = DrivesComboBox.SelectedIndex;
-            DiscDrive? drive = (DiscDrive?)DrivesComboBox.SelectedItem;
-            this.selectedDrive = drive;
-
-            string discName = "N/A";
-            if (drive != null && drive.Value.HasDisc)
-            {
-                discName = drive.Value.DiscName;
-            }
-            this.DiscNameLabel.Text = discName;
-
-            this.DownloadBtn.Enabled = (drive != null);
-        }
-
-        private async void DownloadBtn_Click(object sender, EventArgs e) {
-            this.DriveSelectionPanel.Enabled = false;
-            MakeMkvInterface mkv;
-            if (!getMakeMkv(out mkv))
-            {
-                this.DriveSelectionPanel.Enabled = true;
-                return;
-            }
-
-            string outputPath = this.OutputFolder;
-            if (outputPath != null)
-            {
-                outputPath = Path.GetFullPath(outputPath);
-            } else
-            {
-                outputPath = "C:\\";
-            }
             using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
-                Console.WriteLine($"Using initial path: {outputPath}");
-                openFileDialog.InitialDirectory = outputPath;
+                openFileDialog.InitialDirectory = "F:\\Video\\backup";
 
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    outputPath = openFileDialog.SelectedPath;
-                } else
-                {
-                    this.DriveSelectionPanel.Enabled = true;
-                    return;
+                    var playlist = new Playlist {
+                        Title = "RWBY Test",
+                        Files = new() {
+                            new PlaylistFile() {
+                                Source = "BDMV\\STREAM\\00004.m2ts",
+                                Tracks = new() {
+                                    new PlaylistTrack() {
+                                        ID = 0,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Name = "Wassup",
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 1,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Name = "IM IMMUNE",
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 2,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 3,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    }
+                                }
+                            },
+                            new PlaylistFile() {
+                                Source = "BDMV\\STREAM\\00015.m2ts",
+                                Tracks = new() {
+                                    new PlaylistTrack() {
+                                        ID = 0,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 0,
+                                            TrackIndex = 0
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 1,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 0,
+                                            TrackIndex = 1
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 2,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 3,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    }
+                                },
+                            },
+                            new PlaylistFile() {
+                                Source = "BDMV\\STREAM\\00004.m2ts",
+                                Tracks = new() {
+                                    new PlaylistTrack() {
+                                        ID = 0,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 1,
+                                            TrackIndex = 0
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 1,
+                                        Copy = true,
+                                        Sync = new(){ },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 1,
+                                            TrackIndex = 1
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 2,
+                                        Copy = true,
+                                        Sync = new(){
+                                            new TrackID() {
+                                                FileIndex = 1,
+                                                TrackIndex = 2
+                                            }
+                                        },
+                                        Commentary = false,
+                                        AppendedTo = new() {
+                                            FileIndex = 0,
+                                            TrackIndex = 2
+                                        }
+                                    },
+                                    new PlaylistTrack() {
+                                        ID = 3,
+                                        Copy = false,
+                                        Sync = new(){ },
+                                        Commentary = false
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    MkvToolNixInterface.MergeAsync(this.disc, playlist, Path.Combine(openFileDialog.SelectedPath, "Test.mkv"));
                 }
             }
-            this.OutputFolder = outputPath;
+        }
 
-            UpdateProgressBar(new MakeMkvProgress());
+        private void viewInfoToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            {
+                openFileDialog.InitialDirectory = "F:\\Video\\backup";
 
-            // Blocking, but will keep application running while in progress
-            IProgress<MakeMkvProgress> progress = new Progress<MakeMkvProgress>(UpdateProgressBar);
-            try
-            {
-                await mkv.BackupDiscAsync(this.DrivesComboBox.SelectedIndex, outputPath, progress);
-            } catch (Exception ex)
-            {
-                PlaySound(SadSound);
-                MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MakeMKV", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.DriveSelectionPanel.Enabled = true;
-                return;
-            }
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    MkvToolNixDisc? disc = null;
+                    try
+                    {
+                        disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+                    } catch (Exception ex)
+                    {
+                        MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
 
-            PlaySound(HappySound);
-            UpdateProgressBar(MakeMkvProgress.Max);
+                    if (disc == null)
+                    {
+                        MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
 
-            // Try and save metadata with the rip
-            string metadataFolder = Path.Combine(outputPath, ".metadata");
-            try
-            {
-                Directory.CreateDirectory(metadataFolder);
-            } catch (Exception)
-            {
-                MessageBox.Show("Failed to create folder.");
-                this.DriveSelectionPanel.Enabled = true;
-                return;
-            }
-
-            try
-            {
-                Json.Write(this, Path.Combine(metadataFolder, "DiscScrape.json"));
-                Console.WriteLine("Saved 'DiscScrape.json'");
-            } catch (Exception ex)
-            {
-                Console.WriteLine("Failed to save 'DiscScrape.json'");
-                MessageBox.Show("Failed to write DiscScrapes.json: " + ex.Message);
-            } finally
-            {
-                this.DriveSelectionPanel.Enabled = true;
+                    new ViewInfoForm(disc).ShowDialog();
+                }
             }
         }
 
-        private void UpdateProgressBar(MakeMkvProgress progress) {
-            CurrentProgressBar.Value = progress.Current;
-            TotalProgressBar.Value = progress.Total;
-        }
-
-        private void ReadBtn_Click(object sender, EventArgs e) {
-            this.DriveSelectionPanel.Enabled = false;
-            MakeMkvInterface mkv;
-            if (!getMakeMkv(out mkv))
+        private void loadDiscToolStripMenuItem1_Click(object sender, EventArgs e) {
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
-                this.DriveSelectionPanel.Enabled = true;
-                return;
+                openFileDialog.InitialDirectory = "F:\\Video\\backup";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+
+                    try
+                    {
+                        this.disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+                        this.renames = new();
+                    } catch (Exception ex)
+                    {
+                        MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    if (disc == null)
+                    {
+                        MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                }
             }
-
-            UpdateProgressBar(new MakeMkvProgress());
-
-            // Blocking, but will keep application running while in progress
-            IProgress<MakeMkvProgress> progress = new Progress<MakeMkvProgress>(UpdateProgressBar);
-            this.loadedDisc = mkv.ReadDisc(this.DrivesComboBox.SelectedIndex, progress);
-
-            UpdateProgressBar(MakeMkvProgress.Max);
-
-            if (this.loadedDisc == null)
-            {
-                PlaySound(SadSound);
-                MessageBox.Show("There was an error reading the disc.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.DriveSelectionPanel.Enabled = true;
-                return;
-            }
-            PlaySound(HappySound);
-
-            //Console.WriteLine("All data received:");
-            //Console.WriteLine(this.loadedDisc);
-            Console.WriteLine("Disc read successful.");
-
-            this.DriveSelectionPanel.Enabled = true;
         }
 
-        private void discToolStripMenuItem1_Click(object sender, EventArgs e) {
-
-        }
-
-        private void saveDiscToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e) {
             using (SaveFileDialog dialog = new())
             {
                 dialog.Filter = "JSON files (*.json)|*.json";
@@ -300,19 +234,17 @@ namespace MakeMKV_Title_Decoder
 
                     try
                     {
-                        Json.Write(this, path);
-                        //this.OutputFolder = Path.GetDirectoryName(path);
+                        Json.Write(this.renames, path);
                         Console.WriteLine("Saved JSON file.");
                     } catch (Exception ex)
                     {
-                        PlaySound(SadSound);
                         MessageBox.Show("Failed to save JSON: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
         }
 
-        private void loadDiscToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void loadToolStripMenuItem1_Click(object sender, EventArgs e) {
             using (OpenFileDialog dialog = new())
             {
                 dialog.Filter = "JSON files (*.json)|*.json";
@@ -322,17 +254,15 @@ namespace MakeMKV_Title_Decoder
                 {
                     using (var stream = dialog.OpenFile())
                     {
+                        RenameData data = new();
+
                         try
                         {
-                            Json.Read(stream, this);
-                            if (this.OutputFolder == null)
-                            {
-                                this.OutputFolder = Path.GetDirectoryName(Path.GetFullPath(dialog.FileName));
-                            }
+                            Json.Read(stream, data);
                             Console.WriteLine("Loaded JSON file.");
+                            this.renames = data;
                         } catch (Exception ex)
                         {
-                            PlaySound(SadSound);
                             MessageBox.Show("Failed to read file: " + ex.Message, "Failed to read file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
@@ -341,94 +271,31 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void RenameVideosBtn_Click(object sender, EventArgs e) {
-            if (OutputFolder == null)
+        private void clipRenamerToolStripMenuItem1_Click(object sender, EventArgs e) {
+            if (disc == null)
             {
-                SelectFolderBtn_Click(null, null);
-                if (OutputFolder == null)
-                {
-                    return;
-                }
-            }
-
-            // Sanity check
-            if (!Directory.Exists(OutputFolder))
-            {
-                PlaySound(SadSound);
-                MessageBox.Show("Failed to find directory: " + OutputFolder, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Please load a disc first.");
                 return;
             }
-            if (this.loadedDisc == null)
-            {
-                PlaySound(SadSound);
-                MessageBox.Show("No disc is currently loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            FileRenamer form = new(this.loadedDisc, OutputFolder, IgnoreIncompleteCheckBox.Checked, this);
-            form.Show();
+            new ClipRenamerForm(renames, disc).ShowDialog();
         }
 
-        private void SelectFolderBtn_Click(object sender, EventArgs e) {
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+        private void playlistCreatorToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (this.disc != null)
             {
-                if (OutputFolder != null)
-                {
-                    Console.WriteLine($"Using initial path: {OutputFolder}");
-                    openFileDialog.InitialDirectory = OutputFolder;
-                }
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    OutputFolder = openFileDialog.SelectedPath;
-                }
+                new PlaylistCreatorForm(this.disc, this.renames).ShowDialog();
             }
         }
 
-        private void loadToolStripMenuItem_Click(object sender, EventArgs e) {
-            using (OpenFileDialog dialog = new())
+        private void fileRenamerToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (this.disc != null)
             {
-                dialog.Filter = "JSON files (*.json)|*.json";
-                dialog.RestoreDirectory = true;
-
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    using (var stream = dialog.OpenFile())
-                    {
-                        RenameData renameData = new();
-
-                        try
-                        {
-                            Json.Read(stream, renameData);
-                            this.OutputFolder = renameData.OutputFolder;
-                            Console.WriteLine("Loaded JSON file.");
-                        } catch (Exception ex)
-                        {
-                            PlaySound(SadSound);
-                            MessageBox.Show("Failed to read file: " + ex.Message, "Failed to read file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        FileRenamer renamer = new(renameData);
-                        renamer.Show();
-                    }
-                }
+                new FileRenamerForm(this.disc, this.renames).ShowDialog();
             }
         }
 
-        private void testToolStripMenuItem_Click(object sender, EventArgs e) {
-            using (OpenFileDialog dialog = new())
-            {
-                dialog.Filter = "index (index.bdmv)|index.bdmv";
-                dialog.RestoreDirectory = true;
-
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    Console.WriteLine($"Opening {Path.GetFileName(dialog.FileName)}");
-                    BlurayIndexParser parser = new(dialog.FileName);
-                    parser.Parse();
-                }
-            }
+        private void backupToolStripMenuItem_Click(object sender, EventArgs e) {
+            new DiscBakupForm().Show();
         }
     }
 }
