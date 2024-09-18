@@ -10,7 +10,7 @@ namespace MakeMKV_Title_Decoder.Controls
 {
     public class TrackListData
     {
-        public MkvTrack? Track = null;
+        public LoadedTrack? Track = null;
         public object? Tag = null;
     }
 
@@ -23,7 +23,7 @@ namespace MakeMKV_Title_Decoder.Controls
         public string KeepIconKey { get; set; } = "dialog-ok-apply.png";
         public string DeleteIconKey { get; set; } = "dialog-cancel.png";
 
-        private Dictionary<MkvTrack, PropertyItem> QuickLookup = new();
+        private Dictionary<LoadedTrack, PropertyItem> QuickLookup = new();
 
         const int FirstColumnWidth = 160;
         private int padding = 0;
@@ -99,7 +99,7 @@ namespace MakeMKV_Title_Decoder.Controls
             SelectedIndexChanged += Event_SelectedIndexChanged;
         }
 
-        public TrackListData Add(MkvMergeID clip, MkvTrack track, RenameData renames, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null)
+        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null)
         {
             TrackListData data = new();
             data.Track = track;
@@ -120,43 +120,43 @@ namespace MakeMKV_Title_Decoder.Controls
                 source.SubItems.Add(item);
             }
 
-            Update(clip, track, renames);
+            Update(track);
             return data;
         }
 
-        public void Update(MkvMergeID clip, MkvTrack track, RenameData renames)
+        public void Update(LoadedTrack track)
         {
             PropertyItem item = QuickLookup[track];
-            var data = renames.GetClipRename(clip)?.GetTrackRename(track);
+            var data = track.Rename;
 
             List<string> trackProperties = new();
-            switch (track.Type)
+            switch (track.Data.Type)
             {
                 case MkvTrackType.Video:
-                    var size = track.Properties?.PixelDimensions;
+                    var size = track.Data.Properties?.PixelDimensions;
                     if (size != null) trackProperties.Add($"{size} pixels");
                     break;
                 case MkvTrackType.Audio:
-                    var freq = track.Properties?.AudioSamplingFrequency;
+                    var freq = track.Data.Properties?.AudioSamplingFrequency;
                     if (freq != null) trackProperties.Add($"{freq} Hz");
 
-                    var channels = track.Properties?.AudioChannels;
+                    var channels = track.Data.Properties?.AudioChannels;
                     if (channels != null) trackProperties.Add($"{channels} channels");
                     break;
             }
 
-            item.Text = track.Codec;
+            item.Text = track.Data.Codec;
 
-            item.SubItems[1].Text = track.Type.ToString();
-            ((PropertyData)item.SubItems[1].Tag).IconKey = GetTypeIcon(track.Type);
+            item.SubItems[1].Text = track.Data.Type.ToString();
+            ((PropertyData)item.SubItems[1].Tag).IconKey = GetTypeIcon(track.Data.Type);
 
             item.SubItems[2].Text = data?.Name; // name
             item.SubItems[3].Text = string.Join(", ", trackProperties); // properties
-            item.SubItems[4].Text = track.Properties?.Language ?? ""; // lang
-            ((PropertyData)item.SubItems[5].Tag).IconKey = GetBoolIcon(track.Properties?.EnabledTrack ?? true); // enabled
-            ((PropertyData)item.SubItems[6].Tag).IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Properties?.DefaultTrack ?? true); // default
-            ((PropertyData)item.SubItems[7].Tag).IconKey = GetBoolIcon(track.Properties?.ForcedTrack ?? false); // forced
-            ((PropertyData)item.SubItems[8].Tag).IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Properties?.FlagCommentary ?? false); // commentary
+            item.SubItems[4].Text = track.Data.Properties?.Language ?? ""; // lang
+            ((PropertyData)item.SubItems[5].Tag).IconKey = GetBoolIcon(track.Data.Properties?.EnabledTrack ?? true); // enabled
+            ((PropertyData)item.SubItems[6].Tag).IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Data.Properties?.DefaultTrack ?? true); // default
+            ((PropertyData)item.SubItems[7].Tag).IconKey = GetBoolIcon(track.Data.Properties?.ForcedTrack ?? false); // forced
+            ((PropertyData)item.SubItems[8].Tag).IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Data.Properties?.FlagCommentary ?? false); // commentary
         }
 
         public new void Clear()
@@ -183,7 +183,7 @@ namespace MakeMKV_Title_Decoder.Controls
             }
         }
 
-        public void Select(MkvTrack? track)
+        public void Select(LoadedTrack? track)
         {
             if (track == null)
             {

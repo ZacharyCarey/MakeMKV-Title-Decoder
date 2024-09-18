@@ -17,145 +17,197 @@
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
+		#region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
-        private void InitializeComponent() {
-            components = new System.ComponentModel.Container();
-            toolTip1 = new ToolTip(components);
-            menuStrip1 = new MenuStrip();
-            viewInfoToolStripMenuItem = new ToolStripMenuItem();
-            testToolStripMenuItem = new ToolStripMenuItem();
-            renameToolStripMenuItem = new ToolStripMenuItem();
-            loadDiscToolStripMenuItem1 = new ToolStripMenuItem();
-            clipRenamerToolStripMenuItem1 = new ToolStripMenuItem();
-            renamesToolStripMenuItem = new ToolStripMenuItem();
-            saveToolStripMenuItem = new ToolStripMenuItem();
-            loadToolStripMenuItem1 = new ToolStripMenuItem();
-            playlistCreatorToolStripMenuItem = new ToolStripMenuItem();
-            fileRenamerToolStripMenuItem = new ToolStripMenuItem();
-            backupToolStripMenuItem = new ToolStripMenuItem();
-            menuStrip1.SuspendLayout();
-            SuspendLayout();
-            // 
-            // menuStrip1
-            // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { renameToolStripMenuItem, viewInfoToolStripMenuItem, testToolStripMenuItem, backupToolStripMenuItem });
-            menuStrip1.Location = new Point(0, 0);
-            menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(829, 24);
-            menuStrip1.TabIndex = 6;
-            menuStrip1.Text = "menuStrip1";
-            // 
-            // viewInfoToolStripMenuItem
-            // 
-            viewInfoToolStripMenuItem.Name = "viewInfoToolStripMenuItem";
-            viewInfoToolStripMenuItem.Size = new Size(68, 20);
-            viewInfoToolStripMenuItem.Text = "View Info";
-            viewInfoToolStripMenuItem.Click += viewInfoToolStripMenuItem_Click;
-            // 
-            // testToolStripMenuItem
-            // 
-            testToolStripMenuItem.Name = "testToolStripMenuItem";
-            testToolStripMenuItem.Size = new Size(39, 20);
-            testToolStripMenuItem.Text = "Test";
-            testToolStripMenuItem.Click += testToolStripMenuItem_Click;
-            // 
-            // renameToolStripMenuItem
-            // 
-            renameToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadDiscToolStripMenuItem1, clipRenamerToolStripMenuItem1, renamesToolStripMenuItem, playlistCreatorToolStripMenuItem, fileRenamerToolStripMenuItem });
-            renameToolStripMenuItem.Name = "renameToolStripMenuItem";
-            renameToolStripMenuItem.Size = new Size(62, 20);
-            renameToolStripMenuItem.Text = "Rename";
-            // 
-            // loadDiscToolStripMenuItem1
-            // 
-            loadDiscToolStripMenuItem1.Name = "loadDiscToolStripMenuItem1";
-            loadDiscToolStripMenuItem1.Size = new Size(180, 22);
-            loadDiscToolStripMenuItem1.Text = "Load Disc";
-            loadDiscToolStripMenuItem1.Click += loadDiscToolStripMenuItem1_Click;
-            // 
-            // clipRenamerToolStripMenuItem1
-            // 
-            clipRenamerToolStripMenuItem1.Name = "clipRenamerToolStripMenuItem1";
-            clipRenamerToolStripMenuItem1.Size = new Size(180, 22);
-            clipRenamerToolStripMenuItem1.Text = "Clip Renamer";
-            clipRenamerToolStripMenuItem1.Click += clipRenamerToolStripMenuItem1_Click;
-            // 
-            // renamesToolStripMenuItem
-            // 
-            renamesToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem, loadToolStripMenuItem1 });
-            renamesToolStripMenuItem.Name = "renamesToolStripMenuItem";
-            renamesToolStripMenuItem.Size = new Size(180, 22);
-            renamesToolStripMenuItem.Text = "Renames File";
-            // 
-            // saveToolStripMenuItem
-            // 
-            saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(100, 22);
-            saveToolStripMenuItem.Text = "Save";
-            saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
-            // 
-            // loadToolStripMenuItem1
-            // 
-            loadToolStripMenuItem1.Name = "loadToolStripMenuItem1";
-            loadToolStripMenuItem1.Size = new Size(100, 22);
-            loadToolStripMenuItem1.Text = "Load";
-            loadToolStripMenuItem1.Click += loadToolStripMenuItem1_Click;
-            // 
-            // playlistCreatorToolStripMenuItem
-            // 
-            playlistCreatorToolStripMenuItem.Name = "playlistCreatorToolStripMenuItem";
-            playlistCreatorToolStripMenuItem.Size = new Size(180, 22);
-            playlistCreatorToolStripMenuItem.Text = "Playlist Creator";
-            playlistCreatorToolStripMenuItem.Click += playlistCreatorToolStripMenuItem_Click;
-            // 
-            // fileRenamerToolStripMenuItem
-            // 
-            fileRenamerToolStripMenuItem.Name = "fileRenamerToolStripMenuItem";
-            fileRenamerToolStripMenuItem.Size = new Size(180, 22);
-            fileRenamerToolStripMenuItem.Text = "File Renamer";
-            fileRenamerToolStripMenuItem.Click += fileRenamerToolStripMenuItem_Click;
-            // 
-            // backupToolStripMenuItem
-            // 
-            backupToolStripMenuItem.Name = "backupToolStripMenuItem";
-            backupToolStripMenuItem.Size = new Size(58, 20);
-            backupToolStripMenuItem.Text = "Backup";
-            backupToolStripMenuItem.Click += backupToolStripMenuItem_Click;
-            // 
-            // Form1
-            // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(829, 539);
-            Controls.Add(menuStrip1);
-            MainMenuStrip = menuStrip1;
-            Name = "Form1";
-            Text = "Form1";
-            Load += Form1_Load;
-            menuStrip1.ResumeLayout(false);
-            menuStrip1.PerformLayout();
-            ResumeLayout(false);
-            PerformLayout();
-        }
+		/// <summary>
+		///  Required method for Designer support - do not modify
+		///  the contents of this method with the code editor.
+		/// </summary>
+		private void InitializeComponent()
+		{
+			components = new System.ComponentModel.Container();
+			toolTip1 = new ToolTip(components);
+			menuStrip1 = new MenuStrip();
+			fileToolStripMenuItem = new ToolStripMenuItem();
+			saveToolStripMenuItem1 = new ToolStripMenuItem();
+			loadToolStripMenuItem = new ToolStripMenuItem();
+			viewInfoToolStripMenuItem = new ToolStripMenuItem();
+			testToolStripMenuItem = new ToolStripMenuItem();
+			label1 = new Label();
+			LoadedDiscLabel = new Label();
+			LoadDiscBtn = new Button();
+			RenameClipsBtn = new Button();
+			PlaylistsBtn = new Button();
+			FileRenamerBtn = new Button();
+			BackupBtn = new Button();
+			ExportButton = new Button();
+			menuStrip1.SuspendLayout();
+			SuspendLayout();
+			// 
+			// menuStrip1
+			// 
+			menuStrip1.ImageScalingSize = new Size(24, 24);
+			menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, viewInfoToolStripMenuItem, testToolStripMenuItem });
+			menuStrip1.Location = new Point(0, 0);
+			menuStrip1.Name = "menuStrip1";
+			menuStrip1.Padding = new Padding(9, 3, 0, 3);
+			menuStrip1.Size = new Size(441, 35);
+			menuStrip1.TabIndex = 6;
+			menuStrip1.Text = "menuStrip1";
+			// 
+			// fileToolStripMenuItem
+			// 
+			fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { saveToolStripMenuItem1, loadToolStripMenuItem });
+			fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+			fileToolStripMenuItem.Size = new Size(54, 29);
+			fileToolStripMenuItem.Text = "File";
+			// 
+			// saveToolStripMenuItem1
+			// 
+			saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
+			saveToolStripMenuItem1.Size = new Size(153, 34);
+			saveToolStripMenuItem1.Text = "Save";
+			saveToolStripMenuItem1.Click += saveToolStripMenuItem1_Click;
+			// 
+			// loadToolStripMenuItem
+			// 
+			loadToolStripMenuItem.Name = "loadToolStripMenuItem";
+			loadToolStripMenuItem.Size = new Size(153, 34);
+			loadToolStripMenuItem.Text = "Load";
+			loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
+			// 
+			// viewInfoToolStripMenuItem
+			// 
+			viewInfoToolStripMenuItem.Name = "viewInfoToolStripMenuItem";
+			viewInfoToolStripMenuItem.Size = new Size(102, 29);
+			viewInfoToolStripMenuItem.Text = "View Info";
+			viewInfoToolStripMenuItem.Click += viewInfoToolStripMenuItem_Click;
+			// 
+			// testToolStripMenuItem
+			// 
+			testToolStripMenuItem.Name = "testToolStripMenuItem";
+			testToolStripMenuItem.Size = new Size(58, 29);
+			testToolStripMenuItem.Text = "Test";
+			testToolStripMenuItem.Click += testToolStripMenuItem_Click;
+			// 
+			// label1
+			// 
+			label1.AutoSize = true;
+			label1.Location = new Point(12, 63);
+			label1.Name = "label1";
+			label1.Size = new Size(113, 25);
+			label1.TabIndex = 7;
+			label1.Text = "Loaded Disc:";
+			// 
+			// LoadedDiscLabel
+			// 
+			LoadedDiscLabel.AutoSize = true;
+			LoadedDiscLabel.Location = new Point(131, 63);
+			LoadedDiscLabel.Name = "LoadedDiscLabel";
+			LoadedDiscLabel.Size = new Size(59, 25);
+			LoadedDiscLabel.TabIndex = 8;
+			LoadedDiscLabel.Text = "label2";
+			// 
+			// LoadDiscBtn
+			// 
+			LoadDiscBtn.Location = new Point(12, 91);
+			LoadDiscBtn.Name = "LoadDiscBtn";
+			LoadDiscBtn.Size = new Size(112, 34);
+			LoadDiscBtn.TabIndex = 9;
+			LoadDiscBtn.Text = "Load";
+			LoadDiscBtn.UseVisualStyleBackColor = true;
+			LoadDiscBtn.Click += LoadDiscBtn_Click;
+			// 
+			// RenameClipsBtn
+			// 
+			RenameClipsBtn.Location = new Point(12, 186);
+			RenameClipsBtn.Name = "RenameClipsBtn";
+			RenameClipsBtn.Size = new Size(146, 34);
+			RenameClipsBtn.TabIndex = 10;
+			RenameClipsBtn.Text = "Rename Clips";
+			RenameClipsBtn.UseVisualStyleBackColor = true;
+			RenameClipsBtn.Click += RenameClipsBtn_Click;
+			// 
+			// PlaylistsBtn
+			// 
+			PlaylistsBtn.Location = new Point(12, 226);
+			PlaylistsBtn.Name = "PlaylistsBtn";
+			PlaylistsBtn.Size = new Size(145, 34);
+			PlaylistsBtn.TabIndex = 12;
+			PlaylistsBtn.Text = "Playlist Creator";
+			PlaylistsBtn.UseVisualStyleBackColor = true;
+			PlaylistsBtn.Click += PlaylistsBtn_Click;
+			// 
+			// FileRenamerBtn
+			// 
+			FileRenamerBtn.Location = new Point(12, 266);
+			FileRenamerBtn.Name = "FileRenamerBtn";
+			FileRenamerBtn.Size = new Size(146, 34);
+			FileRenamerBtn.TabIndex = 14;
+			FileRenamerBtn.Text = "File Renamer";
+			FileRenamerBtn.UseVisualStyleBackColor = true;
+			FileRenamerBtn.Click += FileRenamerBtn_Click;
+			// 
+			// BackupBtn
+			// 
+			BackupBtn.Location = new Point(130, 91);
+			BackupBtn.Name = "BackupBtn";
+			BackupBtn.Size = new Size(112, 34);
+			BackupBtn.TabIndex = 15;
+			BackupBtn.Text = "Backup";
+			BackupBtn.UseVisualStyleBackColor = true;
+			BackupBtn.Click += BackupBtn_Click;
+			// 
+			// ExportButton
+			// 
+			ExportButton.Location = new Point(12, 356);
+			ExportButton.Name = "ExportButton";
+			ExportButton.Size = new Size(146, 34);
+			ExportButton.TabIndex = 16;
+			ExportButton.Text = "Export";
+			ExportButton.UseVisualStyleBackColor = true;
+			ExportButton.Click += ExportButton_Click;
+			// 
+			// Form1
+			// 
+			AutoScaleDimensions = new SizeF(10F, 25F);
+			AutoScaleMode = AutoScaleMode.Font;
+			ClientSize = new Size(441, 412);
+			Controls.Add(ExportButton);
+			Controls.Add(BackupBtn);
+			Controls.Add(FileRenamerBtn);
+			Controls.Add(PlaylistsBtn);
+			Controls.Add(RenameClipsBtn);
+			Controls.Add(LoadDiscBtn);
+			Controls.Add(LoadedDiscLabel);
+			Controls.Add(label1);
+			Controls.Add(menuStrip1);
+			MainMenuStrip = menuStrip1;
+			Margin = new Padding(4, 5, 4, 5);
+			Name = "Form1";
+			Text = "Form1";
+			Load += Form1_Load;
+			menuStrip1.ResumeLayout(false);
+			menuStrip1.PerformLayout();
+			ResumeLayout(false);
+			PerformLayout();
+		}
 
-        #endregion
-        private ToolTip toolTip1;
+		#endregion
+		private ToolTip toolTip1;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem testToolStripMenuItem;
         private ToolStripMenuItem viewInfoToolStripMenuItem;
-        private ToolStripMenuItem renameToolStripMenuItem;
-        private ToolStripMenuItem loadDiscToolStripMenuItem1;
-        private ToolStripMenuItem clipRenamerToolStripMenuItem1;
-        private ToolStripMenuItem renamesToolStripMenuItem;
-        private ToolStripMenuItem saveToolStripMenuItem;
-        private ToolStripMenuItem loadToolStripMenuItem1;
-        private ToolStripMenuItem playlistCreatorToolStripMenuItem;
-        private ToolStripMenuItem fileRenamerToolStripMenuItem;
-        private ToolStripMenuItem backupToolStripMenuItem;
-    }
+		private Label label1;
+		private Label LoadedDiscLabel;
+		private Button LoadDiscBtn;
+		private Button RenameClipsBtn;
+		private Button PlaylistsBtn;
+		private Button FileRenamerBtn;
+		private ToolStripMenuItem fileToolStripMenuItem;
+		private ToolStripMenuItem saveToolStripMenuItem1;
+		private ToolStripMenuItem loadToolStripMenuItem;
+		private Button BackupBtn;
+		private Button ExportButton;
+	}
 }

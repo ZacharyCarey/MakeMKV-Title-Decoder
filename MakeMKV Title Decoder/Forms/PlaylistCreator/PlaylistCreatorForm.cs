@@ -28,10 +28,10 @@ namespace MakeMKV_Title_Decoder
         public Color ErrorColor { get; set; } = Color.LightCoral;
 
         private class SourceListItem {
-            public MkvMergeID Clip;
+            public LoadedStream Clip;
             public string Name;
 
-            public SourceListItem(MkvMergeID clip, string name) {
+            public SourceListItem(LoadedStream clip, string name) {
                 this.Clip = clip;
                 this.Name = name;
             }
@@ -41,10 +41,10 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        MkvToolNixDisc Disc;
+        LoadedDisc Disc;
         RenameData Renames;
 
-        public PlaylistCreatorForm(MkvToolNixDisc disc, RenameData renames) {
+        public PlaylistCreatorForm(LoadedDisc disc, RenameData renames) {
             this.Disc = disc;
             this.Renames = renames;
 
@@ -53,7 +53,7 @@ namespace MakeMKV_Title_Decoder
             SourceList.Items.Clear();
             foreach (var source in disc.Streams)
             {
-                string? name = renames.GetClipRename(source)?.Name;
+                string? name = source.Rename.Name;
                 if (name != null)
                 {
                     this.SourceList.Items.Add(new SourceListItem(source, name));
@@ -63,7 +63,7 @@ namespace MakeMKV_Title_Decoder
 
             foreach (var playlist in renames.Playlists)
             {
-                var loadedPlaylist = LoadedPlaylist.LoadFromRenames(disc, playlist);
+/*                var loadedPlaylist = LoadedPlaylist.LoadFromRenames(disc, playlist);
                 if (loadedPlaylist != null)
                 {
                     this.PlaylistsListBox.Add(loadedPlaylist);
@@ -71,7 +71,7 @@ namespace MakeMKV_Title_Decoder
                 {
                     // TODO handle error
                 }
-            }
+*/            }
             PlaylistsListBox_SelectedIndexChanged(null, null);
         }
 
@@ -108,7 +108,7 @@ namespace MakeMKV_Title_Decoder
                 SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItem;
                 if (selectedItem != null)
                 {
-                    selectedPlaylist.AddSourceFile(selectedItem.Clip);
+//                    selectedPlaylist.AddSourceFile(selectedItem.Clip);
                     UpdatePlaylistUI();
                     UnsavedChangesIcon(selectedPlaylist);
                 }
@@ -152,18 +152,18 @@ namespace MakeMKV_Title_Decoder
             if (selectedPlaylist != null)
             {
                 foreach (var sourceTrack in selectedPlaylist.SourceTracks)
-                {
-                    var item = this.PlaylistTrackOrder.Add(
+                { 
+                    TrackListData item = null/*this.PlaylistTrackOrder.Add(
                         sourceTrack.Source.Source,
                         sourceTrack.Track,
                         this.Renames,
                         sourceTrack.Color
-                    );
+                    )*/;
                     item.Tag = sourceTrack;
                     foreach (var appendedTrack in sourceTrack.AppendedTracks)
                     {
                         bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
-                        item = this.PlaylistTrackOrder.Add(
+                        /*item = this.PlaylistTrackOrder.Add(
                             appendedTrack.Source.Source,
                             appendedTrack.Track,
                             this.Renames,
@@ -171,7 +171,7 @@ namespace MakeMKV_Title_Decoder
                             IndentedTrackPadding,
                             appendedTrack.Enabled ? EnableIconKey : DisableIconKey,
                             compatible ? null : this.ErrorColor
-                        );
+                        );*/
                         item.Tag = appendedTrack;
                         errors |= !compatible;
                     }
@@ -188,7 +188,7 @@ namespace MakeMKV_Title_Decoder
         private PropertyItem CreateClipEntry(AppendedFile clip, int padding = 0) {
             // Clip name
             PropertyItem item = new();
-            item.Text = this.Renames.GetClipRename(clip.Source)?.Name ?? "";
+//            item.Text = this.Renames.GetClipRename(clip.Source)?.Name ?? "";
             item.IconColor = clip.Color;
             item.Padding = padding;
             item.Tag = clip;
@@ -205,7 +205,7 @@ namespace MakeMKV_Title_Decoder
 
             // Directory
             PropertySubItem sub3 = new(item);
-            sub3.Text = clip.Source.GetFullPath(this.Disc);
+//            sub3.Text = clip.Source.GetFullPath(this.Disc);
             item.SubItems.Add(sub3);
 
             return item;
@@ -218,64 +218,64 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void ImportPlaylists_Click(object sender, EventArgs e) {
-            foreach (var playlist in this.Disc.Playlists)
-            {
-                Playlist renamePlaylist = new();
-                LoadedPlaylist loadedPlaylist = new(renamePlaylist, playlist.FileName);
+            //foreach (var playlist in this.Disc.Playlists)
+            //{
+            //    Playlist renamePlaylist = new();
+            //    LoadedPlaylist loadedPlaylist = new(renamePlaylist, playlist.FileName);
 
-                AppendedFile? rootFile = null;
-                foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
-                {
-                    // Try to find file
-                    MkvMergeID? file = null;
-                    foreach (var source in this.Disc.Streams)
-                    {
-                        if (source.GetRelativePath() == sourceFile)
-                        {
-                            file = source;
-                            break;
-                        }
-                    }
-                    if (file == null)
-                    {
-                        // TODO error
-                        continue;
-                    }
+            //    AppendedFile? rootFile = null;
+            //    foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
+            //    {
+            //        // Try to find file
+            //        MkvMergeID? file = null;
+            //        foreach (var source in this.Disc.Streams)
+            //        {
+            //            if (source.GetRelativePath() == sourceFile)
+            //            {
+            //                file = source;
+            //                break;
+            //            }
+            //        }
+            //        if (file == null)
+            //        {
+            //            // TODO error
+            //            continue;
+            //        }
 
-                    // Only add files the user has renames i.e. dont add ignored files
-                    if (Renames.GetClipRename(file) != null)
-                    {
+            //        // Only add files the user has renames i.e. dont add ignored files
+            //        if (Renames.GetClipRename(file) != null)
+            //        {
 
-                        if (rootFile == null)
-                        {
-                            rootFile = loadedPlaylist.ImportSourceFile(file);
-                        } else
-                        {
-                            loadedPlaylist.ImportAppendedFile(rootFile, file);
-                        }
-                    }
-                }
+            //            if (rootFile == null)
+            //            {
+            //                rootFile = loadedPlaylist.ImportSourceFile(file);
+            //            } else
+            //            {
+            //                loadedPlaylist.ImportAppendedFile(rootFile, file);
+            //            }
+            //        }
+            //    }
 
-                // If no valid source files (including ignored files) were found,
-                // dont even bother to import the playlist
-                if (loadedPlaylist.SourceFiles.Count != 0)
-                {
-                    this.Renames.Playlists.Add(renamePlaylist);
-                    this.PlaylistsListBox.Add(loadedPlaylist);
+            //    // If no valid source files (including ignored files) were found,
+            //    // dont even bother to import the playlist
+            //    if (loadedPlaylist.SourceFiles.Count != 0)
+            //    {
+            //        this.Renames.Playlists.Add(renamePlaylist);
+            //        this.PlaylistsListBox.Add(loadedPlaylist);
 
-                    // If only one file was found, just give it the same name as the source
-                    /*if (loadedPlaylist.AppendedFiles.Any())
-                    {
-                        var rename = Renames.GetClipRename(loadedPlaylist.PrimarySource.Source);
-                        if (rename != null && rename.Name != null) loadedPlaylist.Name = rename.Name;
-                    }*/
-                    loadedPlaylist.Save(this.Renames);
+            //        // If only one file was found, just give it the same name as the source
+            //        /*if (loadedPlaylist.AppendedFiles.Any())
+            //        {
+            //            var rename = Renames.GetClipRename(loadedPlaylist.PrimarySource.Source);
+            //            if (rename != null && rename.Name != null) loadedPlaylist.Name = rename.Name;
+            //        }*/
+            //        loadedPlaylist.Save(this.Renames);
 
-                    CheckErrors(loadedPlaylist);
-                }
-            }
+            //        CheckErrors(loadedPlaylist);
+            //    }
+            //}
 
-            this.PlaylistsListBox.Invalidate();
+            //this.PlaylistsListBox.Invalidate();
         }
 
         private void NewPlaylistButton_Click(object sender, EventArgs e) {
@@ -308,7 +308,7 @@ namespace MakeMKV_Title_Decoder
             {
                 selectedTrack.Enabled = true;
                 UpdatePlaylistUI();
-                this.PlaylistTrackOrder.Select(selectedTrack.Track);
+ //               this.PlaylistTrackOrder.Select(selectedTrack.Track);
                 UnsavedChangesIcon(selectedPlaylist);
             }
         }
@@ -321,7 +321,7 @@ namespace MakeMKV_Title_Decoder
 
                 selectedTrack.Enabled = false;
                 UpdatePlaylistUI();
-                this.PlaylistTrackOrder.Select(selectedTrack.Track);
+ //               this.PlaylistTrackOrder.Select(selectedTrack.Track);
                 UnsavedChangesIcon(selectedPlaylist);
             }
         }

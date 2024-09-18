@@ -1,4 +1,5 @@
 ﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms.FileRenamer;
 using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
@@ -15,30 +16,19 @@ namespace MakeMKV_Title_Decoder.Data
 
     public class RenameData : IJsonSerializable {
         public const string Version = "1.0";
-        public SerializableDictionary<ClipRename> ClipRenames = new();
+
+        // Used to identify tracks from the loaded disc backup.
+        // The index in the array is the index referenced in rename data
+        public DiscIdentity DiscIdentity = new();
+
+        // Rename / tagging data for all clips/tracks as identified in DiscIdentity
+        public SerializableList<ClipRename> ClipRenames = new();
+
+        // Playlist data created by the user for how files should be multiplexed / outputted
         public SerializableList<Playlist> Playlists = new();
 
         public RenameData() {
 
-        }
-
-        public ClipRename? GetClipRename(MkvMergeID file, bool createNewIfNeeded = false) {
-            string key = Path.Combine(file.FileDirectory, file.FileName);
-            if (this.ClipRenames.ContainsKey(key))
-            {
-                return this.ClipRenames[key];
-            } else
-            {
-                if (createNewIfNeeded)
-                {
-                    ClipRename result = new();
-                    this.ClipRenames[key] = result;
-                    return result;
-                } else
-                {
-                    return null;
-                }
-            }
         }
 
         public JsonData SaveToJson() {
@@ -46,13 +36,13 @@ namespace MakeMKV_Title_Decoder.Data
 
             obj["version"] = new JsonString(Version);
 
-            JsonObject clips = new();
-            foreach (var pair in this.ClipRenames)
+            JsonArray clips = new();
+            foreach (var clip in this.ClipRenames)
             {
-                var json = pair.Value.SaveToJson();
-                if (json != null) clips[pair.Key] = json;
+                var json = clip.SaveToJson();
+                if (json != null) clips.Add(json);
             }
-            if (clips.Items.Count() > 0) obj["User Names"] = clips;
+            if (clips.Count() > 0) obj["User Names"] = clips;
 
             JsonArray playlists = new();
             foreach(var playlist in this.Playlists)
@@ -77,108 +67,6 @@ namespace MakeMKV_Title_Decoder.Data
             this.ClipRenames.LoadFromJson(obj["User Names"] ?? new JsonObject());
             this.Playlists.LoadFromJson(obj["Playlists"] ?? new JsonArray());
         }
-    }
-
-    public class ClipRename : IJsonSerializable {
-        public string? Name { get; set; } = null;
-        public SerializableDictionary<TrackRename> TrackRenames = new();
-
-        public void SetName(string? NewName) {
-            this.Name = NewName;
-        }
-
-        public TrackRename? GetTrackRename(MkvTrack track, bool createNewIfNeeded = false) {
-            string key = track.ID.ToString();
-            if (this.TrackRenames.ContainsKey(key))
-            {
-                return this.TrackRenames[key];
-            } else
-            {
-                if (createNewIfNeeded)
-                {
-                    TrackRename result = new();
-                    this.TrackRenames[key] = result;
-                    return result;
-                } else
-                {
-                    return null;
-                }
-            }
-        }
-
-
-        public void LoadFromJson(JsonData Data) {
-            JsonObject obj = (JsonObject)Data;
-
-            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
-            this.TrackRenames.LoadFromJson(obj["Tracks"] ?? new JsonObject());
-        }
-
-        public JsonData SaveToJson() {
-            JsonObject obj = new();
-
-            if (this.Name != null) obj["Name"] = new JsonString(this.Name);
-
-            JsonObject tracks = new();
-            foreach(var pair in this.TrackRenames)
-            {
-                var json = pair.Value.SaveToJson();
-                if (json != null) tracks[pair.Key] = json;
-            }
-            if (tracks.Items.Count() > 0) obj["Tracks"] = tracks;
-
-            if (obj.Items.Count() == 0)
-            {
-                return null;
-            } else
-            {
-                return obj;
-            }
-        }
-    }
-
-    public class TrackRename : IJsonSerializable {
-
-        public string? Name = null;
-        public bool? CommentaryFlag = null;
-        public bool? DefaultFlag = null;
-
-        public void SetName(string? NewName) {
-            this.Name = NewName;
-        }
-
-        public void SetCommentaryFlag(bool? val) {
-            this.CommentaryFlag = val;
-        }
-
-        public void SetDefaultFlag(bool? val) {
-            this.DefaultFlag = val;
-        }
-
-        public void LoadFromJson(JsonData Data) {
-            JsonObject obj = (JsonObject)Data;
-
-            this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
-            this.CommentaryFlag = obj.Load<JsonBool>("Commentary Flag")?.Value ?? null;
-            this.DefaultFlag = obj.Load<JsonBool>("Default Track Flag")?.Value ?? null;
-        }
-
-        public JsonData SaveToJson() {
-            JsonObject obj = new();
-
-            if (this.Name != null) obj["Name"] = new JsonString(this.Name);
-            if (this.CommentaryFlag != null) obj["Commentary Flag"] = new JsonBool(this.CommentaryFlag.Value);
-            if (this.DefaultFlag != null) obj["Default Track Flag"] = new JsonBool(this.DefaultFlag.Value);
-
-            if (obj.Items.Count() == 0)
-            {
-                return null;
-            } else
-            {
-                return obj;
-            }
-        }
-
     }
 
     public class Playlist : IJsonSerializable {
@@ -390,20 +278,20 @@ namespace MakeMKV_Title_Decoder.Data
     }
 
     public class TrackID : IJsonSerializable {
-        public int? FileIndex;
-        public int? TrackIndex;
+        public int? StreamIndex;
+        public int? TrackIndex; // TODO Want this to be called "TrackID" but can't because that matches the class name
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
 
-            this.FileIndex = (int?)(obj.Load<JsonInteger>("File Index")?.Value ?? null);
+            this.StreamIndex = (int?)(obj.Load<JsonInteger>("File Index")?.Value ?? null);
             this.TrackIndex = (int?)(obj.Load<JsonInteger>("Track Index")?.Value ?? null);
         }
 
         public JsonData SaveToJson() {
             JsonObject obj = new();
 
-            if (this.FileIndex != null) obj["File Index"] = new JsonInteger(this.FileIndex.Value);
+            if (this.StreamIndex != null) obj["File Index"] = new JsonInteger(this.StreamIndex.Value);
             if (this.TrackIndex != null) obj["Track Index"] = new JsonInteger(this.TrackIndex.Value);
 
             if (obj.Items.Count() == 0) return null;

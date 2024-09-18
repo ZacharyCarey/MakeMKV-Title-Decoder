@@ -1,4 +1,5 @@
 ﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
@@ -384,7 +385,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             var source = track.Track;
 
             TrackID trackId = new();
-            trackId.FileIndex = fileIndexLookup[track.Source];
+            trackId.StreamIndex = fileIndexLookup[track.Source];
             trackId.TrackIndex = (int)track.Track.ID;
             if (!isAppended)
             {
@@ -392,7 +393,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             }
 
             // This will hold all of the track data
-            var trackRename = renames.GetClipRename(track.Source.Source)?.GetTrackRename(source);
+            TrackRename trackRename = null;// renames.GetClipRename(track.Source.Source)?.GetTrackRename(source);
             var playlist = new PlaylistTrack() {
                 UID = source.Properties?.Number,
                 Codec = source.Codec,
@@ -525,7 +526,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                 List<AppendedTrack> newSourceTracks = new();
                 foreach(var order in playlist.TrackOrder)
                 {
-                    PlaylistFile playlistFile = allFiles[(int)order.FileIndex];
+                    PlaylistFile playlistFile = allFiles[(int)order.StreamIndex];
                     AppendedTrack track = trackLookup[lookup[playlistFile]][(int)order.TrackIndex];
                     if (!result.SourceTracks.Contains(track)) throw new Exception();
                 }
@@ -550,7 +551,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             } else
             {
                 TrackID appendedID = playlistTrack.AppendedTo;
-                PlaylistFile appendedFile = allFiles[(int)appendedID.FileIndex];
+                PlaylistFile appendedFile = allFiles[(int)appendedID.StreamIndex];
                 AppendedTrack appendedTrack = breadcrumb[appendedFile.Tracks[(int)appendedID.TrackIndex]]; //trackLookup[lookup[appendedFile]][(int)appendedID.TrackIndex];
 
                 appendedTrack.AppendedTracks.Add(track);

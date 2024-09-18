@@ -18,7 +18,7 @@ namespace MakeMKV_Title_Decoder {
         }
     }
 
-    public static class Utils {
+    public static partial class Utils {
         #region LINQ
         public static IEnumerable<ValueWithIndex<T>> WithIndex<T>(this IEnumerable<T> values) {
             int index = 0;

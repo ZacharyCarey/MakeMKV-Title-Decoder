@@ -53,7 +53,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             try
             {
                 var startInfo = new ProcessStartInfo();
-                startInfo.FileName = Path.Combine(path, "lib", "mkvtoolnix", exeName);
+                startInfo.FileName = Path.Combine(path, "libs", "MkvToolNix", "lib", exeName);
                 startInfo.CreateNoWindow = true;
                 startInfo.UseShellExecute = false;
                 startInfo.RedirectStandardOutput = true;
@@ -184,7 +184,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             if (playlist.TrackOrder != null)
             {
                 args.Add($"--track-order");
-                args.Add(string.Join(",", playlist.TrackOrder.Select(x => $"{x.FileIndex}:{x.TrackIndex}")));
+                args.Add(string.Join(",", playlist.TrackOrder.Select(x => $"{x.StreamIndex}:{x.TrackIndex}")));
             }
 
             if (appendedTracks.Count > 0)
@@ -251,25 +251,17 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
                         foreach (var sync in track.Sync)
                         {
                             //MkvTrack? syncTrack = FindTrack(disc, playlist.Files[sync.FileID.Value], playlist.Files[sync.FileID.Value].Tracks[sync.TrackID.Value]);
-                            MkvMergeID syncFile = FindSource(disc, allFiles[sync.FileIndex.Value]);
+                            MkvMergeID syncFile = FindSource(disc, allFiles[sync.StreamIndex.Value]);
                             if (syncFile != null && syncFile.Container?.Properties?.Duration != null)
                             {
                                 delay += syncFile.Container.Properties.Duration.Value;
                             }
                             else
                             {
-                                // Try using libbluray
-                                // TODO prevent parsing multiple times
-                                ClpiFile? clipFile = ClpiFile.Parse(Path.Combine(disc.RootPath, "BDMV", "CLIPINF", $"{Path.GetFileNameWithoutExtension(syncFile.FileName)}.clpi"));
-                                if (clipFile == null)
-                                {
-                                    // TODO adjust clpi parsing to ONLY parse durations??
-                                    throw new Exception("Failed to calculate duration");
-                                }
-                                //TimeSpan clipLength = clipFile.sequence.atc_seq.SelectMany<ClipStcSequence,TimeSpan>(x => x.stc_seq.Select(y => y.Length).Aggregate((a, b) => a + b));
-                                TimeSpan clipLength = clipFile.sequence.atc_seq.SelectMany(x => x.stc_seq.Select(y => y.Length)).Aggregate((a, b) => a + b);
+                                
                                 //Console.WriteLine("clipLength: " + clipLength.TotalMilliseconds + " ms");
-                                delay += clipLength;
+                                throw new NotImplementedException(); // TODO
+                                //delay += clipLength;
                             }
                         }
 
@@ -281,7 +273,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
                         MkvAppend append = new();
                         append.SrcFile = allFiles.IndexOf(file);
                         append.SrcTrack = (int)track.ID.Value;
-                        append.DstFile = track.AppendedTo.FileIndex.Value;
+                        append.DstFile = track.AppendedTo.StreamIndex.Value;
                         append.DstTrack = track.AppendedTo.TrackIndex.Value;
                         appendedTracks.Add(append);
                     }

@@ -17,11 +17,9 @@ namespace MakeMKV_Title_Decoder
         const string KeepIconKey = "dialog-ok-apply.png";
         const string DeleteIconKey = "dialog-cancel.png";
 
-        public readonly MkvToolNixDisc Disc;
-        public readonly RenameData Renames;
+        public readonly LoadedDisc Disc;
 
-        public VideoCompareForm(RenameData renames, MkvToolNixDisc disc) {
-            this.Renames = renames;
+        public VideoCompareForm(LoadedDisc disc) {
             this.Disc = disc;
 
             InitializeComponent();
@@ -53,7 +51,7 @@ namespace MakeMKV_Title_Decoder
                 keepIconItem.Tag = clip;
                 list.Items.Add(keepIconItem);
 
-                ListViewItem.ListViewSubItem sourceItem = new(keepIconItem, clip.FileName);
+                ListViewItem.ListViewSubItem sourceItem = new(keepIconItem, clip.Data.FileName);
                 keepIconItem.SubItems.Add(sourceItem);
 
                 ListViewItem.ListViewSubItem renameItem = new(keepIconItem, "");
@@ -63,22 +61,22 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void RefreshClipListItem(ListViewItem row, MkvMergeID data) {
-            string name = (this.Renames.GetClipRename(data)?.Name ?? "");
+        private void RefreshClipListItem(ListViewItem row, LoadedStream data) {
+            string name = (data.Rename.Name ?? "");
 
             row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
             row.SubItems[2].Text = name;
         }
 
-        private void SelectClip(VideoPlayer player, MkvMergeID? clip) {
-            player.LoadVideo(clip?.GetFullPath(this.Disc));
+        private void SelectClip(VideoPlayer player, LoadedStream? clip) {
+            player.LoadVideo(clip?.Data?.GetFullPath(this.Disc.Disc));
         }
 
         private void RefreshSelectedItem(ListView list, VideoPlayer player) {
-            MkvMergeID? selection = null;
+            LoadedStream? selection = null;
             if (list.SelectedItems.Count > 0)
             {
-                selection = (MkvMergeID?)list.SelectedItems[0].Tag;
+                selection = (LoadedStream?)list.SelectedItems[0].Tag;
             }
             SelectClip(player, selection);
         }
