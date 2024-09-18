@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +9,11 @@ using System.Threading.Tasks;
 namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 {
     public class AppendedFile {
-        public MkvMergeID Source;
+        public LoadedStream Source;
         public Color Color;
         public List<AppendedFile> AppendedFiles = new();
 
-        public AppendedFile(MkvMergeID source, Color color) {
+        public AppendedFile(LoadedStream source, Color color) {
             this.Source = source;
             this.Color = color;
         }

@@ -63,7 +63,7 @@ namespace MakeMKV_Title_Decoder
 
             foreach (var playlist in renames.Playlists)
             {
-/*                var loadedPlaylist = LoadedPlaylist.LoadFromRenames(disc, playlist);
+                var loadedPlaylist = LoadedPlaylist.LoadFromRenames(disc, playlist);
                 if (loadedPlaylist != null)
                 {
                     this.PlaylistsListBox.Add(loadedPlaylist);
@@ -71,7 +71,7 @@ namespace MakeMKV_Title_Decoder
                 {
                     // TODO handle error
                 }
-*/            }
+            }
             PlaylistsListBox_SelectedIndexChanged(null, null);
         }
 
@@ -108,7 +108,7 @@ namespace MakeMKV_Title_Decoder
                 SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItem;
                 if (selectedItem != null)
                 {
-//                    selectedPlaylist.AddSourceFile(selectedItem.Clip);
+                    selectedPlaylist.AddSourceFile(selectedItem.Clip);
                     UpdatePlaylistUI();
                     UnsavedChangesIcon(selectedPlaylist);
                 }
@@ -153,25 +153,21 @@ namespace MakeMKV_Title_Decoder
             {
                 foreach (var sourceTrack in selectedPlaylist.SourceTracks)
                 { 
-                    TrackListData item = null/*this.PlaylistTrackOrder.Add(
-                        sourceTrack.Source.Source,
+                    TrackListData item = this.PlaylistTrackOrder.Add(
                         sourceTrack.Track,
-                        this.Renames,
                         sourceTrack.Color
-                    )*/;
+                    );
                     item.Tag = sourceTrack;
                     foreach (var appendedTrack in sourceTrack.AppendedTracks)
                     {
                         bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
-                        /*item = this.PlaylistTrackOrder.Add(
-                            appendedTrack.Source.Source,
+                        item = this.PlaylistTrackOrder.Add(
                             appendedTrack.Track,
-                            this.Renames,
                             appendedTrack.Color,
                             IndentedTrackPadding,
                             appendedTrack.Enabled ? EnableIconKey : DisableIconKey,
                             compatible ? null : this.ErrorColor
-                        );*/
+                        );
                         item.Tag = appendedTrack;
                         errors |= !compatible;
                     }
@@ -188,24 +184,24 @@ namespace MakeMKV_Title_Decoder
         private PropertyItem CreateClipEntry(AppendedFile clip, int padding = 0) {
             // Clip name
             PropertyItem item = new();
-//            item.Text = this.Renames.GetClipRename(clip.Source)?.Name ?? "";
+            item.Text = clip.Source.Rename.Name ?? "";
             item.IconColor = clip.Color;
             item.Padding = padding;
             item.Tag = clip;
 
             // Container
             PropertySubItem sub1 = new(item);
-            sub1.Text = clip.Source.Container?.Type ?? "";
+            sub1.Text = clip.Source.Data.Container?.Type ?? "";
             item.SubItems.Add(sub1);
 
             // File size
             PropertySubItem sub2 = new(item);
-            sub2.Text = clip.Source.FileSize.ToString();
+            sub2.Text = clip.Source.Data.FileSize.ToString();
             item.SubItems.Add(sub2);
 
             // Directory
             PropertySubItem sub3 = new(item);
-//            sub3.Text = clip.Source.GetFullPath(this.Disc);
+            sub3.Text = clip.Source.Data.GetFullPath(this.Disc.Data);
             item.SubItems.Add(sub3);
 
             return item;
@@ -218,64 +214,63 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void ImportPlaylists_Click(object sender, EventArgs e) {
-            //foreach (var playlist in this.Disc.Playlists)
-            //{
-            //    Playlist renamePlaylist = new();
-            //    LoadedPlaylist loadedPlaylist = new(renamePlaylist, playlist.FileName);
+            foreach (var playlist in this.Disc.Data.Playlists)
+            {
+                Playlist renamePlaylist = new();
+                LoadedPlaylist loadedPlaylist = new(renamePlaylist, playlist.FileName);
 
-            //    AppendedFile? rootFile = null;
-            //    foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
-            //    {
-            //        // Try to find file
-            //        MkvMergeID? file = null;
-            //        foreach (var source in this.Disc.Streams)
-            //        {
-            //            if (source.GetRelativePath() == sourceFile)
-            //            {
-            //                file = source;
-            //                break;
-            //            }
-            //        }
-            //        if (file == null)
-            //        {
-            //            // TODO error
-            //            continue;
-            //        }
+                AppendedFile? rootFile = null;
+                foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
+                {
+                    // Try to find file
+                    LoadedStream? file = null;
+                    foreach (var source in this.Disc.Streams)
+                    {
+                        if (source.Data.GetRelativePath() == sourceFile)
+                        {
+                            file = source;
+                            break;
+                        }
+                    }
+                    if (file == null)
+                    {
+                        // TODO error
+                        continue;
+                    }
 
-            //        // Only add files the user has renames i.e. dont add ignored files
-            //        if (Renames.GetClipRename(file) != null)
-            //        {
+                    // Only add files the user has renames i.e. dont add ignored files
+                    if (file.Rename.Name != null)
+                    {
+						if (rootFile == null)
+						{
+							rootFile = loadedPlaylist.ImportSourceFile(file);
+						} else
+						{
+							loadedPlaylist.ImportAppendedFile(rootFile, file);
+						}
+					}
+                }
 
-            //            if (rootFile == null)
-            //            {
-            //                rootFile = loadedPlaylist.ImportSourceFile(file);
-            //            } else
-            //            {
-            //                loadedPlaylist.ImportAppendedFile(rootFile, file);
-            //            }
-            //        }
-            //    }
+                // If no valid source files (including ignored files) were found,
+                // dont even bother to import the playlist
+                if (loadedPlaylist.SourceFiles.Count != 0)
+                {
+                    this.Renames.Playlists.Add(renamePlaylist);
+                    this.PlaylistsListBox.Add(loadedPlaylist);
 
-            //    // If no valid source files (including ignored files) were found,
-            //    // dont even bother to import the playlist
-            //    if (loadedPlaylist.SourceFiles.Count != 0)
-            //    {
-            //        this.Renames.Playlists.Add(renamePlaylist);
-            //        this.PlaylistsListBox.Add(loadedPlaylist);
+                    // If only one file was found, just give it the same name as the source
+                    /*if (loadedPlaylist.AppendedFiles.Any())
+                    {
+                        var rename = Renames.GetClipRename(loadedPlaylist.PrimarySource.Source);
+                        if (rename != null && rename.Name != null) loadedPlaylist.Name = rename.Name;
+                    }*/
+                    loadedPlaylist.Save(this.Disc);
 
-            //        // If only one file was found, just give it the same name as the source
-            //        /*if (loadedPlaylist.AppendedFiles.Any())
-            //        {
-            //            var rename = Renames.GetClipRename(loadedPlaylist.PrimarySource.Source);
-            //            if (rename != null && rename.Name != null) loadedPlaylist.Name = rename.Name;
-            //        }*/
-            //        loadedPlaylist.Save(this.Renames);
+                    CheckErrors(loadedPlaylist);
+                }
+            }
 
-            //        CheckErrors(loadedPlaylist);
-            //    }
-            //}
-
-            //this.PlaylistsListBox.Invalidate();
+            this.PlaylistsListBox.Invalidate();
         }
 
         private void NewPlaylistButton_Click(object sender, EventArgs e) {
@@ -308,7 +303,7 @@ namespace MakeMKV_Title_Decoder
             {
                 selectedTrack.Enabled = true;
                 UpdatePlaylistUI();
- //               this.PlaylistTrackOrder.Select(selectedTrack.Track);
+                this.PlaylistTrackOrder.Select(selectedTrack.Track);
                 UnsavedChangesIcon(selectedPlaylist);
             }
         }
@@ -321,7 +316,7 @@ namespace MakeMKV_Title_Decoder
 
                 selectedTrack.Enabled = false;
                 UpdatePlaylistUI();
- //               this.PlaylistTrackOrder.Select(selectedTrack.Track);
+                this.PlaylistTrackOrder.Select(selectedTrack.Track);
                 UnsavedChangesIcon(selectedPlaylist);
             }
         }
@@ -434,7 +429,7 @@ namespace MakeMKV_Title_Decoder
                 }
 
                 selectedItem.Playlist.Name = this.PlaylistNameTextBox.Text;
-                selectedItem.Playlist.Save(this.Renames);
+                selectedItem.Playlist.Save(this.Disc);
                 ClearUnsavedChangesIcon(selectedItem.Playlist);
                 this.PlaylistsListBox.Invalidate();
             }

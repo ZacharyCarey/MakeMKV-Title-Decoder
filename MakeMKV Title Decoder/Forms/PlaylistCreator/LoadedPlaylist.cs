@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.Data;
+﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
@@ -61,17 +62,18 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
         #region File Management
         private List<AppendedFile> _AllFiles = new();
 
-        private AppendedFile CreateFile(MkvMergeID clip) {
+        // TODO instead of holding references to files, would it be easier
+        // just to hold the index references, the same way the rename data works?
+        private AppendedFile CreateFile(LoadedStream clip) {
             var result = new AppendedFile(clip, GetNextColor());
             _AllFiles.Add(result);
             return result;
         }
 
-        private AppendedFile GetFileOrCreate(MkvMergeID clip) {
-            var path = clip.GetRelativePath();
+        private AppendedFile GetFileOrCreate(LoadedStream clip) {
             foreach(var file in _AllFiles)
             {
-                if (file.Source.GetRelativePath() == path)
+                if (file.Source == clip)
                 {
                     return file;
                 }
@@ -96,7 +98,6 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
         public Playlist RenameData;
         public List<AppendedFile> SourceFiles = new();
-        //public IEnumerable<AppendedFile> AppendedFiles => _AllFiles.Where(x => x != this.PrimarySource);
         public List<AppendedTrack> SourceTracks = new();
         public string? Name;
 
@@ -142,25 +143,25 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             }
         }
 
-        public AppendedFile AddSourceFile(MkvMergeID file) {
+        public AppendedFile AddSourceFile(LoadedStream file) {
             var appendedFile = CreateFile(file);
             AddSourceFile(appendedFile);
             return appendedFile;
         }
 
-        public AppendedFile AddAppendedFile(AppendedFile parent, MkvMergeID file) {
+        public AppendedFile AddAppendedFile(AppendedFile parent, LoadedStream file) {
             var appendedFile = CreateFile(file);
             this.AddAppendedFile(parent, appendedFile);
             return appendedFile;
         }
 
-        public AppendedFile ImportSourceFile(MkvMergeID file) {
+        public AppendedFile ImportSourceFile(LoadedStream file) {
             var appendedFile = GetFileOrCreate(file);
             AddSourceFile(appendedFile);
             return appendedFile;
         }
 
-        public AppendedFile ImportAppendedFile(AppendedFile parent, MkvMergeID file) {
+        public AppendedFile ImportAppendedFile(AppendedFile parent, LoadedStream file) {
             var appendedFile = GetFileOrCreate(file);
             AddAppendedFile(parent, appendedFile);
             return appendedFile;
@@ -343,32 +344,50 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             return false;
         }
 
-        public void Save(RenameData renames) {
+        // TODO find a more efficient way to do this
+        public long FindStreamIndex(LoadedDisc disc, LoadedStream stream)
+        {
+            return disc.Streams.IndexOf(stream);
+        }
+
+        public TrackID FindTrackID(LoadedDisc disc, LoadedStream stream, LoadedTrack track)
+        {
+            TrackID trackID = new();
+            trackID.StreamIndex = (int)FindStreamIndex(disc, stream);
+            trackID.TrackIndex = stream.Tracks.IndexOf(track);
+            return trackID;
+        }
+
+        public void Save(LoadedDisc disc) {
             RenameData.Name = this.Name;
-            RenameData.Files.Clear();
-            RenameData.TrackOrder.Clear();
+            RenameData.SourceFiles.Clear();
+            RenameData.Tracks.Clear();
 
             // Save all the files first
-            Dictionary<AppendedFile, PlaylistFile> lookup = new();
-            Dictionary<AppendedFile, int> fileIndexLookup = new();
-            int lastIndex = 0;
+            Dictionary<AppendedFile, PlaylistSource> lookup = new();
+            //Dictionary<AppendedFile, int> fileIndexLookup = new();
             foreach(var source in this.SourceFiles)
             {
-                var sourcePlaylist = new PlaylistFile();
-                lookup[source] = sourcePlaylist;
-                RenameData.Files.Add(sourcePlaylist);
-                fileIndexLookup[source] = lastIndex++;
+                var sourcePlaylist = new PlaylistSource();
+                sourcePlaylist.StreamIndex = FindStreamIndex(disc, source.Source);
 
-                sourcePlaylist.Source = source.Source.GetRelativePath();
+                lookup[source] = sourcePlaylist;
+                RenameData.SourceFiles.Add(sourcePlaylist);
+                //fileIndexLookup[source] = lastIndex++;
+
+                //sourcePlaylist.Source = source.Source.GetRelativePath();
 
                 foreach(var appended in source.AppendedFiles)
                 {
-                    var appendedPlaylist = new PlaylistFile();
+                    var appendedPlaylist = new PlaylistSource();
+                    appendedPlaylist.StreamIndex = FindStreamIndex(disc, appended.Source);
+
                     lookup[appended] = appendedPlaylist;
                     sourcePlaylist.AppendedFiles.Add(appendedPlaylist);
-                    fileIndexLookup[appended] = lastIndex++;
+                    lookup[appended] = appendedPlaylist;
+                    //fileIndexLookup[appended] = lastIndex++;
 
-                    appendedPlaylist.Source = appended.Source.GetRelativePath();
+                    //appendedPlaylist.Source = appended.Source.GetRelativePath();
                 }
             }
 
@@ -377,38 +396,55 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             TrackID lastEnabledTrack = new TrackID();
             foreach (var sourceTrack in this.SourceTracks)
             {
-                SaveTrack(lookup, fileIndexLookup, renames, sourceTrack, false, disabledTracks, ref lastEnabledTrack);
+                SaveTrack(disc, lookup, /*fileIndexLookup,*/ /*renames,*/ sourceTrack, RenameData.Tracks, false, disabledTracks, ref lastEnabledTrack);
             }
         }
 
-        private void SaveTrack(Dictionary<AppendedFile, PlaylistFile> lookup, Dictionary<AppendedFile, int> fileIndexLookup, RenameData renames, AppendedTrack track, bool isAppended, List<TrackID> disabledTracks, ref TrackID lastEnabledTrack) {
+        // TODO make more efficient
+        private void FindAppendedFileIndex(PlaylistSource search, out long sourceIndex, out long appendedIndex)
+        {
+            for (int i = 0; i < this.RenameData.SourceFiles.Count; i++)
+            {
+                PlaylistSource source = this.RenameData.SourceFiles[i];
+                if (source == search)
+                {
+                    sourceIndex = i;
+                    appendedIndex = -1;
+                    return;
+                }
+
+                for (int j = 0; j < source.AppendedFiles.Count; j++)
+                {
+                    PlaylistSource appended = source.AppendedFiles[j];
+                    if (appended == search)
+                    {
+                        sourceIndex = i;
+                        appendedIndex = j;
+                        return;
+                    }
+                }
+            }
+            throw new Exception();
+        }
+
+        private void SaveTrack(LoadedDisc disc, Dictionary<AppendedFile, PlaylistSource> lookup, /*Dictionary<AppendedFile, int> fileIndexLookup,*/ /*RenameData renames,*/ AppendedTrack track, SerializableList<PlaylistTrack> owner, bool isAppended, List<TrackID> disabledTracks, ref TrackID lastEnabledTrack) {
             var source = track.Track;
 
-            TrackID trackId = new();
-            trackId.StreamIndex = fileIndexLookup[track.Source];
-            trackId.TrackIndex = (int)track.Track.ID;
-            if (!isAppended)
-            {
-                RenameData.TrackOrder.Add(trackId);
-            }
+            TrackID trackId = FindTrackID(disc, track.Source.Source, track.Track);
 
-            // This will hold all of the track data
-            TrackRename trackRename = null;// renames.GetClipRename(track.Source.Source)?.GetTrackRename(source);
-            var playlist = new PlaylistTrack() {
-                UID = source.Properties?.Number,
-                Codec = source.Codec,
-                ID = source.ID,
-                Copy = track.Enabled,
-                Name = trackRename?.Name,
-                Commentary = trackRename?.CommentaryFlag
-            };
+            var playlist = new PlaylistTrack();
+            FindAppendedFileIndex(lookup[track.Source], out playlist.SourceFileIndex, out playlist.AppendedFileIndex);
+			playlist.TrackIndex = (long)trackId.TrackIndex;
 
-            // Add to the source file that owns it
-            lookup[track.Source].Tracks.Add(playlist);
+            playlist.Copy = track.Enabled;
+
+            // Add to the source file that owns it\
+            owner.Add(playlist);
 
             if (!isAppended)
             {
                 // We want to save sub-tracks for accurate reloading later
+                // TODO disable sub-tracks if not enabled
                 //if (track.Enabled)
                 //{
                     // create internal state for appended tracks
@@ -418,7 +454,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                     // Save all appended tracks
                     foreach (var appendedTrack in track.AppendedTracks)
                     {
-                        SaveTrack(lookup, fileIndexLookup, renames, appendedTrack, true, disabledTracks, ref lastTrack);
+                        SaveTrack(disc, lookup, appendedTrack, playlist.AppendedTracks, true, disabledTracks, ref lastTrack);
                     }
                 //}
             } else
@@ -426,11 +462,11 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                 if (track.Enabled)
                 {
                     // Mark which track it is appended to
-                    playlist.AppendedTo = lastEnabledTrack;
+                    //playlist.AppendedTo = lastEnabledTrack;
 
                     // Update sync info as needed
-                    playlist.Sync.Clear();
-                    playlist.Sync.AddRange(disabledTracks);
+                    //playlist.Sync.Clear();
+                    //playlist.Sync.AddRange(disabledTracks);
 
                     // Update for the next track
                     disabledTracks.Clear();
@@ -438,7 +474,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                 } else
                 {
                     // We want to mark how disabled tracks are appended so the file can be properly reloaded 
-                    playlist.AppendedTo = lastEnabledTrack;
+                    //playlist.AppendedTo = lastEnabledTrack;
 
                     // Update internal state for next track
                     disabledTracks.Add(trackId);
@@ -457,7 +493,53 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             return null;
         }
 
-        private static MkvTrack? FindTrack(MkvMergeID stream, PlaylistTrack filter) {
+		public static LoadedPlaylist? LoadFromRenames(LoadedDisc disc, Playlist playlist)
+        {
+            LoadedPlaylist result = new(playlist, playlist.Name);
+
+            // Load files first
+            foreach(var source in playlist.SourceFiles)
+            {
+				var sourceFile = result.CreateFile(disc.GetStream(source.StreamIndex)); // TODO error handling
+                result.SourceFiles.Add(sourceFile);
+
+                foreach (var appended in source.AppendedFiles)
+                {
+                    var appendedFile = result.CreateFile(disc.GetStream(source.StreamIndex)); // TODO error handling
+                    sourceFile.AppendedFiles.Add(appendedFile);
+                }
+            }
+
+            // Load Tracks
+            foreach(var track in playlist.Tracks)
+            {
+                AppendedTrack sourceTrack = LoadTrack(result, track);
+                result.SourceTracks.Add(sourceTrack);
+
+                foreach(var appended in track.AppendedTracks)
+                {
+                    AppendedTrack appendedTrack = LoadTrack(result, appended);
+                    sourceTrack.AppendedTracks.Add(appendedTrack);
+                }
+            }
+
+            return result;
+        }
+
+        private static AppendedTrack LoadTrack(LoadedPlaylist result, PlaylistTrack playlist)
+        {
+            AppendedFile source = result.SourceFiles[(int)playlist.SourceFileIndex];
+            if (playlist.AppendedFileIndex >= 0) {
+                source = source.AppendedFiles[(int)playlist.AppendedFileIndex];
+            }
+
+            LoadedTrack sourceTrack = source.Source.Tracks[(int)playlist.TrackIndex];
+
+            var track = new AppendedTrack(source, sourceTrack, source.Color);
+            return track;
+        }
+
+		/*private static MkvTrack? FindTrack(MkvMergeID stream, PlaylistTrack filter) {
             // TODO better matching algorithm
             List<MkvTrack> matchingTracks = stream.Tracks.Where(x => x.Properties?.Number == filter.UID).ToList();
             if (matchingTracks.Count > 1)
@@ -559,9 +641,9 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
                 if (!appendedTrack.Enabled) track.Enabled = false;
             }
-        }
+        }*/
 
-        public override string ToString() {
+		public override string ToString() {
             return Name;
         }
     }

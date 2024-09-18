@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +11,12 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
     public class AppendedTrack {
         public Color Color;
         public AppendedFile Source;
-        public MkvTrack Track;
+        public LoadedTrack Track;
         public bool Enabled = true;
         public List<AppendedTrack> AppendedTracks = new();
         public Color? BackColor;
 
-        public AppendedTrack(AppendedFile sourceFile, MkvTrack sourceTrack, Color color, Color? backColor = null) {
+        public AppendedTrack(AppendedFile sourceFile, LoadedTrack sourceTrack, Color color, Color? backColor = null) {
             this.Source = sourceFile;
             this.Track = sourceTrack;
             this.Color = color;
@@ -24,15 +25,15 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
         public bool IsCompatableWith(AppendedTrack other) {
             if (!Enabled) return true;
-            if (this.Track.Type != other.Track.Type) return false;
+            if (this.Track.Data.Type != other.Track.Data.Type) return false;
 
-            if (this.Track.Type == MkvTrackType.Video)
+            if (this.Track.Data.Type == MkvTrackType.Video)
             {
                 return true;
-            } else if (this.Track.Type == MkvTrackType.Audio)
+            } else if (this.Track.Data.Type == MkvTrackType.Audio)
             {
-                return this.Track?.Properties?.AudioChannels == other.Track.Properties?.AudioChannels;
-            } else if (this.Track.Type == MkvTrackType.Subtitles)
+                return this.Track.Data.Properties?.AudioChannels == other.Track.Data.Properties?.AudioChannels;
+            } else if (this.Track.Data.Type == MkvTrackType.Subtitles)
             {
                 return true;
             } else

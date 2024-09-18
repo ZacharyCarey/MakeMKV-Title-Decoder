@@ -168,35 +168,36 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
 
         private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, string outputFile)
         {
-            List<string> args = new();
-            List<MkvAppend> appendedTracks = new();
-            List<PlaylistFile> allFiles = FindFiles(playlist).ToList();
-            IEnumerable<string> files = playlist.Files.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks, false, allFiles));
+            /*            List<string> args = new();
+                        List<MkvAppend> appendedTracks = new();
+                        List<PlaylistFile> allFiles = FindFiles(playlist).ToList();
+                        IEnumerable<string> files = playlist.Files.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks, false, allFiles));
 
-            args.Add($"-o \"{outputFile}\"");
-            args.AddRange(files);
+                        args.Add($"-o \"{outputFile}\"");
+                        args.AddRange(files);
 
-            if (playlist.Title != null)
-            {
-                args.Add($"--title \"{playlist.Title}\"");
-            }
+                        if (playlist.Title != null)
+                        {
+                            args.Add($"--title \"{playlist.Title}\"");
+                        }
 
-            if (playlist.TrackOrder != null)
-            {
-                args.Add($"--track-order");
-                args.Add(string.Join(",", playlist.TrackOrder.Select(x => $"{x.StreamIndex}:{x.TrackIndex}")));
-            }
+                        if (playlist.TrackOrder != null)
+                        {
+                            args.Add($"--track-order");
+                            args.Add(string.Join(",", playlist.TrackOrder.Select(x => $"{x.StreamIndex}:{x.TrackIndex}")));
+                        }
 
-            if (appendedTracks.Count > 0)
-            {
-                args.Add($"--append-to {string.Join(",", appendedTracks)}");
-            }
+                        if (appendedTracks.Count > 0)
+                        {
+                            args.Add($"--append-to {string.Join(",", appendedTracks)}");
+                        }
 
-            string fullCommand = string.Join(" ", args);
-            return fullCommand;
+                        string fullCommand = string.Join(" ", args);
+                        return fullCommand;*/
+            return "";
         }
 
-        private static IEnumerable<PlaylistFile> FindFiles(Playlist playlist)
+        /*private static IEnumerable<PlaylistFile> FindFiles(Playlist playlist)
         {
             foreach (var file in playlist.Files)
             {
@@ -206,10 +207,10 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
                     yield return append;
                 }
             }
-        }
+        }*/
 
         // TODO use the json file option to prevent console issues?
-        private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, PlaylistFile file, List<MkvAppend> appendedTracks, bool isAppended, List<PlaylistFile> allFiles)
+        /*private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, PlaylistFile file, List<MkvAppend> appendedTracks, bool isAppended, List<PlaylistFile> allFiles)
         {
             List<string> args = new();
             List<long> audioTracks = new();
@@ -303,9 +304,9 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             }
 
             return string.Join(" ", args);
-        }
+        }*/
 
-        private static MkvMergeID? FindSource(MkvToolNixDisc disc, PlaylistFile file)
+        /*private static MkvMergeID? FindSource(MkvToolNixDisc disc, PlaylistFile file)
         {
             // TODO store results for faster lookup and/or better searching
             string filePath = file.Source;
@@ -318,9 +319,9 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             }
 
             return null;
-        }
+        }*/
 
-        private static MkvTrack? FindTrack(MkvToolNixDisc disc, PlaylistFile file, PlaylistTrack playlist)
+        /*private static MkvTrack? FindTrack(MkvToolNixDisc disc, PlaylistFile file, PlaylistTrack playlist)
         {
             // TODO store results for faster lookup and/or better searching
             string filePath = file.Source;
@@ -340,7 +341,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             }
 
             return null;
-        }
+        }*/
     }
 
     internal struct MkvAppend
