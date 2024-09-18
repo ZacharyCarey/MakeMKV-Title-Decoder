@@ -15,17 +15,17 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		public long? NumberOfSets = null;
 		public long? SetNumber = null;
 
-		public SerializableList<StreamIdentity> Streams = new();
+		//public SerializableList<StreamIdentity> Streams = new();
 
 		public void LoadFromMkvToolNix(LoadedDisc loadedDisc)
 		{
-			var disc = loadedDisc.Disc;
+			var disc = loadedDisc.Data;
 
 			Title = disc.Title;
 			NumberOfSets = disc.NumberOfSets;
 			SetNumber = disc.SetNumber;
 
-			Streams.Clear();
+			//Streams.Clear();
 			/*foreach(var loadedStream in loadedDisc.Streams)
 			{
 				var stream = new StreamIdentity();
@@ -40,7 +40,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 			Data.LoadJson("Number of Sets", out NumberOfSets);
 			Data.LoadJson("Set Number", out  SetNumber);
 
-			Streams.LoadFromJson(((JsonObject)Data)["Streams"]);
+			//Streams.LoadFromJson(((JsonObject)Data)["Streams"]);
 		}
 
 		public JsonData SaveToJson()
@@ -51,7 +51,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 			obj["Number of Sets"] = Utils.SaveJson(NumberOfSets);
 			obj["Set Number"] = Utils.SaveJson(SetNumber);
 
-			obj["Streams"] = Streams.SaveToJson();
+			//obj["Streams"] = Streams.SaveToJson();
 
 			return obj;
 		}

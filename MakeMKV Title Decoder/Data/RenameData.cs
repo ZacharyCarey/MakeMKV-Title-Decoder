@@ -17,12 +17,7 @@ namespace MakeMKV_Title_Decoder.Data
     public class RenameData : IJsonSerializable {
         public const string Version = "1.0";
 
-        // Used to identify tracks from the loaded disc backup.
-        // The index in the array is the index referenced in rename data
-        public DiscIdentity DiscIdentity = new();
-
-        // Rename / tagging data for all clips/tracks as identified in DiscIdentity
-        public SerializableList<ClipRename> ClipRenames = new();
+        public LoadedDisc Disc = new();
 
         // Playlist data created by the user for how files should be multiplexed / outputted
         public SerializableList<Playlist> Playlists = new();
@@ -35,14 +30,7 @@ namespace MakeMKV_Title_Decoder.Data
             JsonObject obj = new();
 
             obj["version"] = new JsonString(Version);
-
-            JsonArray clips = new();
-            foreach (var clip in this.ClipRenames)
-            {
-                var json = clip.SaveToJson();
-                if (json != null) clips.Add(json);
-            }
-            if (clips.Count() > 0) obj["User Names"] = clips;
+            obj["Disc"] = this.Disc.SaveToJson();
 
             JsonArray playlists = new();
             foreach(var playlist in this.Playlists)
@@ -64,7 +52,7 @@ namespace MakeMKV_Title_Decoder.Data
                 throw new Exception("Unable to read this version of the file. Please upgrade the file to a newer version.");
             }
 
-            this.ClipRenames.LoadFromJson(obj["User Names"] ?? new JsonObject());
+            this.Disc.LoadFromJson(obj["Disc"]);
             this.Playlists.LoadFromJson(obj["Playlists"] ?? new JsonArray());
         }
     }

@@ -1,8 +1,10 @@
-﻿using MakeMKV_Title_Decoder.Data.Renames;
+﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,22 +12,21 @@ namespace MakeMKV_Title_Decoder.Data
 {
 
 	// TODO probably needs a better name
-	public class LoadedDisc
+	public class LoadedDisc : IJsonSerializable
 	{
-		public DiscIdentity Identity { get; private set; }
-		public MkvToolNixDisc Disc { get; private set; }
+		public DiscIdentity Identity { get; private set; } = new();
+		public MkvToolNixDisc Data { get; private set; }
 		public List<LoadedStream> Streams { get; private set; } = new List<LoadedStream>();
+
+		public LoadedDisc()
+		{
+
+		}
 
 		private LoadedDisc(MkvToolNixDisc disc)
 		{
-			this.Disc = disc;
+			this.Data = disc;
 			this.Identity = new();
-		}
-
-		private LoadedDisc(DiscIdentity identity, MkvToolNixDisc disc)
-		{
-			this.Disc = disc;
-			this.Identity = identity;
 		}
 
 		public LoadedStream? GetStream(long index)
@@ -44,7 +45,7 @@ namespace MakeMKV_Title_Decoder.Data
 			return stream.GetTrack((long)id.TrackIndex);
 		}
 
-		public void Save(RenameData renameData)
+		/*public void Save(RenameData renameData)
 		{
 			Dictionary<LoadedStream, long> streamLookup = new();
 			Dictionary<LoadedTrack, TrackID> trackLookup = new();
@@ -90,7 +91,7 @@ namespace MakeMKV_Title_Decoder.Data
 					track.Rename.ID = (long)trackLookup[track].TrackIndex;
 				}
 			}
-		}
+		}*/
 
 		public static LoadedDisc? TryLoadDisc(MkvToolNixDisc disc)
 		{
@@ -106,45 +107,89 @@ namespace MakeMKV_Title_Decoder.Data
 			}
 
 			LoadedDisc result = new(disc);
+			result.Identity.LoadFromMkvToolNix(result); // TODO should this just be in constructor?
 			result.Streams = streams;
 			return result;
 		}
 
-		public static LoadedDisc? TryLoadRenameData(MkvToolNixDisc disc, RenameData rename)
+		public bool TryLoadRenameData(MkvToolNixDisc disc)
 		{
-			var ID = rename.DiscIdentity;
-			if (ID.Streams.Count != disc.Streams.Length) return null; 
+			if (this.Streams.Count != disc.Streams.Length) return false;
 
-			// TODO check other parameters in DiscID
-
-			List<LoadedStream> streams = new();
-			for (int i = 0; i < ID.Streams.Count; i++)
+			// TODO shares code with TryLoadDisc....
+			for (int i = 0; i < this.Streams.Count; i++)
 			{
-				LoadedStream? stream = LoadedStream.TryLoadStream(ID.Streams[i], disc, disc.Streams[i]);
-				if (stream == null)
+				LoadedStream loadedStream = this.Streams[i];
+				bool result = loadedStream.TryLoadRenameData(disc, disc.Streams[i]);
+
+				if (result == false)
 				{
-					return null;
-				}
-				streams.Add(stream);
-			}
-
-			LoadedDisc result = new(ID, disc);
-			result.Streams = streams;
-
-			// Load rename data
-			foreach (ClipRename clipRename in rename.ClipRenames)
-			{
-				var streamID = streams[(int)clipRename.ID];
-				streamID.Rename = new ClipRename(clipRename);
-
-				foreach(TrackRename trackRename in streamID.Rename.TrackRenames)
-				{
-					var trackID = streamID.Tracks[(int)trackRename.ID];
-					trackID.Rename = trackRename;
+					return false;
 				}
 			}
+			this.Data = disc;
 
-			return result;
+			// Attempt to match data to disc
+			if (!this.MatchData(disc))
+			{
+				return false;
+			} else
+			{
+				return true;
+			}
+		}
+
+		internal bool MatchData(MkvToolNixDisc disc)
+		{
+			this.Data = disc;
+			if (disc.Streams.Length != this.Streams.Count) return false;
+
+			try
+			{
+				for (int i = 0; i < disc.Streams.Length; i++)
+				{
+					bool result = this.Streams[i].MatchData(disc.Streams[i]);
+					if (result == false)
+					{
+						return false;
+					}
+				}
+			}catch(Exception ex)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		public void LoadFromJson(JsonData data)
+		{
+			var obj = (JsonObject)data;
+
+			this.Identity.LoadFromJson(obj["Identity"]);
+
+			this.Streams.Clear();
+			foreach(var Data in (JsonArray)obj["Streams"])
+			{
+				LoadedStream stream = LoadedStream.LoadJson(Data);
+				this.Streams.Add(stream);
+			}
+		}
+
+		public JsonData SaveToJson()
+		{
+			var obj = new JsonObject();
+
+			obj["Identity"] = this.Identity.SaveToJson();
+
+			JsonArray streams = new();
+			foreach(var stream in this.Streams)
+			{
+				streams.Add(stream.SaveToJson());
+			}
+			obj["Streams"] = streams;
+
+			return obj;
 		}
 	}
 

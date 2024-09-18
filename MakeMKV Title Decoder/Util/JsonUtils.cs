@@ -117,6 +117,7 @@ namespace MakeMKV_Title_Decoder
 					if (Enum.TryParse(typeof(T), str.Value, out temp))
 					{
 						result = (T)temp;
+						return;
 					}
 				}
 			}
@@ -181,6 +182,7 @@ namespace MakeMKV_Title_Decoder
 				if (TimeSpan.TryParse(str.Value, out temp))
 				{
 					result = temp;
+					return;
 				}
 			}
 

@@ -66,7 +66,7 @@ namespace MakeMKV_Title_Decoder
                 this.VideoPreview.LoadVideo(null);
             } else
             {
-                this.VideoPreview.LoadVideo(clip.Data.GetFullPath(this.Disc.Disc));
+                this.VideoPreview.LoadVideo(clip.Data.GetFullPath(this.Disc.Data));
             }
 
             this.VideoTrackList.Clear();

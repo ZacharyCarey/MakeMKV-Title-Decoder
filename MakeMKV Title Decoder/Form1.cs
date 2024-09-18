@@ -10,8 +10,8 @@ namespace MakeMKV_Title_Decoder
 	public partial class Form1 : Form
 	{
 
-		LoadedDisc? disc = null;
-		RenameData renames = new();
+		MkvToolNixDisc? Disc = null;
+		RenameData Renames = new();
 
 		public Form1()
 		{
@@ -213,46 +213,47 @@ namespace MakeMKV_Title_Decoder
 						return;
 					}
 
+					// TODO add CLPI parsing to loading bar
 					LoadedDisc? loadedDisc = LoadedDisc.TryLoadDisc(parsedDisc);
 					if (loadedDisc == null)
 					{
-						// TODO likely due to duration parsing
-						MessageBox.Show("Failed to load disc data.");
+						// TODO is this two message boxes for same error?
+						MessageBox.Show("Failed to read clpi data.");
 						return;
 					}
 
-					this.disc = loadedDisc;
-					this.renames = new();
+					this.Disc = parsedDisc;
+					this.Renames = new();
+					this.Renames.Disc = loadedDisc;
 				}
 			}
 
-			LoadedDiscLabel.Text = this.disc?.Disc?.RootPath ?? "";
+			LoadedDiscLabel.Text = this.Disc?.RootPath ?? "";
 		}
 
 		private void RenameClipsBtn_Click(object sender, EventArgs e)
 		{
-			if (disc == null)
+			if (Disc == null)
 			{
 				MessageBox.Show("Please load a disc first.");
 				return;
 			}
-			new ClipRenamerForm(disc).ShowDialog();
-			this.disc.Save(this.renames); // TODO allow canceling changes
+			new ClipRenamerForm(Renames.Disc).ShowDialog();
 		}
 
 		private void PlaylistsBtn_Click(object sender, EventArgs e)
 		{
-			if (this.disc != null)
+			if (this.Disc != null)
 			{
-				new PlaylistCreatorForm(this.disc, this.renames).ShowDialog();
+				new PlaylistCreatorForm(Renames.Disc, this.Renames).ShowDialog();
 			}
 		}
 
 		private void FileRenamerBtn_Click(object sender, EventArgs e)
 		{
-			if (this.disc != null)
+			if (this.Disc != null)
 			{
-				new FileRenamerForm(this.disc.Disc, this.renames).ShowDialog();
+				//new FileRenamerForm(this.disc.Disc, this.renames).ShowDialog();
 			}
 		}
 
@@ -273,7 +274,7 @@ namespace MakeMKV_Title_Decoder
 
 					try
 					{
-						Json.Write(this.renames, path);
+						Json.Write(this.Renames, path);
 						Console.WriteLine("Saved JSON file.");
 					} catch (Exception ex)
 					{
@@ -285,7 +286,7 @@ namespace MakeMKV_Title_Decoder
 
 		private void loadToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			if (this.disc == null)
+			if (this.Disc == null)
 			{
 				MessageBox.Show("Please load a disc before loading rename data.", "Please load disc");
 				return;
@@ -300,11 +301,11 @@ namespace MakeMKV_Title_Decoder
 				{
 					using (var stream = dialog.OpenFile())
 					{
-						RenameData data = new();
+						RenameData rename = new();
 
 						try
 						{
-							Json.Read(stream, data);
+							Json.Read(stream, rename);
 							Console.WriteLine("Loaded JSON file.");
 						} catch (Exception ex)
 						{
@@ -312,15 +313,24 @@ namespace MakeMKV_Title_Decoder
 							return;
 						}
 
-						LoadedDisc? loadedDisc = LoadedDisc.TryLoadRenameData(this.disc.Disc, data);
+						// TODO add CLPI parsing to loading bar
+						/*LoadedDisc? loadedDisc = LoadedDisc.TryLoadDisc(this.Disc);
 						if (loadedDisc == null)
 						{
-							MessageBox.Show("Failed to match rename data to loaded disc");
+							// TODO is this two message boxes for same error?
+							// TODO this means we are parsing the CLPI twice
+							MessageBox.Show("Failed to read clpi data.");
+							return;
+						}
+						rename.Disc = loadedDisc;*/
+
+						if (!rename.Disc.TryLoadRenameData(this.Disc))
+						{
+							MessageBox.Show("Failed to match rename data to the disc");
 							return;
 						}
 
-						this.disc = loadedDisc;
-						this.renames = data;
+						this.Renames = rename;
 					}
 				}
 			}

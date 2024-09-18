@@ -1,35 +1,52 @@
-﻿using MakeMKV_Title_Decoder.Data.Renames;
+﻿using JsonSerializable;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.Data
 {
-	public class LoadedTrack
+	public class LoadedTrack : IJsonSerializable
 	{
-		public const double MinimumSimilarityScore = 0.95;
+		public const double MinimumSimilarityScore = 0.99;
 
-		public TrackIdentity Identity { get; private set; }
+		public TrackIdentity Identity { get; private set; } = new();
 		public TrackRename Rename = new();
 		public MkvTrack Data { get; private set; }
-		public long MkvMergeIndex { get; set; }
+		public long MkvMergeID { get => Data.ID; }
+
+		private LoadedTrack() { }
 
 		public LoadedTrack(MkvTrack track)
 		{
 			this.Identity = new();
 			this.Data = track;
-			this.MkvMergeIndex = track.ID;
 		}
 
 		public LoadedTrack(TrackIdentity trackID, MkvTrack trackData)
 		{
 			this.Identity = trackID;
 			this.Data = trackData;
-			this.MkvMergeIndex = trackData.ID;
+		}
+
+
+		public static LoadedTrack? TryLoadTrack(MkvToolNixDisc disc, MkvMergeID clip, MkvTrack track)
+		{
+			var loadedTrack = new LoadedTrack(track);
+			loadedTrack.Identity.LoadFromMkvToolNix(track); // TODO should this just be in constructor?
+			return loadedTrack;
+		}
+
+		public bool TryLoadRenameData(MkvTrack track)
+		{
+			// TODO shares code with TryLoadTrack....
+			this.Data = track;
+			return true;
 		}
 
 		public double CalculateSimilarityScore()
@@ -93,7 +110,7 @@ namespace MakeMKV_Title_Decoder.Data
 			} else if (original != null && testing != null)
 			{
 				int strDist = Utils.LevenshteinDistance(original, testing);
-				double dist = Math.Abs(strDist - original.Length);
+				double dist = strDist; //Math.Abs(strDist - original.Length);
 				if (original.Length > 0)
 				{
 					dist /= original.Length;
@@ -104,6 +121,44 @@ namespace MakeMKV_Title_Decoder.Data
 			{
 				return 0.0;
 			}
+		}
+	
+		internal bool MatchData(MkvTrack track)
+		{
+			this.Data = track;
+			double score = CalculateSimilarityScore();
+			if (score < MinimumSimilarityScore)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		public void LoadFromJson(JsonData data)
+		{
+			JsonObject obj = (JsonObject)data;
+
+			this.Identity.LoadFromJson(obj["Identity"]);
+			this.Rename.LoadFromJson(obj["Rename"]);
+		}
+
+		public JsonData SaveToJson()
+		{
+			JsonObject obj = new();
+
+			obj["Identity"] = this.Identity.SaveToJson();
+			obj["Rename"] = this.Rename.SaveToJson();
+
+			return obj;
+		}
+
+		// TODO hack
+		public static LoadedTrack LoadJson(JsonData data)
+		{
+			LoadedTrack track = new();
+			track.LoadFromJson(data);
+			return track;
 		}
 	}
 }

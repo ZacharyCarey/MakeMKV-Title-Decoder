@@ -69,7 +69,7 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void SelectClip(VideoPlayer player, LoadedStream? clip) {
-            player.LoadVideo(clip?.Data?.GetFullPath(this.Disc.Disc));
+            player.LoadVideo(clip?.Data?.GetFullPath(this.Disc.Data));
         }
 
         private void RefreshSelectedItem(ListView list, VideoPlayer player) {

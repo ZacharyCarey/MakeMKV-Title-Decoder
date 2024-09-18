@@ -31,10 +31,8 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		public string? PixelDimensions = null;
 		public string? TrackName = null;
 
-		public void LoadFromMkvToolNix(LoadedTrack loadedTrack)
+		public void LoadFromMkvToolNix(MkvTrack track)
 		{
-			var track = loadedTrack.Data;
-
 			this.Codec = track.Codec;
 			this.Type = track.Type;
 			this.AudioBitsPerSample = track.Properties?.AudioBitsPerSample;
