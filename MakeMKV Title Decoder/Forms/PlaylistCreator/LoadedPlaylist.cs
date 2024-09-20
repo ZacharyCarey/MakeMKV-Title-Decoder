@@ -505,7 +505,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
                 foreach (var appended in source.AppendedFiles)
                 {
-                    var appendedFile = result.CreateFile(disc.GetStream(source.StreamIndex)); // TODO error handling
+                    var appendedFile = result.CreateFile(disc.GetStream(appended.StreamIndex)); // TODO error handling
                     sourceFile.AppendedFiles.Add(appendedFile);
                 }
             }

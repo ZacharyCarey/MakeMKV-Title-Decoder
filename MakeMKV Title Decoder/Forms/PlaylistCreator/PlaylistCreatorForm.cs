@@ -1,6 +1,7 @@
 ﻿using libbluray.bdnav.Mpls;
 using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Forms.FileRenamer;
 using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
@@ -67,11 +68,13 @@ namespace MakeMKV_Title_Decoder
                 if (loadedPlaylist != null)
                 {
                     this.PlaylistsListBox.Add(loadedPlaylist);
+                    CheckErrors(loadedPlaylist);
                 } else
                 {
                     // TODO handle error
                 }
             }
+            this.PlaylistsListBox.Invalidate();
             PlaylistsListBox_SelectedIndexChanged(null, null);
         }
 
@@ -108,27 +111,58 @@ namespace MakeMKV_Title_Decoder
                 SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItem;
                 if (selectedItem != null)
                 {
-                    selectedPlaylist.AddSourceFile(selectedItem.Clip);
-                    UpdatePlaylistUI();
-                    UnsavedChangesIcon(selectedPlaylist);
+                    AppendedFile? selectedSourceFile = (AppendedFile?)PlaylistFilesList.SelectedItem?.Tag;
+                    if (selectedSourceFile != null)
+                    {
+                        // Check if source or appended file
+                        AppendedFile? parent = null;
+                        bool isSource = false;
+                        foreach (var file in selectedPlaylist.SourceFiles)
+                        {
+                            if (file == selectedSourceFile)
+                            {
+                                isSource = true;
+                                break;
+                            } else
+                            {
+                                foreach (var appendedFile in file.AppendedFiles)
+                                {
+                                    if (appendedFile == selectedSourceFile)
+                                    {
+                                        parent = file;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isSource)
+                        {
+                            selectedPlaylist.AddAppendedFile(selectedSourceFile, selectedItem.Clip);
+                            UpdatePlaylistUI();
+                            UnsavedChangesIcon(selectedPlaylist);
+                            return;
+                        } else if (parent != null)
+                        {
+                            selectedPlaylist.AddAppendedFile(parent, selectedItem.Clip);
+                            UpdatePlaylistUI();
+                            UnsavedChangesIcon(selectedPlaylist);
+                            return;
+                        } else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine("Unknow selected file.");
+                            Console.ResetColor();
+                            return;
+                        }
+                    } else
+                    {
+                        selectedPlaylist.AddSourceFile(selectedItem.Clip);
+                        UpdatePlaylistUI();
+                        UnsavedChangesIcon(selectedPlaylist);
+                    }
                 }
             }
-        }
-
-        private void CheckErrors(LoadedPlaylist playlist) {
-            bool errors = false;
-
-            foreach (var sourceTrack in playlist.SourceTracks)
-            {
-                foreach (var appendedTrack in sourceTrack.AppendedTracks)
-                {
-                    bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
-                    errors |= !compatible;
-                }
-            }
-
-            if (errors) ErrorIcon(playlist);
-            else ClearErrorIcon(playlist);
         }
 
         private void UpdatePlaylistUI() {
@@ -179,6 +213,22 @@ namespace MakeMKV_Title_Decoder
                 if (errors) ErrorIcon(selectedPlaylist);
                 else ClearErrorIcon(selectedPlaylist);
             }
+        }
+
+        private void CheckErrors(LoadedPlaylist playlist) {
+            bool errors = false;
+
+            foreach (var sourceTrack in playlist.SourceTracks)
+            {
+                foreach (var appendedTrack in sourceTrack.AppendedTracks)
+                {
+                    bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
+                    errors |= !compatible;
+                }
+            }
+
+            if (errors) ErrorIcon(playlist);
+            else ClearErrorIcon(playlist);
         }
 
         private PropertyItem CreateClipEntry(AppendedFile clip, int padding = 0) {
