@@ -536,6 +536,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             LoadedTrack sourceTrack = source.Source.Tracks[(int)playlist.TrackIndex];
 
             var track = new AppendedTrack(source, sourceTrack, source.Color);
+            track.Enabled = playlist.Copy;
             return track;
         }
 

@@ -383,7 +383,7 @@ namespace MakeMKV_Title_Decoder
                     UpdatePlaylistUI();
                     for(int i = 0; i < this.PlaylistTrackOrder.Items.Count; i++)
                     {
-                        var track = (AppendedTrack?)PlaylistTrackOrder.Items[i].Tag;
+                        var track = (AppendedTrack?)((TrackListData?)((PropertyData?)PlaylistTrackOrder.Items[i].Tag)?.Tag)?.Tag;
                         if (track == selectedTrack)
                         {
                             this.PlaylistTrackOrder.SelectedIndex = i;
@@ -407,7 +407,7 @@ namespace MakeMKV_Title_Decoder
                     UpdatePlaylistUI();
                     for (int i = 0; i < this.PlaylistTrackOrder.Items.Count; i++)
                     {
-                        var track = (AppendedTrack?)PlaylistTrackOrder.Items[i].Tag;
+                        var track = (AppendedTrack?)((TrackListData?)((PropertyData?)PlaylistTrackOrder.Items[i].Tag)?.Tag)?.Tag;
                         if (track == selectedTrack)
                         {
                             this.PlaylistTrackOrder.SelectedIndex = i;
