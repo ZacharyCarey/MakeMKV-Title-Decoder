@@ -251,9 +251,9 @@ namespace MakeMKV_Title_Decoder
 
 		private void FileRenamerBtn_Click(object sender, EventArgs e)
 		{
-			if (this.Disc != null)
+			if (this.Disc != null && this.Renames.Disc != null)
 			{
-				//new FileRenamerForm(this.disc.Disc, this.renames).ShowDialog();
+				new FileRenamerForm(this.Renames).ShowDialog();
 			}
 		}
 

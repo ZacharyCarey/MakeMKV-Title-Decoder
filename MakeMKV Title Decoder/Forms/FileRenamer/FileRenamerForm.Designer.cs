@@ -64,6 +64,7 @@
             label3 = new Label();
             label2 = new Label();
             TypeComboBox = new ComboBox();
+            ExportSelectedBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -116,6 +117,7 @@
             // 
             // panel1
             // 
+            panel1.Controls.Add(ExportSelectedBtn);
             panel1.Controls.Add(ExportAllBtn);
             panel1.Dock = DockStyle.Bottom;
             panel1.Location = new Point(0, 775);
@@ -484,6 +486,16 @@
             TypeComboBox.TabIndex = 5;
             TypeComboBox.SelectedIndexChanged += TypeComboBox_SelectedIndexChanged;
             // 
+            // ExportSelectedBtn
+            // 
+            ExportSelectedBtn.Location = new Point(124, 6);
+            ExportSelectedBtn.Name = "ExportSelectedBtn";
+            ExportSelectedBtn.Size = new Size(102, 23);
+            ExportSelectedBtn.TabIndex = 1;
+            ExportSelectedBtn.Text = "Export Selected";
+            ExportSelectedBtn.UseVisualStyleBackColor = true;
+            ExportSelectedBtn.Click += ExportSelectedBtn_Click;
+            // 
             // FileRenamerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -547,5 +559,6 @@
         private Button ApplyChangesBtn;
         private Label ExtraName;
         private TextBox ExtraNameTextBox;
+        private Button ExportSelectedBtn;
     }
 }

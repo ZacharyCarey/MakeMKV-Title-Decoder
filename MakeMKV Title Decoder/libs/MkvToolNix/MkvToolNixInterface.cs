@@ -5,6 +5,7 @@ using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -144,7 +145,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             }
         }
 
-        public static void Merge(MkvToolNixDisc disc, Playlist playlist, string outputFile, IProgress<SimpleProgress>? progress = null, SimpleProgress? totalProgress = null)
+        public static void Merge(LoadedDisc disc, Playlist playlist, string outputFile, IProgress<SimpleProgress>? progress = null, SimpleProgress? totalProgress = null)
         {
             TestData data = new();
 
@@ -155,7 +156,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             bool result = ParseCommandForceArgs(data, progress, "mkvmerge.exe", cmd, totalProgress);
         }
 
-        public static void MergeAsync(MkvToolNixDisc disc, Playlist playlist, string outputFile, SimpleProgress? totalProgress = null)
+        public static void MergeAsync(LoadedDisc disc, Playlist playlist, string outputFile, SimpleProgress? totalProgress = null)
         {
             var progressForm = new TaskProgressViewer<Task, SimpleProgress>(
                 (progress) =>
@@ -166,51 +167,109 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             progressForm.ShowDialog();
         }
 
-        private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, string outputFile)
+        private static string GetMergeCommand(LoadedDisc disc, Playlist playlist, string outputFile)
         {
-            /*            List<string> args = new();
-                        List<MkvAppend> appendedTracks = new();
-                        List<PlaylistFile> allFiles = FindFiles(playlist).ToList();
-                        IEnumerable<string> files = playlist.Files.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks, false, allFiles));
+            List<string> args = new();
+            List<MkvAppend> appendedTracks = new();
+            List<PlaylistSource> allFiles = new();
+            Dictionary<PlaylistID, PlaylistSource> lookup = new();
+            FindFiles(playlist, allFiles, lookup);
 
-                        args.Add($"-o \"{outputFile}\"");
-                        args.AddRange(files);
+            args.Add($"-o \"{outputFile}\"");
 
-                        if (playlist.Title != null)
-                        {
-                            args.Add($"--title \"{playlist.Title}\"");
-                        }
+            foreach(var sourceFile in playlist.SourceFiles.WithIndex())
+            {
+                args.Add(GetMergeCommand(disc, playlist, new PlaylistID(sourceFile.Index), sourceFile.Value, appendedTracks, false, allFiles, lookup));
+            }
 
-                        if (playlist.TrackOrder != null)
-                        {
-                            args.Add($"--track-order");
-                            args.Add(string.Join(",", playlist.TrackOrder.Select(x => $"{x.StreamIndex}:{x.TrackIndex}")));
-                        }
+            if (playlist.Title != null)
+            {
+                args.Add($"--title \"{playlist.Title}\"");
+            }
 
-                        if (appendedTracks.Count > 0)
-                        {
-                            args.Add($"--append-to {string.Join(",", appendedTracks)}");
-                        }
+            // Determine source track order
+            List<PlaylistID> trackOrder = new();
+            foreach(var source in playlist.Tracks)
+            {
+                trackOrder.Add(new PlaylistID(
+                    allFiles.IndexOf(lookup[new PlaylistID((int)source.SourceFileIndex, (int)source.AppendedFileIndex)]),
+                    (int)FindTrack(lookup, disc, source)?.MkvMergeID
+                ));
+            }
+            args.Add($"--track-order");
+            args.Add(string.Join(",", trackOrder.Select(x => $"{x.SourceIndex}:{x.AppendedIndex}")));
 
-                        string fullCommand = string.Join(" ", args);
-                        return fullCommand;*/
-            return "";
+            if (appendedTracks.Count > 0)
+            {
+                args.Add($"--append-to {string.Join(",", appendedTracks)}");
+            }
+
+            string fullCommand = string.Join(" ", args);
+            return fullCommand;
         }
 
-        /*private static IEnumerable<PlaylistFile> FindFiles(Playlist playlist)
-        {
-            foreach (var file in playlist.Files)
-            {
-                yield return file;
-                foreach (var append in file.AppendedFiles)
+        private struct PlaylistID : IEquatable<PlaylistID> {
+            public int SourceIndex;
+            public int AppendedIndex;
+
+            public PlaylistID(int src = -1, int append = -1) {
+                SourceIndex = src;
+                AppendedIndex = append;
+            }
+
+            public static bool operator ==(PlaylistID left, PlaylistID right) {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(PlaylistID left, PlaylistID right) {
+                return !left.Equals(right);
+            }
+
+            public bool Equals(PlaylistID other) {
+                return (SourceIndex == other.SourceIndex) && (AppendedIndex == other.AppendedIndex);
+            }
+
+            public override bool Equals([NotNullWhen(true)] object? obj) {
+                if (obj == null) return false;
+                if (obj is PlaylistID other)
                 {
-                    yield return append;
+                    return Equals(other);
+                } else
+                {
+                    return false;
+                }
+            } 
+
+            public override int GetHashCode() {
+                unchecked
+                {
+                    int hash = 23;
+                    hash = hash * 31 + SourceIndex;
+                    hash = hash * 31 + AppendedIndex;
+                    return hash;
                 }
             }
-        }*/
+        }
+
+        private static void FindFiles(Playlist playlist, List<PlaylistSource> allFiles, Dictionary<PlaylistID, PlaylistSource> lookup)
+        {
+            allFiles.Clear();
+            lookup.Clear();
+            foreach (var sourcePair in playlist.SourceFiles.WithIndex())
+            {
+                allFiles.Add(sourcePair.Value);
+                lookup[new PlaylistID(sourcePair.Index)] = sourcePair.Value;
+
+                foreach (var appendPair in sourcePair.Value.AppendedFiles.WithIndex())
+                {
+                    allFiles.Add(appendPair.Value);
+                    lookup[new PlaylistID(sourcePair.Index, appendPair.Index)] = appendPair.Value;
+                }
+            }
+        }
 
         // TODO use the json file option to prevent console issues?
-        /*private static string GetMergeCommand(MkvToolNixDisc disc, Playlist playlist, PlaylistFile file, List<MkvAppend> appendedTracks, bool isAppended, List<PlaylistFile> allFiles)
+        private static string GetMergeCommand(LoadedDisc disc, Playlist playlist, PlaylistID fileID, PlaylistSource file, List<MkvAppend> appendedTracks, bool isAppended, List<PlaylistSource> allFiles, Dictionary<PlaylistID, PlaylistSource> lookup)
         {
             List<string> args = new();
             List<long> audioTracks = new();
@@ -222,61 +281,92 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
                 args.Add("+");
             }
 
-            foreach (PlaylistTrack track in file.Tracks)
-            {
-                if (track.Copy ?? false)
+            Action<PlaylistTrack, long> AddTrack = (track, delay) => {
+                if (track.Copy)
                 {
-                    MkvTrack? source = FindTrack(disc, file, track);
-                    if (source == null) continue;// TODO warning
+                    LoadedTrack? source = FindTrack(lookup, disc, track);
+                    if (source == null) return; // TODO warning
 
-                    switch (source.Type)
+                    switch(source.Data.Type)
                     {
                         case MkvTrackType.Audio:
-                            audioTracks.Add(source.ID);
-                            break;
+                            audioTracks.Add(source.MkvMergeID); break;
                         case MkvTrackType.Video:
-                            videoTracks.Add(source.ID);
-                            break;
+                            videoTracks.Add(source.MkvMergeID); break;
                         case MkvTrackType.Subtitles:
-                            subtitleTracks.Add(source.ID);
-                            break;
+                            subtitleTracks.Add(source.MkvMergeID); break;
                         default:
-                            continue; // TODO warning
+                            return; // TODO warning
                     }
 
-                    if (track.Name != null) args.Add($"--track-name {source.ID}:\"{track.Name}\"");
-                    if (track.Commentary != null) args.Add($"--commentary-flag {source.ID}:{(track.Commentary == true ? 1 : 0)}");
-                    if (track.Sync.Count > 0)
+                    if (source.Rename.Name != null) args.Add($"--track-name {source.MkvMergeID}:\"{source.Rename.Name}\"");
+                    if (source.Rename.CommentaryFlag != null) args.Add($"--commentary-flag {source.MkvMergeID}:{(source.Rename.CommentaryFlag == true ? 1 : 0)}");
+                    if (delay > 0) args.Add($"-y {source.MkvMergeID}:{delay}");
+                }
+            };
+
+            foreach (var sourcePair in playlist.Tracks.WithIndex())
+            {
+                PlaylistID sourceID = new PlaylistID((int)sourcePair.Value.SourceFileIndex, (int)sourcePair.Value.AppendedFileIndex);
+
+                if (sourceID == fileID && sourcePair.Value.Copy)
+                {
+                    AddTrack(sourcePair.Value, 0);
+                }
+
+                long totalDelay = 0;
+                PlaylistTrack? parentTrack = sourcePair.Value;
+                if (sourcePair.Value.Copy == false)
+                {
+                    LoadedStream? stream = FindSource(disc, lookup[sourceID]);
+                    totalDelay = (stream == null) ? 0 : (long)stream.Duration.TotalMilliseconds;
+                    parentTrack = null;
+                } else
+                {
+                    foreach(var appendedPair in sourcePair.Value.AppendedTracks.WithIndex())
                     {
-                        TimeSpan delay = new();
-                        foreach (var sync in track.Sync)
+                        PlaylistID appendedID = new PlaylistID((int)appendedPair.Value.SourceFileIndex, (int)appendedPair.Value.AppendedFileIndex);
+
+                        if (appendedID == fileID && appendedPair.Value.Copy)
                         {
-                            //MkvTrack? syncTrack = FindTrack(disc, playlist.Files[sync.FileID.Value], playlist.Files[sync.FileID.Value].Tracks[sync.TrackID.Value]);
-                            MkvMergeID syncFile = FindSource(disc, allFiles[sync.StreamIndex.Value]);
-                            if (syncFile != null && syncFile.Container?.Properties?.Duration != null)
+                            if (appendedPair.Value.Delay == null)
                             {
-                                delay += syncFile.Container.Properties.Duration.Value;
-                            }
-                            else
-                            {
-                                
-                                //Console.WriteLine("clipLength: " + clipLength.TotalMilliseconds + " ms");
-                                throw new NotImplementedException(); // TODO
-                                //delay += clipLength;
+                                AddTrack(appendedPair.Value, totalDelay);
+                                MkvAppend append = new();
+                                append.SrcFile = allFiles.IndexOf(file);
+                                append.SrcTrack = (int)(FindTrack(lookup, disc, appendedPair.Value)?.MkvMergeID ?? -1);
+                                append.DstFile = allFiles.IndexOf(lookup[new PlaylistID((int)parentTrack.SourceFileIndex, (int)parentTrack.AppendedFileIndex)]);
+                                append.DstTrack = (int)(FindTrack(lookup, disc, parentTrack)?.MkvMergeID ?? -1);
+                                appendedTracks.Add(append);
                             }
                         }
 
-                        args.Add($"-y {source.ID}:{(long)delay.TotalMilliseconds}");
-                    }
-
-                    if (track.AppendedTo != null)
-                    {
-                        MkvAppend append = new();
-                        append.SrcFile = allFiles.IndexOf(file);
-                        append.SrcTrack = (int)track.ID.Value;
-                        append.DstFile = track.AppendedTo.StreamIndex.Value;
-                        append.DstTrack = track.AppendedTo.TrackIndex.Value;
-                        appendedTracks.Add(append);
+                        if (appendedPair.Value.Copy && appendedPair.Value.Delay == null)
+                        {
+                            totalDelay = 0;
+                            parentTrack = appendedPair.Value;
+                        } else
+                        {
+                            if (appendedPair.Value.Delay == null)
+                            {
+                                LoadedStream? stream2 = FindSource(disc, lookup[appendedID]);
+                                totalDelay += (stream2 == null) ? 0 : (long)stream2.Duration.TotalMilliseconds;
+                            } else
+                            {
+                                var delay = appendedPair.Value.Delay;
+                                if (delay.DelayType == DelayType.Source)
+                                {
+                                    LoadedStream? stream2 = FindSource(disc, lookup[new PlaylistID((int)delay.SourceFileIndex, (int)delay.AppendedFileIndex)]);
+                                    totalDelay += (stream2 == null) ? 0 : (long)stream2.Duration.TotalMilliseconds;
+                                } else if (delay.DelayType == DelayType.Delay)
+                                {
+                                    totalDelay += delay.Milliseconds;
+                                } else
+                                {
+                                    throw new Exception();
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -296,52 +386,31 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
             else
                 args.Add($"-S");
 
-            args.Add(Path.Combine(disc.RootPath, file.Source));
+            args.Add(FindSource(disc, file)?.Data.GetFullPath(disc.Data));
 
             if (!isAppended)
             {
-                args.AddRange(file.AppendedFiles.Select(x => GetMergeCommand(disc, playlist, x, appendedTracks, true, allFiles)));
+                foreach(var appendedFile in file.AppendedFiles.WithIndex())
+                {
+                    args.Add(GetMergeCommand(disc, playlist, new PlaylistID(fileID.SourceIndex, appendedFile.Index), appendedFile.Value, appendedTracks, true, allFiles, lookup));
+                }
             }
 
             return string.Join(" ", args);
-        }*/
+        }
 
-        /*private static MkvMergeID? FindSource(MkvToolNixDisc disc, PlaylistFile file)
+        private static LoadedStream? FindSource(LoadedDisc disc, PlaylistSource stream)
         {
-            // TODO store results for faster lookup and/or better searching
-            string filePath = file.Source;
-            foreach (MkvMergeID stream in disc.Streams)
-            {
-                if (stream.GetRelativePath() == filePath)
-                {
-                    return stream;
-                }
-            }
+            return disc.Streams[(int)stream.StreamIndex];
+        }
 
-            return null;
-        }*/
-
-        /*private static MkvTrack? FindTrack(MkvToolNixDisc disc, PlaylistFile file, PlaylistTrack playlist)
+        private static LoadedTrack? FindTrack(Dictionary<PlaylistID, PlaylistSource> lookup, LoadedDisc disc, PlaylistTrack track)
         {
-            // TODO store results for faster lookup and/or better searching
-            string filePath = file.Source;
-            foreach (MkvMergeID stream in disc.Streams)
-            {
-                if (stream.GetRelativePath() == filePath)
-                {
-                    foreach (MkvTrack track in stream.Tracks)
-                    {
-                        if (track.ID == playlist.ID)
-                        {
-                            return track;
-                        }
-                    }
-                    break;
-                }
-            }
+            PlaylistID ID = new((int)track.SourceFileIndex, (int)track.AppendedFileIndex);
+            PlaylistSource source = lookup[ID];
 
-            return null;
-        }*/
+            return disc.Streams[(int)source.StreamIndex].Tracks[(int)track.TrackIndex];
+        }
     }
 
     internal struct MkvAppend
