@@ -7,12 +7,58 @@ using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.Data
 {
-	// TODO
-	/*public enum PlaylistTrackType
+	public enum DelayType
 	{
 		Source,
 		Delay
-	}*/
+	}
+
+	public class DelayInfo : IJsonSerializable {
+        public DelayType DelayType = DelayType.Delay;
+
+		public long SourceFileIndex = -1;
+		public long AppendedFileIndex = -1;
+
+		public long Milliseconds = 0;
+
+        public void LoadFromJson(JsonData Data) {
+			JsonObject obj = (JsonObject)Data;
+
+			JsonString enumString = (JsonString)obj["Type"];
+			if (enumString == "Source")
+			{
+				DelayType = DelayType.Source;
+				SourceFileIndex = ((JsonInteger)obj["Source File Index"]).Value;
+				AppendedFileIndex = ((JsonInteger)obj["Appended File Index"]).Value;
+				Milliseconds = 0;
+			} else if (enumString == "Delay")
+			{
+				DelayType = DelayType.Delay;
+				SourceFileIndex = -1;
+				AppendedFileIndex = -1;
+				Milliseconds = ((JsonInteger)obj["Milliseconds"]).Value;
+			} else
+			{
+				throw new Exception();
+			}
+        }
+
+        public JsonData SaveToJson() {
+			JsonObject obj = new();
+
+			obj["Type"] = new JsonString(this.DelayType.ToString());
+			if (this.DelayType == DelayType.Delay)
+			{
+                obj["Milliseconds"] = new JsonInteger(this.Milliseconds);
+            } else if (this.DelayType == DelayType.Source)
+			{
+                obj["Source File Index"] = new JsonInteger(SourceFileIndex);
+                obj["Appended File Index"] = new JsonInteger(AppendedFileIndex);
+            }
+
+			return obj;
+        }
+    }
 
 	public class PlaylistTrack : IJsonSerializable
 	{
@@ -34,6 +80,9 @@ namespace MakeMKV_Title_Decoder.Data
 		/// </summary>
 		public bool Copy = true;
 
+		public DelayInfo? Delay = null;
+
+
 		/// <summary>
 		/// Only allows a depth of 1. I.e. an appended track can't itself have appended tracks
 		/// </summary>
@@ -48,6 +97,14 @@ namespace MakeMKV_Title_Decoder.Data
 			this.TrackIndex = ((JsonInteger)obj["Track Index"]).Value;
 			this.Copy = ((JsonBool)obj["Copy"]).Value;
 			this.AppendedTracks.LoadFromJson(obj["Appended Tracks"]);
+
+			this.Delay = null;
+			var json = obj["Delay"];
+			if (json != null && !(json is JsonString))
+			{
+				this.Delay = new();
+				this.Delay.LoadFromJson(json);
+			}
 		}
 
 		public JsonData SaveToJson()
@@ -59,6 +116,13 @@ namespace MakeMKV_Title_Decoder.Data
 			obj["Track Index"] = new JsonInteger(this.TrackIndex);
 			obj["Copy"] = new JsonBool(this.Copy);
 			obj["Appended Tracks"] = this.AppendedTracks.SaveToJson();
+			if (this.Delay == null)
+			{
+				obj["Delay"] = new JsonString(null);
+			} else
+			{
+				obj["Delay"] = this.Delay.SaveToJson();
+			}
 
 			return obj;
 		}

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -84,7 +85,7 @@ namespace MakeMKV_Title_Decoder
 
         private void PlaylistCreatorForm_FormClosing(object sender, FormClosingEventArgs e) {
             bool unsavedChanges = false;
-            foreach(var item in PlaylistsListBox.AllItems)
+            foreach (var item in PlaylistsListBox.AllItems)
             {
                 if (item.Icons.Contains(UnsavedIconKey))
                 {
@@ -169,15 +170,15 @@ namespace MakeMKV_Title_Decoder
             bool errors = false;
             LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
 
-            this.PlaylistFilesList.Items.Clear();
+            this.PlaylistFilesList.Clear();
             if (selectedPlaylist != null)
             {
-                foreach(var sourceFile in selectedPlaylist.SourceFiles)
+                foreach (var sourceFile in selectedPlaylist.SourceFiles)
                 {
-                    this.PlaylistFilesList.Items.Add(CreateClipEntry(sourceFile));
-                    foreach(var appendedFile in sourceFile.AppendedFiles)
+                    CreateClipEntry(sourceFile, true);
+                    foreach (var appendedFile in sourceFile.AppendedFiles)
                     {
-                        this.PlaylistFilesList.Items.Add(CreateClipEntry(appendedFile, IndentedTrackPadding));
+                        CreateClipEntry(appendedFile, false);
                     }
                 }
             }
@@ -186,7 +187,7 @@ namespace MakeMKV_Title_Decoder
             if (selectedPlaylist != null)
             {
                 foreach (var sourceTrack in selectedPlaylist.SourceTracks)
-                { 
+                {
                     TrackListData item = this.PlaylistTrackOrder.Add(
                         sourceTrack.Track,
                         sourceTrack.Color
@@ -195,13 +196,19 @@ namespace MakeMKV_Title_Decoder
                     foreach (var appendedTrack in sourceTrack.AppendedTracks)
                     {
                         bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
-                        item = this.PlaylistTrackOrder.Add(
-                            appendedTrack.Track,
-                            appendedTrack.Color,
-                            IndentedTrackPadding,
-                            appendedTrack.Enabled ? EnableIconKey : DisableIconKey,
-                            compatible ? null : this.ErrorColor
-                        );
+                        if (appendedTrack.Delay == null)
+                        {
+                            item = this.PlaylistTrackOrder.Add(
+                                appendedTrack.Track,
+                                appendedTrack.Color,
+                                IndentedTrackPadding,
+                                appendedTrack.Enabled ? EnableIconKey : DisableIconKey,
+                                compatible ? null : this.ErrorColor
+                            );
+                        } else
+                        {
+                            item = this.PlaylistTrackOrder.Add(appendedTrack.Delay, appendedTrack.Color, IndentedTrackPadding, compatible ? null : this.ErrorColor);
+                        }
                         item.Tag = appendedTrack;
                         errors |= !compatible;
                     }
@@ -231,30 +238,30 @@ namespace MakeMKV_Title_Decoder
             else ClearErrorIcon(playlist);
         }
 
-        private PropertyItem CreateClipEntry(AppendedFile clip, int padding = 0) {
+        private void CreateClipEntry(AppendedFile clip, bool isRoot) {
             // Clip name
-            PropertyItem item = new();
+            PropertyData item = new();
             item.Text = clip.Source.Rename.Name ?? "";
             item.IconColor = clip.Color;
-            item.Padding = padding;
+            item.IsSubItem = !isRoot;
             item.Tag = clip;
 
             // Container
-            PropertySubItem sub1 = new(item);
+            PropertyData sub1 = new();
             sub1.Text = clip.Source.Data.Container?.Type ?? "";
             item.SubItems.Add(sub1);
 
             // File size
-            PropertySubItem sub2 = new(item);
+            PropertyData sub2 = new();
             sub2.Text = clip.Source.Data.FileSize.ToString();
             item.SubItems.Add(sub2);
 
             // Directory
-            PropertySubItem sub3 = new(item);
+            PropertyData sub3 = new();
             sub3.Text = clip.Source.Data.GetFullPath(this.Disc.Data);
             item.SubItems.Add(sub3);
 
-            return item;
+            this.PlaylistFilesList.Add(item, sub1, sub2, sub3);
         }
 
         private void PlaylistsListBox_SelectedIndexChanged(object sender, EventArgs e) {
@@ -291,14 +298,14 @@ namespace MakeMKV_Title_Decoder
                     // Only add files the user has renames i.e. dont add ignored files
                     if (file.Rename.Name != null)
                     {
-						if (rootFile == null)
-						{
-							rootFile = loadedPlaylist.ImportSourceFile(file);
-						} else
-						{
-							loadedPlaylist.ImportAppendedFile(rootFile, file);
-						}
-					}
+                        if (rootFile == null)
+                        {
+                            rootFile = loadedPlaylist.ImportSourceFile(file);
+                        } else
+                        {
+                            loadedPlaylist.ImportAppendedFile(rootFile, file);
+                        }
+                    }
                 }
 
                 // If no valid source files (including ignored files) were found,
@@ -381,12 +388,12 @@ namespace MakeMKV_Title_Decoder
                 if (moved)
                 {
                     UpdatePlaylistUI();
-                    for(int i = 0; i < this.PlaylistTrackOrder.Items.Count; i++)
+                    foreach (var pair in this.PlaylistTrackOrder.Items.WithIndex())
                     {
-                        var track = (AppendedTrack?)((TrackListData?)((PropertyData?)PlaylistTrackOrder.Items[i].Tag)?.Tag)?.Tag;
+                        var track = (AppendedTrack?)pair.Value.Tag;
                         if (track == selectedTrack)
                         {
-                            this.PlaylistTrackOrder.SelectedIndex = i;
+                            this.PlaylistTrackOrder.SelectedIndex = pair.Index;
                             break;
                         }
                     }
@@ -405,12 +412,12 @@ namespace MakeMKV_Title_Decoder
                 if (moved)
                 {
                     UpdatePlaylistUI();
-                    for (int i = 0; i < this.PlaylistTrackOrder.Items.Count; i++)
+                    foreach (var pair in this.PlaylistTrackOrder.Items.WithIndex())
                     {
-                        var track = (AppendedTrack?)((TrackListData?)((PropertyData?)PlaylistTrackOrder.Items[i].Tag)?.Tag)?.Tag;
+                        var track = (AppendedTrack?)pair.Value.Tag;
                         if (track == selectedTrack)
                         {
-                            this.PlaylistTrackOrder.SelectedIndex = i;
+                            this.PlaylistTrackOrder.SelectedIndex = pair.Index;
                             break;
                         }
                     }
@@ -493,6 +500,91 @@ namespace MakeMKV_Title_Decoder
                 {
                     this.PlaylistsListBox.Remove(selectedItem);
                     this.Renames.Playlists.Remove(selectedItem.Playlist.RenameData);
+                }
+            }
+        }
+
+        private void AddDelayBtn_Click(object sender, EventArgs e) {
+            if (this.PlaylistsListBox.SelectedItem != null)
+            {
+                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
+                AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+                if (selectedTrack != null) {
+                    AppendedTrack? rootTrack = null;
+                    foreach (var sourceTrack in selectedPlaylist.SourceTracks)
+                    {
+                        if (sourceTrack == selectedTrack)
+                        {
+                            rootTrack = sourceTrack;
+                            break;
+                        } else
+                        {
+                            foreach (var appendedTrack in sourceTrack.AppendedTracks)
+                            {
+                                if (appendedTrack == selectedTrack)
+                                {
+                                    rootTrack = sourceTrack;
+                                    break;
+                                }
+                            }
+                            if (rootTrack != null)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (rootTrack != null)
+                    {
+                        var delay = new TrackDelay();
+                        DelayEditorForm form = new(selectedPlaylist, delay);
+                        if (form.ShowDialog() == DialogResult.OK)
+                        {
+                            delay = form.DelayInfo;
+                            selectedPlaylist.AddDelay(rootTrack, delay);
+                            UpdatePlaylistUI();
+                            UnsavedChangesIcon(selectedPlaylist);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void EditDelayBtn_Click(object sender, EventArgs e) {
+            if (this.PlaylistsListBox.SelectedItem != null)
+            {
+                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
+                AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+                if (selectedTrack != null && selectedTrack.Delay != null)
+                {
+                    DelayEditorForm form = new(selectedPlaylist, selectedTrack.Delay);
+                    if (form.ShowDialog() == DialogResult.OK)
+                    {
+                        selectedTrack.Delay = form.DelayInfo;
+                        UpdatePlaylistUI();
+                        UnsavedChangesIcon(selectedPlaylist);
+                    }
+                }
+            }
+        }
+
+        private void DeleteDelayBtn_Click(object sender, EventArgs e) {
+            if (this.PlaylistsListBox.SelectedItem != null)
+            {
+                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
+                AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+                if (selectedTrack != null)
+                {
+                    if (selectedTrack.Delay != null)
+                    {
+                        foreach(var sourceTrack in selectedPlaylist.SourceTracks)
+                        {
+                            sourceTrack.AppendedTracks.Remove(selectedTrack);
+                        }
+
+                        UpdatePlaylistUI();
+                        UnsavedChangesIcon(selectedPlaylist);
+                    }
                 }
             }
         }

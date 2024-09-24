@@ -61,6 +61,10 @@ namespace MakeMKV_Title_Decoder
             SourceList = new ListBox();
             SourcePropertiesPanel = new Panel();
             SourceApplyButton = new Button();
+            label3 = new Label();
+            AddDelayBtn = new Button();
+            EditDelayBtn = new Button();
+            DeleteDelayBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -283,6 +287,7 @@ namespace MakeMKV_Title_Decoder
             PlaylistFilesList.Name = "PlaylistFilesList";
             PlaylistFilesList.OwnerDraw = true;
             PlaylistFilesList.SelectedIndex = null;
+            PlaylistFilesList.SelectedItem = null;
             PlaylistFilesList.Size = new Size(1027, 281);
             PlaylistFilesList.SmallImageList = imageList1;
             PlaylistFilesList.TabIndex = 0;
@@ -350,6 +355,10 @@ namespace MakeMKV_Title_Decoder
             // 
             // panel4
             // 
+            panel4.Controls.Add(DeleteDelayBtn);
+            panel4.Controls.Add(EditDelayBtn);
+            panel4.Controls.Add(AddDelayBtn);
+            panel4.Controls.Add(label3);
             panel4.Controls.Add(DownTrackBtn);
             panel4.Controls.Add(TrackUpBtn);
             panel4.Controls.Add(DisableTrackBtn);
@@ -431,6 +440,45 @@ namespace MakeMKV_Title_Decoder
             SourceApplyButton.UseVisualStyleBackColor = true;
             SourceApplyButton.Click += SourceApplyButton_Click;
             // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(6, 199);
+            label3.Name = "label3";
+            label3.Size = new Size(36, 15);
+            label3.TabIndex = 13;
+            label3.Text = "Delay";
+            // 
+            // AddDelayBtn
+            // 
+            AddDelayBtn.Location = new Point(6, 217);
+            AddDelayBtn.Name = "AddDelayBtn";
+            AddDelayBtn.Size = new Size(75, 23);
+            AddDelayBtn.TabIndex = 14;
+            AddDelayBtn.Text = "Add";
+            AddDelayBtn.UseVisualStyleBackColor = true;
+            AddDelayBtn.Click += AddDelayBtn_Click;
+            // 
+            // EditDelayBtn
+            // 
+            EditDelayBtn.Location = new Point(6, 246);
+            EditDelayBtn.Name = "EditDelayBtn";
+            EditDelayBtn.Size = new Size(75, 23);
+            EditDelayBtn.TabIndex = 15;
+            EditDelayBtn.Text = "Edit";
+            EditDelayBtn.UseVisualStyleBackColor = true;
+            EditDelayBtn.Click += EditDelayBtn_Click;
+            // 
+            // DeleteDelayBtn
+            // 
+            DeleteDelayBtn.Location = new Point(6, 275);
+            DeleteDelayBtn.Name = "DeleteDelayBtn";
+            DeleteDelayBtn.Size = new Size(75, 23);
+            DeleteDelayBtn.TabIndex = 16;
+            DeleteDelayBtn.Text = "Delete";
+            DeleteDelayBtn.UseVisualStyleBackColor = true;
+            DeleteDelayBtn.Click += DeleteDelayBtn_Click;
+            // 
             // PlaylistCreatorForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -459,6 +507,7 @@ namespace MakeMKV_Title_Decoder
             splitContainer3.ResumeLayout(false);
             panel1.ResumeLayout(false);
             panel4.ResumeLayout(false);
+            panel4.PerformLayout();
             SourcePropertiesPanel.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -496,5 +545,9 @@ namespace MakeMKV_Title_Decoder
         private Panel panel1;
         private Button PlaylistSourceDeleteBtn;
         private ImageList imageList1;
+        private Button EditDelayBtn;
+        private Button AddDelayBtn;
+        private Label label3;
+        private Button DeleteDelayBtn;
     }
 }

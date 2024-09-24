@@ -155,6 +155,13 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             return appendedFile;
         }
 
+        public AppendedTrack AddDelay(AppendedTrack sourceTrack, TrackDelay delayInfo) {
+            var track = new AppendedTrack(null, null, Color.White);
+            track.Delay = delayInfo;
+            sourceTrack.AppendedTracks.Add(track);
+            return track;
+        }
+
         public AppendedFile ImportSourceFile(LoadedStream file) {
             var appendedFile = GetFileOrCreate(file);
             AddSourceFile(appendedFile);
@@ -203,6 +210,16 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                         if (otherSource == null) throw new Exception("Could not find another source to move appended tracks. This should not happen");
 
                         otherSource.AppendedTracks.AddRange(source.AppendedTracks);
+                    }
+                }
+
+                // Remove any referenced delay tracks and swap them to manual delays
+                foreach(var appended in source.AppendedTracks)
+                {
+                    if (appended.Delay != null && appended.Delay.ClipDelay == file)
+                    {
+                        appended.Delay.ClipDelay = null;
+                        appended.Delay.MillisecondDelay = (long)file.Source.Duration.TotalMilliseconds;
                     }
                 }
             }
@@ -430,23 +447,40 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
         private void SaveTrack(LoadedDisc disc, Dictionary<AppendedFile, PlaylistSource> lookup, /*Dictionary<AppendedFile, int> fileIndexLookup,*/ /*RenameData renames,*/ AppendedTrack track, SerializableList<PlaylistTrack> owner, bool isAppended, List<TrackID> disabledTracks, ref TrackID lastEnabledTrack) {
             var source = track.Track;
 
-            TrackID trackId = FindTrackID(disc, track.Source.Source, track.Track);
-
             var playlist = new PlaylistTrack();
-            FindAppendedFileIndex(lookup[track.Source], out playlist.SourceFileIndex, out playlist.AppendedFileIndex);
-			playlist.TrackIndex = (long)trackId.TrackIndex;
-
             playlist.Copy = track.Enabled;
 
             // Add to the source file that owns it\
             owner.Add(playlist);
 
-            if (!isAppended)
+            // Save delay info
+            if (track.Delay != null && isAppended)
             {
-                // We want to save sub-tracks for accurate reloading later
-                // TODO disable sub-tracks if not enabled
-                //if (track.Enabled)
-                //{
+                playlist.Delay = new();
+                if (track.Delay.ClipDelay != null)
+                {
+                    playlist.Delay.DelayType = DelayType.Source;
+                    FindAppendedFileIndex(lookup[track.Delay.ClipDelay], out playlist.Delay.SourceFileIndex, out playlist.Delay.AppendedFileIndex);
+                } else
+                {
+                    playlist.Delay.DelayType = DelayType.Delay;
+                    playlist.Delay.Milliseconds = track.Delay.MillisecondDelay;
+                }
+
+
+            } else
+            {
+                TrackID trackId = FindTrackID(disc, track.Source.Source, track.Track);
+
+                FindAppendedFileIndex(lookup[track.Source], out playlist.SourceFileIndex, out playlist.AppendedFileIndex);
+                playlist.TrackIndex = (long)trackId.TrackIndex;
+
+                if (!isAppended)
+                {
+                    // We want to save sub-tracks for accurate reloading later
+                    // TODO disable sub-tracks if not enabled
+                    //if (track.Enabled)
+                    //{
                     // create internal state for appended tracks
                     disabledTracks = new();
                     TrackID lastTrack = trackId;
@@ -456,28 +490,29 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                     {
                         SaveTrack(disc, lookup, appendedTrack, playlist.AppendedTracks, true, disabledTracks, ref lastTrack);
                     }
-                //}
-            } else
-            {
-                if (track.Enabled)
-                {
-                    // Mark which track it is appended to
-                    //playlist.AppendedTo = lastEnabledTrack;
-
-                    // Update sync info as needed
-                    //playlist.Sync.Clear();
-                    //playlist.Sync.AddRange(disabledTracks);
-
-                    // Update for the next track
-                    disabledTracks.Clear();
-                    lastEnabledTrack = trackId;
+                    //}
                 } else
                 {
-                    // We want to mark how disabled tracks are appended so the file can be properly reloaded 
-                    //playlist.AppendedTo = lastEnabledTrack;
+                    if (track.Enabled)
+                    {
+                        // Mark which track it is appended to
+                        //playlist.AppendedTo = lastEnabledTrack;
 
-                    // Update internal state for next track
-                    disabledTracks.Add(trackId);
+                        // Update sync info as needed
+                        //playlist.Sync.Clear();
+                        //playlist.Sync.AddRange(disabledTracks);
+
+                        // Update for the next track
+                        disabledTracks.Clear();
+                        lastEnabledTrack = trackId;
+                    } else
+                    {
+                        // We want to mark how disabled tracks are appended so the file can be properly reloaded 
+                        //playlist.AppendedTo = lastEnabledTrack;
+
+                        // Update internal state for next track
+                        disabledTracks.Add(trackId);
+                    }
                 }
             }
         }
@@ -528,15 +563,40 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
         private static AppendedTrack LoadTrack(LoadedPlaylist result, PlaylistTrack playlist)
         {
-            AppendedFile source = result.SourceFiles[(int)playlist.SourceFileIndex];
-            if (playlist.AppendedFileIndex >= 0) {
-                source = source.AppendedFiles[(int)playlist.AppendedFileIndex];
+            AppendedTrack track;
+
+            if (playlist.Delay == null)
+            {
+                AppendedFile source = result.SourceFiles[(int)playlist.SourceFileIndex];
+                if (playlist.AppendedFileIndex >= 0)
+                {
+                    source = source.AppendedFiles[(int)playlist.AppendedFileIndex];
+                }
+
+                LoadedTrack sourceTrack = source.Source.Tracks[(int)playlist.TrackIndex];
+
+                track = new AppendedTrack(source, sourceTrack, source.Color);
+                track.Enabled = playlist.Copy;
+            } else {
+                track = new AppendedTrack(null, null, Color.White);
+                track.Delay = new();
+                
+                if (playlist.Delay.DelayType == DelayType.Source)
+                {
+                    track.Delay.ClipDelay = result.SourceFiles[(int)playlist.Delay.SourceFileIndex];
+                    if (playlist.Delay.AppendedFileIndex >= 0)
+                    {
+                        track.Delay.ClipDelay = track.Delay.ClipDelay.AppendedFiles[(int)playlist.Delay.AppendedFileIndex];
+                    } 
+                } else if (playlist.Delay.DelayType == DelayType.Delay)
+                {
+                    track.Delay.MillisecondDelay = playlist.Delay.Milliseconds;
+                } else
+                {
+                    throw new Exception("Unknown enum.");
+                }
             }
 
-            LoadedTrack sourceTrack = source.Source.Tracks[(int)playlist.TrackIndex];
-
-            var track = new AppendedTrack(source, sourceTrack, source.Color);
-            track.Enabled = playlist.Copy;
             return track;
         }
 

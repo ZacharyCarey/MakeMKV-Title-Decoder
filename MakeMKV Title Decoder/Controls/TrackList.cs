@@ -1,17 +1,18 @@
 ﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
 using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MakeMKV_Title_Decoder.Controls
 {
-    public class TrackListData
+    public class TrackListData : PropertyData
     {
         public LoadedTrack? Track = null;
-        public object? Tag = null;
     }
 
     public class TrackList : PropertiesList
@@ -22,8 +23,6 @@ namespace MakeMKV_Title_Decoder.Controls
 
         public string KeepIconKey { get; set; } = "dialog-ok-apply.png";
         public string DeleteIconKey { get; set; } = "dialog-cancel.png";
-
-        private Dictionary<LoadedTrack, PropertyItem> QuickLookup = new();
 
         const int FirstColumnWidth = 160;
         private int padding = 0;
@@ -39,6 +38,8 @@ namespace MakeMKV_Title_Decoder.Controls
                 }
             }
         }
+
+        public new IEnumerable<TrackListData> Items => base.Items.Cast<TrackListData>();
 
         public TrackList()
         {
@@ -99,76 +100,137 @@ namespace MakeMKV_Title_Decoder.Controls
             SelectedIndexChanged += Event_SelectedIndexChanged;
         }
 
-        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null)
+        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null, object? Tag = null)
         {
             TrackListData data = new();
             data.Track = track;
-            PropertyItem source = new();
-            source.IconColor = color;
-            source.Padding = padding ?? 0;
-            source.IconKey = Icon;
-            source.Tag = data;
-            if (backColor != null) source.BackColor = backColor.Value;
-            Items.Add(source);
+            data.IconColor = color;
+            data.Padding = padding ?? 0;
+            data.IconKey = Icon;
+            data.BackColor = backColor;
+            data.Tag = null;
 
-            QuickLookup[track] = source;
-
-            for (int i = 0; i < 8; i++)
+            TrackListData[] subItems = new TrackListData[8];
+            for (int i = 0; i < subItems.Length; i++)
             {
-                PropertySubItem item = new(source);
-                if (backColor != null) item.BackColor = backColor.Value;
-                source.SubItems.Add(item);
+                subItems[i] = new TrackListData();
+                subItems[i].BackColor = backColor;
             }
+
+            base.Add(data, subItems);
 
             Update(track);
             return data;
         }
 
-        public void Update(LoadedTrack track)
-        {
-            PropertyItem item = QuickLookup[track];
-            var data = track.Rename;
+        public TrackListData Add(TrackDelay delay, Color color, int padding, Color? backColor) {
+            TrackListData data = new();
+            data.Track = null;
+            data.IconColor = color;
+            data.Padding = padding;
+            data.BackColor = BackColor;
+            data.Tag = delay;
 
-            List<string> trackProperties = new();
-            switch (track.Data.Type)
+            TrackListData[] subItems = new TrackListData[8];
+            for(int i = 0; i < subItems.Length; i++)
             {
-                case MkvTrackType.Video:
-                    var size = track.Data.Properties?.PixelDimensions;
-                    if (size != null) trackProperties.Add($"{size} pixels");
-                    break;
-                case MkvTrackType.Audio:
-                    var freq = track.Data.Properties?.AudioSamplingFrequency;
-                    if (freq != null) trackProperties.Add($"{freq} Hz");
-
-                    var channels = track.Data.Properties?.AudioChannels;
-                    if (channels != null) trackProperties.Add($"{channels} channels");
-                    break;
+                subItems[i] = new TrackListData();
+                subItems[i].BackColor = backColor;
             }
 
-            item.Text = track.Data.Codec;
+            base.Add(data, subItems);
 
-            item.SubItems[1].Text = track.Data.Type.ToString();
-            ((PropertyData)item.SubItems[1].Tag).IconKey = GetTypeIcon(track.Data.Type);
+            Update(delay);
+            return data;
+        }
 
-            item.SubItems[2].Text = data?.Name; // name
-            item.SubItems[3].Text = string.Join(", ", trackProperties); // properties
-            item.SubItems[4].Text = track.Data.Properties?.Language ?? ""; // lang
-            ((PropertyData)item.SubItems[5].Tag).IconKey = GetBoolIcon(track.Data.Properties?.EnabledTrack ?? true); // enabled
-            ((PropertyData)item.SubItems[6].Tag).IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Data.Properties?.DefaultTrack ?? true); // default
-            ((PropertyData)item.SubItems[7].Tag).IconKey = GetBoolIcon(track.Data.Properties?.ForcedTrack ?? false); // forced
-            ((PropertyData)item.SubItems[8].Tag).IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Data.Properties?.FlagCommentary ?? false); // commentary
+        public void Update(LoadedTrack track)
+        {
+            foreach(var item in base.Items.Cast<TrackListData>())
+            {
+                if (item.Track == track)
+                {
+                    var data = track.Rename;
+
+                    List<string> trackProperties = new();
+                    switch (track.Data.Type)
+                    {
+                        case MkvTrackType.Video:
+                            var size = track.Data.Properties?.PixelDimensions;
+                            if (size != null) trackProperties.Add($"{size} pixels");
+                            break;
+                        case MkvTrackType.Audio:
+                            var freq = track.Data.Properties?.AudioSamplingFrequency;
+                            if (freq != null) trackProperties.Add($"{freq} Hz");
+
+                            var channels = track.Data.Properties?.AudioChannels;
+                            if (channels != null) trackProperties.Add($"{channels} channels");
+                            break;
+                    }
+
+                    item.Text = track.Data.Codec;
+
+                    item.SubItems[0].Text = track.Data.Type.ToString();
+                    item.SubItems[0].IconKey = GetTypeIcon(track.Data.Type);
+
+                    item.SubItems[1].Text = data?.Name ?? ""; // name
+                    item.SubItems[1].IconColor = null;
+                    item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
+                    item.SubItems[3].Text = track.Data.Properties?.Language ?? ""; // lang
+                    item.SubItems[4].IconKey = GetBoolIcon(track.Data.Properties?.EnabledTrack ?? true); // enabled
+                    item.SubItems[5].IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Data.Properties?.DefaultTrack ?? true); // default
+                    item.SubItems[6].IconKey = GetBoolIcon(track.Data.Properties?.ForcedTrack ?? false); // forced
+                    item.SubItems[7].IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Data.Properties?.FlagCommentary ?? false); // commentary
+
+                    return;
+                }
+            }
+
+            // TODO throw error
+        }
+
+        public void Update(TrackDelay delay) {
+            foreach(var item in base.Items.Cast<TrackListData>())
+            {
+                if (item.Tag != null && item.Tag is TrackDelay otherDelay && otherDelay == delay)
+                {
+                    item.Text = "Delay";
+                    item.SubItems[0].IconKey = null;
+                    item.SubItems[2].Text = "";
+                    item.SubItems[3].Text = "";
+                    item.SubItems[4].IconKey = null;
+                    item.SubItems[5].IconKey = null;
+                    item.SubItems[6].IconKey = null;
+                    item.SubItems[7].IconKey = null;
+
+                    if (delay.ClipDelay != null)
+                    {
+                        item.SubItems[0].Text = "Clip Sync";
+                        item.SubItems[1].Text = delay.ClipDelay.Source.Rename.Name ?? "null";
+                        item.SubItems[1].IconColor = delay.ClipDelay.Color;
+                    } else
+                    {
+                        item.SubItems[0].Text = "Manual";
+                        item.SubItems[1].Text = $"{delay.MillisecondDelay} ms";
+                    }
+
+                    return;
+                }
+            }
+
+            // TODO throw error
         }
 
         public new void Clear()
         {
-            QuickLookup.Clear();
-            Items.Clear();
+            base.Clear();
         }
 
         public new TrackListData? SelectedItem
         {
-            get => (TrackListData?)base.SelectedItem?.Tag;
-            set
+            get => (TrackListData?)base.SelectedItem;
+            set => base.SelectedItem = (PropertyData?)value;
+            /*set
             {
                 for (int i = 0; i < Items.Count; i++)
                 {
@@ -180,7 +242,7 @@ namespace MakeMKV_Title_Decoder.Controls
                     }
                 }
                 SelectedIndex = null;
-            }
+            }*/
         }
 
         public void Select(LoadedTrack? track)
@@ -191,15 +253,15 @@ namespace MakeMKV_Title_Decoder.Controls
                 return;
             }
 
-            for (int i = 0; i < Items.Count; i++)
+            foreach(var pair in this.Items.WithIndex())
             {
-                TrackListData? data = (TrackListData?)((PropertyData)Items[i].Tag).Tag;
-                if (data != null && data.Track == track)
+                if (pair.Value.Track == track)
                 {
-                    SelectedIndex = i;
+                    base.SelectedIndex = pair.Index;
                     return;
                 }
             }
+
             SelectedIndex = null;
         }
 
