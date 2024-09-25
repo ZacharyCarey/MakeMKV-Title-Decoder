@@ -24,6 +24,7 @@ namespace MakeMKV_Title_Decoder
         private LoadedStream? SelectedClip = null;
         private LoadedTrack? SelectedVideoTrack = null;
         private LoadedTrack? SelectedAudioTrack = null;
+        private LoadedTrack? SelectedOtherTrack = null;
 
         public ClipRenamerForm(LoadedDisc disc) {
             this.Disc = disc;
@@ -137,11 +138,11 @@ namespace MakeMKV_Title_Decoder
             new VideoCompareForm(this.Disc).ShowDialog();
         }
 
-        private void SelectTrack(LoadedTrack? track, MkvTrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox commentaryCheckBox, CheckBox defaultCheckBox) {
+        private void SelectTrack(LoadedTrack? track, MkvTrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox? commentaryCheckBox, CheckBox defaultCheckBox) {
             TrackRename? rename = track?.Rename;
 
             nameTextBox.Text = (rename?.Name ?? "");
-            commentaryCheckBox.Checked = (rename?.CommentaryFlag ?? false);
+            if (commentaryCheckBox != null) commentaryCheckBox.Checked = (rename?.CommentaryFlag ?? false);
             defaultCheckBox.Checked = (rename?.DefaultFlag ?? true);
             propertiesPanel.Enabled = (track != null);
 
@@ -194,6 +195,7 @@ namespace MakeMKV_Title_Decoder
                 renames.DefaultFlag = defaultFlag;
 
                 list.Update(track);
+                list.Invalidate();
             }
         }
 
@@ -219,6 +221,32 @@ namespace MakeMKV_Title_Decoder
 
         private void VideoTrackList_SelectedIndexChanged(object sender, EventArgs e) {
 
+        }
+
+        private void AudioTrackList_SelectedIndexChanged(object sender, EventArgs e) {
+
+        }
+
+        private void OtherTrackList_OnSelectionChanged(TrackListData track) {
+            this.SelectedOtherTrack = track?.Track;
+            SelectTrack(
+                track?.Track,
+                MkvTrackType.Unknown,
+                OtherTrackPanel,
+                OtherTrackName,
+                null,
+                OtherTrackDefault
+            );
+        }
+
+        private void OtherTrackApply_Click(object sender, EventArgs e) {
+            TrackApplyChanges(
+                this.OtherTrackList,
+                this.SelectedOtherTrack,
+                this.OtherTrackName.Text,
+                false,
+                this.OtherTrackDefault.Checked
+            );
         }
     }
 }

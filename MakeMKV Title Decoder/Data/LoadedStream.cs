@@ -61,6 +61,7 @@ namespace MakeMKV_Title_Decoder.Data
 				return null;
 			}
 
+			Dictionary<MkvTrackType, List<LoadedTrack>> sortedByType = new();
 			List<LoadedTrack> tracks = new List<LoadedTrack>();
 			foreach(var track in clip.Tracks)
 			{
@@ -70,6 +71,29 @@ namespace MakeMKV_Title_Decoder.Data
 					return null;
 				}
 				tracks.Add(loadedTrack);
+
+				List<LoadedTrack> typeList;
+				if (!sortedByType.TryGetValue(loadedTrack.Data.Type, out typeList))
+				{
+					typeList = new();
+					sortedByType[loadedTrack.Data.Type] = typeList;
+				}
+				typeList.Add(loadedTrack);
+			}
+
+			// Set defaults if needed
+			foreach(var track in tracks)
+			{
+				if (track.Data.Properties?.DefaultTrack == null)
+				{
+					if (track.Data.Type == MkvTrackType.Audio || track.Data.Type == MkvTrackType.Video)
+					{
+						track.Rename.DefaultFlag = sortedByType[track.Data.Type].IndexOf(track) == 0;
+					} else
+					{
+						track.Rename.DefaultFlag = false;
+					}
+				}
 			}
 
 			var stream = new LoadedStream(clip, timespan.Value);

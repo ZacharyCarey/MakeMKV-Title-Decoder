@@ -28,9 +28,9 @@ namespace MakeMKV_Title_Decoder
         /// </summary>
         private void InitializeComponent() {
             components = new System.ComponentModel.Container();
-            ListViewItem listViewItem1 = new ListViewItem(new string[] { "", "003339.m2ts", "Hello" }, "dialog-ok-apply.png");
-            ListViewItem listViewItem2 = new ListViewItem("test2");
-            ListViewItem listViewItem3 = new ListViewItem("test3");
+            ListViewItem listViewItem4 = new ListViewItem(new string[] { "", "003339.m2ts", "Hello" }, "dialog-ok-apply.png");
+            ListViewItem listViewItem5 = new ListViewItem("test2");
+            ListViewItem listViewItem6 = new ListViewItem("test3");
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ClipRenamerForm));
             ClipsList = new ListView();
             columnHeader3 = new ColumnHeader();
@@ -47,6 +47,11 @@ namespace MakeMKV_Title_Decoder
             VideoPreview = new VideoPlayer();
             VideoView1 = new LibVLCSharp.WinForms.VideoView();
             OtherTrackList = new TrackList();
+            OtherTrackPanel = new Panel();
+            OtherTrackDefault = new CheckBox();
+            OtherTrackApply = new Button();
+            OtherTrackName = new TextBox();
+            label4 = new Label();
             splitContainer4 = new SplitContainer();
             VideoTrackList = new TrackList();
             VideoTrackPanel = new Panel();
@@ -78,6 +83,7 @@ namespace MakeMKV_Title_Decoder
             splitContainer3.Panel2.SuspendLayout();
             splitContainer3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)VideoView1).BeginInit();
+            OtherTrackPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer4).BeginInit();
             splitContainer4.Panel1.SuspendLayout();
             splitContainer4.Panel2.SuspendLayout();
@@ -93,7 +99,7 @@ namespace MakeMKV_Title_Decoder
             ClipsList.Dock = DockStyle.Fill;
             ClipsList.FullRowSelect = true;
             ClipsList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
-            ClipsList.Items.AddRange(new ListViewItem[] { listViewItem1, listViewItem2, listViewItem3 });
+            ClipsList.Items.AddRange(new ListViewItem[] { listViewItem4, listViewItem5, listViewItem6 });
             ClipsList.Location = new Point(0, 0);
             ClipsList.MultiSelect = false;
             ClipsList.Name = "ClipsList";
@@ -223,15 +229,16 @@ namespace MakeMKV_Title_Decoder
             // splitContainer3.Panel2
             // 
             splitContainer3.Panel2.Controls.Add(OtherTrackList);
+            splitContainer3.Panel2.Controls.Add(OtherTrackPanel);
             splitContainer3.Size = new Size(933, 1047);
-            splitContainer3.SplitterDistance = 885;
+            splitContainer3.SplitterDistance = 685;
             splitContainer3.TabIndex = 2;
             // 
             // VideoPreview
             // 
             VideoPreview.AudioTrack = -1L;
             VideoPreview.Dock = DockStyle.Bottom;
-            VideoPreview.Location = new Point(0, 790);
+            VideoPreview.Location = new Point(0, 590);
             VideoPreview.Name = "VideoPreview";
             VideoPreview.Size = new Size(929, 91);
             VideoPreview.Sync = null;
@@ -247,7 +254,7 @@ namespace MakeMKV_Title_Decoder
             VideoView1.Location = new Point(0, 0);
             VideoView1.MediaPlayer = null;
             VideoView1.Name = "VideoView1";
-            VideoView1.Size = new Size(929, 881);
+            VideoView1.Size = new Size(929, 681);
             VideoView1.TabIndex = 1;
             VideoView1.Text = "videoView1";
             // 
@@ -265,11 +272,61 @@ namespace MakeMKV_Title_Decoder
             OtherTrackList.OwnerDraw = true;
             OtherTrackList.SelectedIndex = null;
             OtherTrackList.SelectedItem = null;
-            OtherTrackList.Size = new Size(929, 154);
+            OtherTrackList.Size = new Size(929, 265);
             OtherTrackList.SmallImageList = ImageList1;
-            OtherTrackList.TabIndex = 0;
+            OtherTrackList.TabIndex = 5;
             OtherTrackList.UseCompatibleStateImageBehavior = false;
             OtherTrackList.View = View.Details;
+            OtherTrackList.OnSelectionChanged += OtherTrackList_OnSelectionChanged;
+            // 
+            // OtherTrackPanel
+            // 
+            OtherTrackPanel.Controls.Add(OtherTrackDefault);
+            OtherTrackPanel.Controls.Add(OtherTrackApply);
+            OtherTrackPanel.Controls.Add(OtherTrackName);
+            OtherTrackPanel.Controls.Add(label4);
+            OtherTrackPanel.Dock = DockStyle.Bottom;
+            OtherTrackPanel.Location = new Point(0, 265);
+            OtherTrackPanel.Name = "OtherTrackPanel";
+            OtherTrackPanel.Size = new Size(929, 89);
+            OtherTrackPanel.TabIndex = 4;
+            // 
+            // OtherTrackDefault
+            // 
+            OtherTrackDefault.AutoSize = true;
+            OtherTrackDefault.Location = new Point(3, 32);
+            OtherTrackDefault.Name = "OtherTrackDefault";
+            OtherTrackDefault.Size = new Size(64, 19);
+            OtherTrackDefault.TabIndex = 7;
+            OtherTrackDefault.Text = "Default";
+            OtherTrackDefault.UseVisualStyleBackColor = true;
+            // 
+            // OtherTrackApply
+            // 
+            OtherTrackApply.Location = new Point(3, 57);
+            OtherTrackApply.Name = "OtherTrackApply";
+            OtherTrackApply.Size = new Size(75, 23);
+            OtherTrackApply.TabIndex = 5;
+            OtherTrackApply.Text = "Apply";
+            OtherTrackApply.UseVisualStyleBackColor = true;
+            OtherTrackApply.Click += OtherTrackApply_Click;
+            // 
+            // OtherTrackName
+            // 
+            OtherTrackName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            OtherTrackName.Location = new Point(51, 3);
+            OtherTrackName.Name = "OtherTrackName";
+            OtherTrackName.Size = new Size(875, 23);
+            OtherTrackName.TabIndex = 3;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(3, 6);
+            label4.Name = "label4";
+            label4.Size = new Size(42, 15);
+            label4.TabIndex = 2;
+            label4.Text = "Name:";
             // 
             // splitContainer4
             // 
@@ -394,6 +451,7 @@ namespace MakeMKV_Title_Decoder
             AudioTrackList.UseCompatibleStateImageBehavior = false;
             AudioTrackList.View = View.Details;
             AudioTrackList.OnSelectionChanged += AudioTrackList_OnSelectionChanged;
+            AudioTrackList.SelectedIndexChanged += AudioTrackList_SelectedIndexChanged;
             // 
             // AudioTrackPanel
             // 
@@ -471,7 +529,7 @@ namespace MakeMKV_Title_Decoder
             compareToolStripMenuItem.Text = "Compare";
             compareToolStripMenuItem.Click += compareToolStripMenuItem_Click;
             // 
-            // ClipRenamer
+            // ClipRenamerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -479,7 +537,7 @@ namespace MakeMKV_Title_Decoder
             Controls.Add(splitContainer1);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
-            Name = "ClipRenamer";
+            Name = "ClipRenamerForm";
             Text = "ClipRenamer";
             FormClosing += ClipRenamer_FormClosing;
             Load += ClipRenamer_Load;
@@ -498,6 +556,8 @@ namespace MakeMKV_Title_Decoder
             ((System.ComponentModel.ISupportInitialize)splitContainer3).EndInit();
             splitContainer3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)VideoView1).EndInit();
+            OtherTrackPanel.ResumeLayout(false);
+            OtherTrackPanel.PerformLayout();
             splitContainer4.Panel1.ResumeLayout(false);
             splitContainer4.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitContainer4).EndInit();
@@ -545,5 +605,10 @@ namespace MakeMKV_Title_Decoder
         private CheckBox AudioTrackDefault;
         private SplitContainer splitContainer3;
         private TrackList OtherTrackList;
+        private Panel OtherTrackPanel;
+        private CheckBox OtherTrackDefault;
+        private Button OtherTrackApply;
+        private TextBox OtherTrackName;
+        private Label label4;
     }
 }

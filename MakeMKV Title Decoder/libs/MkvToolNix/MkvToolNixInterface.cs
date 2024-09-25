@@ -301,6 +301,7 @@ namespace MakeMKV_Title_Decoder.libs.MkvToolNix
 
                     if (source.Rename.Name != null) args.Add($"--track-name {source.MkvMergeID}:\"{source.Rename.Name}\"");
                     if (source.Rename.CommentaryFlag != null) args.Add($"--commentary-flag {source.MkvMergeID}:{(source.Rename.CommentaryFlag == true ? 1 : 0)}");
+                    if (source.Rename.DefaultFlag != null) args.Add($"--default-track-flag {source.MkvMergeID}:{(source.Rename.DefaultFlag == true ? 1 : 0)}");
                     if (delay > 0) args.Add($"-y {source.MkvMergeID}:{delay}");
                 }
             };
