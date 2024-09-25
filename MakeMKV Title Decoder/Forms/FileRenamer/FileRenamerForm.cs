@@ -26,10 +26,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         private RenameData Renames;
 
-        private string? OutputPath = null;
-        private string? OutputFolderName = null;
-        private string OutputFullPath = "";
-
         private bool FirstTmdb = true;
         private string? lastDir = null;
 
@@ -101,6 +97,12 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.MultiVersionCheckBox.Checked = (output?.MultiVersion != null);
             this.MultiVersionTextBox.Text = (output?.MultiVersion ?? "");
 
+            TypeComboBox.SelectedItem = output?.ShowID?.Type;
+            IdTextBox.Text = output?.ShowID?.ID.ToString() ?? "";
+            SeasonTextBox.Text = output?.ShowID?.Season?.ToString() ?? "";
+            EpisodeTextBox.Text = output?.ShowID?.Episode?.ToString() ?? "";
+            ShowNameTextBox.Text = output?.ShowName ?? "";
+
             bool isMovie = true; //((ShowType?)this.TypeComboBox.SelectedItem == ShowType.Movie);
             this.ExtrasRadioButton.Enabled = isMovie;
             this.SpecialsRadioButton.Enabled = isMovie;
@@ -111,8 +113,10 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.DeletedScenesRadioButton.Enabled = isMovie;
             this.InterviewsRadioButton.Enabled = isMovie;
 
-            RadioButtonReverseLookup[output?.FeatureType ?? FeatureType.MainFeature].PerformClick();
+            RadioButtonReverseLookup[output?.Type ?? FeatureType.MainFeature].PerformClick();
             this.ExtraNameTextBox.Text = (output?.ExtraName ?? "");
+
+            UpdateOutputLabel();
         }
 
         private void TmdbBtn_Click(object sender, EventArgs e) {
@@ -142,138 +146,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             UpdateOutputLabel();
         }
 
-        private void SelectOutputFolderBtn_Click(object sender, EventArgs e) {
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
-            {
-                if (lastDir != null)
-                {
-                    openFileDialog.InitialDirectory = lastDir;
-                }
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string path = openFileDialog.SelectedPath;
-                    lastDir = path;
-                    string dir = Path.GetFileNameWithoutExtension(path);
-                    // Verify it matches selected TMDB ID
-
-                    bool isValid = false;
-                    int start = dir.LastIndexOf('[');
-                    int end = dir.LastIndexOf(']');
-                    if (start >= 0 && end >= 0 && start < end)
-                    {
-                        string showName = dir.Substring(0, start).TrimEnd();
-
-                        string tmdb = dir.Substring(start + 1, end - start - 1);
-                        if (tmdb.StartsWith(TmdbPrefix))
-                        {
-                            this.ShowNameTextBox.Text = showName;
-                            this.IdTextBox.Text = tmdb.Substring(TmdbPrefix.Length);
-                            isValid = true;
-                        }
-                    }
-
-                    if (!isValid)
-                    {
-                        if (MessageBox.Show("Failed to parse show title/ID. Folder will be renamed as needed.", "Rename?", MessageBoxButtons.OKCancel) != DialogResult.OK)
-                        {
-                            return;
-                        }
-
-                        if (string.IsNullOrWhiteSpace(this.ShowNameTextBox.Text))
-                        {
-                            MessageBox.Show("Show name can't be empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        long id;
-                        if (!long.TryParse(this.IdTextBox.Text, out id))
-                        {
-                            MessageBox.Show("ID must be a valid number.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        try
-                        {
-                            string parent = Directory.GetParent(path).FullName;
-                            dir = $"{this.ShowNameTextBox.Text} [{TmdbPrefix}{id}]";
-                            path = Path.Combine(parent, dir);
-                            Directory.Move(path, path);
-
-                            this.OutputPath = parent;
-                            this.OutputFolderName = dir;
-                            this.OutputFullPath = path;
-                        } catch (Exception)
-                        {
-                            MessageBox.Show("Failed to rename folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        UpdateOutputLabel();
-                    } else
-                    {
-                        try
-                        {
-                            this.OutputPath = Directory.GetParent(path).FullName;
-                            this.OutputFolderName = dir;
-                            this.OutputFullPath = path;
-                        } catch (Exception)
-                        {
-                            MessageBox.Show("Failed to find folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            return;
-                        }
-
-                        UpdateOutputLabel();
-                    }
-                }
-            }
-        }
-
-        private void CreateFolderBtn_Click(object sender, EventArgs e) {
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
-            {
-                if (lastDir != null)
-                {
-                    openFileDialog.InitialDirectory = lastDir;
-                }
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string path = openFileDialog.SelectedPath;
-                    lastDir = path;
-
-                    if (string.IsNullOrWhiteSpace(this.ShowNameTextBox.Text))
-                    {
-                        MessageBox.Show("Show name can't be empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    long id;
-                    if (!long.TryParse(this.IdTextBox.Text, out id))
-                    {
-                        MessageBox.Show("ID must be a valid number.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    string dir = $"{this.ShowNameTextBox.Text} [{TmdbPrefix}{id}]";
-                    try
-                    {
-                        Directory.CreateDirectory(Path.Combine(path, dir));
-                    } catch (Exception)
-                    {
-                        MessageBox.Show("Failed to create folder.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    this.OutputPath = path;
-                    this.OutputFolderName = dir;
-                    this.OutputFullPath = Path.Combine(path, dir);
-
-                    UpdateOutputLabel();
-                }
-            }
-        }
-
         private void ShowNameTextBox_TextChanged_1(object sender, EventArgs e) {
             UpdateOutputLabel();
         }
@@ -298,40 +170,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         private void UpdateOutputLabel() {
             var ID = ParseID();
-            this.OutputFolderName = $"{this.ShowNameTextBox.Text} [{TmdbPrefix}{ID?.ID.ToString() ?? ""}]";
-            if (string.IsNullOrWhiteSpace(this.OutputFolderName))
-            {
-                this.OutputFolderName = null;
-            }
-
-            if (this.OutputPath == null)
-            {
-                this.OutputFullPath = this.OutputFolderName ?? "";
-            } else
-            {
-                if (this.OutputFolderName == null)
-                {
-                    this.OutputFullPath = this.OutputPath;
-                } else
-                {
-                    this.OutputFullPath = Path.Combine(this.OutputPath, this.OutputFolderName);
-                }
-            }
-
-            this.OutputFolderLabel.Text = this.OutputFullPath;
-        }
-
-        private void ShowNameTextBox_TextChanged(object sender, EventArgs e) {
-            // Rename folder
-            this.OutputFolderName = ShowNameTextBox.Text;
-            if (this.OutputPath == null)
-            {
-                this.OutputFullPath = this.OutputFolderName;
-            } else
-            {
-                this.OutputFullPath = Path.Combine(this.OutputPath, this.OutputFullPath);
-            }
-            UpdateOutputLabel();
+            this.OutputFolderLabel.Text = $"{this.ShowNameTextBox.Text} [{TmdbPrefix}{ID?.ID.ToString() ?? ""}]";
         }
 
         private TmdbID? ParseID() {
@@ -376,10 +215,10 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 if (id.Season == null || id.Episode == null) return true;
             }
 
-            if (playlist.OutputFile.FeatureType == null) return true;
+            if (playlist.OutputFile.Type == null) return true;
             if (string.IsNullOrWhiteSpace(playlist.OutputFile.ShowName)) return true;
             if (playlist.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(playlist.OutputFile.MultiVersion)) return true;
-            if (playlist.OutputFile.FeatureType != null && playlist.OutputFile.FeatureType != FeatureType.MainFeature && string.IsNullOrEmpty(playlist.OutputFile.ExtraName)) return true;
+            if (playlist.OutputFile.Type != null && playlist.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(playlist.OutputFile.ExtraName)) return true;
 
             return false;
         }
@@ -412,7 +251,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 playlist.OutputFile.ShowName = this.ShowNameTextBox.Text;
                 playlist.OutputFile.MultiVersion = (this.MultiVersionCheckBox.Checked ? this.MultiVersionTextBox.Text : null);
                 playlist.OutputFile.ShowID = ParseID();
-                playlist.OutputFile.FeatureType = SelectedType;
+                playlist.OutputFile.Type = SelectedType;
                 playlist.OutputFile.ExtraName = (this.SelectedType == FeatureType.MainFeature) ? null : this.ExtraNameTextBox.Text;
 
                 CheckForErrors(selectedItem);
@@ -437,63 +276,35 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         }
 
         private void Export(params Playlist[] playlists) {
-            if (this.OutputFolderName == null || this.OutputPath == null)
+            string rootFolder;
+            using (FolderBrowserDialog browser = new())
             {
-                MessageBox.Show("Please select a valid output folder");
-                return;
-            }
+                if (lastDir != null)
+                {
+                    browser.InitialDirectory = lastDir;
+                }
 
-            if (!Directory.Exists(this.OutputFullPath))
-            {
-                // Attempt to create directory
-                try
+                if (browser.ShowDialog() == DialogResult.OK)
                 {
-                    Directory.CreateDirectory(this.OutputFullPath);
-                } catch (Exception)
+                    rootFolder = browser.SelectedPath;
+                } else
                 {
-                    MessageBox.Show("Failed to create output folder.");
                     return;
                 }
             }
 
             // Get a list of all exported items
-            List<Tuple<string, Playlist>> exports = new();
+            List<Tuple<string, string?, string, Playlist>> exports = new();
             foreach (var playlist in playlists)
             {
-                string? outputFile = null;
                 OutputName output = playlist.OutputFile;
-
-                string versionString = "";
-                if (output.MultiVersion != null)
+                try
                 {
-                    versionString = $" - {output.MultiVersion}";
-                }
-
-                if (output.ShowID?.Type == ShowType.Movie)
-                {
-                    string? bonusFolder = GetFolderName(output.FeatureType ?? FeatureType.MainFeature);
-                    if (bonusFolder != null)
-                    {
-                        outputFile = Path.Combine(this.OutputFullPath, bonusFolder, $"{output.ExtraName ?? ""}{versionString}.mkv");
-                    } else
-                    {
-                        outputFile = Path.Combine(this.OutputFullPath, $"{output.ShowName ?? ""} [{TmdbPrefix}{output.ShowID?.ID.ToString() ?? ""}]{versionString}.mkv");
-                    }
-                } else if (output.ShowID?.Type == ShowType.TV)
-                {
-                    outputFile = Path.Combine(this.OutputFullPath, $"Season {output.ShowID.Season}");
-
-                    string? bonusFolder = GetFolderName(output.FeatureType ?? FeatureType.MainFeature);
-                    if (bonusFolder != null)
-                    {
-                        outputFile = Path.Combine(outputFile, bonusFolder, $"{output.ExtraName ?? ""}{versionString}.mkv");
-                    } else
-                    {
-                        outputFile = Path.Combine(outputFile, $"{output.ShowName ?? ""} S{output.ShowID.Season}E{output.ShowID.Episode}{versionString}.mkv");
-                    }
-                }
-
-                if (outputFile == null)
+                    string outputFolder = output.GetFolderPath();
+                    string? bonusFolder = output.GetBonusFolder();
+                    string outputFile = output.GetFileName();
+                    exports.Add(new(outputFolder, bonusFolder, outputFile, playlist));
+                } catch(Exception ex)
                 {
                     if (MessageBox.Show($"Failed to determine output file for playlist '{playlist.Name}'. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
@@ -503,40 +314,73 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         continue;
                     }
                 }
-
-                exports.Add(new(outputFile, playlist));
             }
 
             // Save metadata to output if desired
+            bool saveMeta = false;
             if (MessageBox.Show("Save rename metadata?", "Save data?", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-                try
-                {
-                    string optional = "";
-                    if (Renames.Disc.Data.NumberOfSets != null || Renames.Disc.Data.SetNumber != null)
-                    {
-                        optional = $" {Renames.Disc.Data.SetNumber?.ToString() ?? "_"} of {Renames.Disc.Data.NumberOfSets?.ToString() ?? "_"}";
-                    }
-
-                    string file = Path.Combine(this.OutputFullPath, ".metadata", $"{Utils.GetFileSafeName($"{Renames.Disc.Identity.Title}{optional}")}.json");
-                    Directory.CreateDirectory(Path.Combine(this.OutputFullPath, ".metadata"));
-                    if (File.Exists(file))
-                    {
-                        File.Delete(file);
-                    }
-                    Json.Write(this.Renames, file);
-                } catch (Exception)
-                {
-                    MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
-                }
+                saveMeta = true;
             }
+
+            List<string> metaFolders = new();
 
             // Export files
             for (int i = 0; i < exports.Count; i++)
             {
-                string outputFile = exports[i].Item1;
-                var playlist = exports[i].Item2;
-                MkvToolNixInterface.MergeAsync(Renames.Disc, playlist, outputFile, new SimpleProgress((uint)i, (uint)exports.Count));
+                string outputFolder = exports[i].Item1;
+                string? bonusFolder = exports[i].Item2;
+                string outputFile = exports[i].Item3;
+                var playlist = exports[i].Item4;
+
+                string fullPath;
+                if (bonusFolder == null)
+                {
+                    fullPath = Path.Combine(rootFolder, outputFolder);
+                } else
+                {
+                    fullPath = Path.Combine(rootFolder, outputFolder, bonusFolder);
+                }
+
+                if (!Directory.Exists(fullPath))
+                {
+                    // Attempt to create directory
+                    try
+                    {
+                        Directory.CreateDirectory(fullPath);
+                    } catch (Exception)
+                    {
+                        MessageBox.Show("Failed to create output folder.");
+                        continue;
+                    }
+                }
+
+                if (saveMeta && !metaFolders.Contains(outputFolder))
+                {
+                    metaFolders.Add(outputFolder);
+
+                    try
+                    {
+                        string optional = "";
+                        if (Renames.Disc.Data.NumberOfSets != null || Renames.Disc.Data.SetNumber != null)
+                        {
+                            optional = $" {Renames.Disc.Data.SetNumber?.ToString() ?? "_"} of {Renames.Disc.Data.NumberOfSets?.ToString() ?? "_"}";
+                        }
+
+                        string file = Path.Combine(fullPath, ".metadata", $"{Utils.GetFileSafeName($"{Renames.Disc.Identity.Title}{optional}")}.json");
+                        Directory.CreateDirectory(Path.Combine(fullPath, ".metadata"));
+                        if (File.Exists(file))
+                        {
+                            File.Delete(file);
+                        }
+                        Json.Write(this.Renames, file);
+                    } catch (Exception)
+                    {
+                        MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
+                    }
+                }
+
+                MkvToolNixInterface.MergeAsync(Renames.Disc, playlist, Path.Combine(fullPath, outputFile), new SimpleProgress((uint)i, (uint)exports.Count));
             }
         }
 
@@ -555,7 +399,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         {
                             continue;
                         }
-                    } 
+                    }
 
                     exports.Add(selected.Playlist);
                 }
@@ -590,6 +434,28 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     return;
                 }
                 Export(selected.Playlist);
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e) {
+            var selected = PlaylistListBox1.SelectedItem;
+            if (selected != null)
+            {
+                foreach (var item in PlaylistListBox1.AllItems)
+                {
+                    if (item == selected) continue;
+
+                    var ID = selected.Playlist.OutputFile.ShowID;
+                    if (ID != null) ID = new TmdbID(ID);
+                    item.Playlist.OutputFile.ShowID = ID;
+
+                    var name = selected.Playlist.OutputFile.ShowName;
+                    item.Playlist.OutputFile.ShowName = name;
+
+                    CheckForErrors(item);
+                }
+
+                PlaylistListBox1.Invalidate();
             }
         }
     }

@@ -24,6 +24,13 @@ namespace MakeMKV_Title_Decoder.Forms.TmdbBrowser {
             this.Episode = episode;
         }
 
+        public TmdbID(TmdbID copy) {
+            this.Type = copy.Type;
+            this.ID = copy.ID;
+            this.Season = copy.Season;
+            this.Episode = copy.Episode;
+        }
+
         public override string ToString() {
             List<string> strings = new();
             strings.Add($"{this.Type.ToString()}={this.ID}");

@@ -58,15 +58,96 @@ namespace MakeMKV_Title_Decoder.Data
     }
 
     public class OutputName : IJsonSerializable {
+        const string TmdbPrefix = "tmdbid=";
 
         public TmdbID? ShowID;
         public string? ShowName;
 
         // For multiple versions of the same episode, which version is this one?
         public string? MultiVersion;
-        public FeatureType? FeatureType;
+        public FeatureType? Type;
         public string? ExtraName;
 
+
+        public string GetFolderPath() {
+            List<string> folders = new();
+
+            folders.Add($"{this.ShowName} [{TmdbPrefix}{ShowID?.ID.ToString() ?? ""}]");
+
+            if (ShowID?.Type == ShowType.Movie)
+            {
+                // TODO this is bad
+            } else if (ShowID?.Type == ShowType.TV)
+            {
+                folders.Add($"Season {ShowID.Season}");
+            } else
+            {
+                throw new Exception();
+            }
+
+            return Path.Combine(folders.ToArray());
+        }
+
+        public string? GetBonusFolder() {
+            switch (ShowID?.Type)
+            {
+                case ShowType.Movie:
+                case ShowType.TV:
+                    return GetFolderName(this.Type ?? FeatureType.MainFeature);
+                default:
+                    throw new Exception();
+            }
+        }
+
+        public string GetFileName() {
+            string versionString = "";
+            if (MultiVersion != null)
+            {
+                versionString = $" - {MultiVersion}";
+            }
+
+            if (ShowID?.Type == ShowType.Movie)
+            {
+                string? bonusFolder = GetFolderName(this.Type ?? FeatureType.MainFeature);
+                if (bonusFolder != null)
+                {
+                    return $"{ExtraName ?? ""}{versionString}.mkv";
+                } else
+                {
+                    return $"{ShowName ?? ""} [{TmdbPrefix}{ShowID?.ID.ToString() ?? ""}]{versionString}.mkv";
+                }
+            } else if (ShowID?.Type == ShowType.TV)
+            {
+                string? bonusFolder = GetFolderName(this.Type ?? FeatureType.MainFeature);
+                if (bonusFolder != null)
+                {
+                    return $"{ExtraName ?? ""}{versionString}.mkv";
+                } else
+                {
+                    return $"{ShowName ?? ""} S{ShowID.Season}E{ShowID.Episode}{versionString}.mkv";
+                }
+            } else
+            {
+                throw new Exception();
+            }
+        }
+
+        private static string? GetFolderName(FeatureType type) {
+            switch (type)
+            {
+                case FeatureType.Extras: return "extras";
+                case FeatureType.Specials: return "specials";
+                case FeatureType.Shorts: return "shorts";
+                case FeatureType.Scenes: return "scenes";
+                case FeatureType.Featurettes: return "featurettes";
+                case FeatureType.BehindTheScenes: return "behind the scenes";
+                case FeatureType.DeletedScenes: return "deleted scenes";
+                case FeatureType.Interviews: return "interviews";
+                case FeatureType.Trailers: return "trailers";
+                default:
+                    return null;
+            }
+        }
 
         public void LoadFromJson(JsonData Data) {
             JsonObject obj = (JsonObject)Data;
@@ -85,10 +166,10 @@ namespace MakeMKV_Title_Decoder.Data
             FeatureType result;
             if (Enum.TryParse(obj.Load<JsonString>("Feature Type")?.Value ?? null, out result))
             {
-                this.FeatureType = result;
+                this.Type = result;
             } else
             {
-                this.FeatureType = null;
+                this.Type = null;
             }
 
             this.ExtraName = obj.Load<JsonString>("Extra Name")?.Value ?? null;
@@ -100,7 +181,7 @@ namespace MakeMKV_Title_Decoder.Data
             if (ShowID != null) obj["ID"] = ShowID.SaveToJson();
             if (this.ShowName != null) obj["Show Name"] = new JsonString(this.ShowName);
             if (this.MultiVersion != null) obj["Multi-Version"] = new JsonString(this.MultiVersion);
-            if (this.FeatureType != null) obj["Feature Type"] = new JsonString(this.FeatureType.ToString());
+            if (this.Type != null) obj["Feature Type"] = new JsonString(this.Type.ToString());
             if (this.ExtraName != null) obj["Extra Name"] = new JsonString(this.ExtraName);
 
             return obj;

@@ -30,6 +30,7 @@
             PlaylistListBox1 = new PlaylistListBox();
             imageList1 = new ImageList(components);
             panel1 = new Panel();
+            ExportSelectedBtn = new Button();
             ExportAllBtn = new Button();
             panel2 = new Panel();
             ApplyChangesBtn = new Button();
@@ -50,9 +51,7 @@
             MultiVersionCheckBox = new CheckBox();
             ShowNameTextBox = new TextBox();
             label5 = new Label();
-            CreateFolderBtn = new Button();
             OutputFolderLabel = new Label();
-            SelectOutputFolderBtn = new Button();
             panel3 = new Panel();
             TmdbIdLabel = new Label();
             EpisodeTextBox = new TextBox();
@@ -64,7 +63,7 @@
             label3 = new Label();
             label2 = new Label();
             TypeComboBox = new ComboBox();
-            ExportSelectedBtn = new Button();
+            button1 = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -125,6 +124,16 @@
             panel1.Size = new Size(452, 43);
             panel1.TabIndex = 0;
             // 
+            // ExportSelectedBtn
+            // 
+            ExportSelectedBtn.Location = new Point(124, 6);
+            ExportSelectedBtn.Name = "ExportSelectedBtn";
+            ExportSelectedBtn.Size = new Size(102, 23);
+            ExportSelectedBtn.TabIndex = 1;
+            ExportSelectedBtn.Text = "Export Selected";
+            ExportSelectedBtn.UseVisualStyleBackColor = true;
+            ExportSelectedBtn.Click += ExportSelectedBtn_Click;
+            // 
             // ExportAllBtn
             // 
             ExportAllBtn.Location = new Point(12, 6);
@@ -137,13 +146,12 @@
             // 
             // panel2
             // 
+            panel2.Controls.Add(button1);
             panel2.Controls.Add(ApplyChangesBtn);
             panel2.Controls.Add(OptionsPanel);
             panel2.Controls.Add(ShowNameTextBox);
             panel2.Controls.Add(label5);
-            panel2.Controls.Add(CreateFolderBtn);
             panel2.Controls.Add(OutputFolderLabel);
-            panel2.Controls.Add(SelectOutputFolderBtn);
             panel2.Controls.Add(panel3);
             panel2.Dock = DockStyle.Fill;
             panel2.Location = new Point(0, 0);
@@ -350,16 +358,6 @@
             label5.TabIndex = 14;
             label5.Text = "Show Name:";
             // 
-            // CreateFolderBtn
-            // 
-            CreateFolderBtn.Location = new Point(87, 242);
-            CreateFolderBtn.Name = "CreateFolderBtn";
-            CreateFolderBtn.Size = new Size(75, 23);
-            CreateFolderBtn.TabIndex = 13;
-            CreateFolderBtn.Text = "Create";
-            CreateFolderBtn.UseVisualStyleBackColor = true;
-            CreateFolderBtn.Click += CreateFolderBtn_Click;
-            // 
             // OutputFolderLabel
             // 
             OutputFolderLabel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -369,16 +367,6 @@
             OutputFolderLabel.Size = new Size(84, 15);
             OutputFolderLabel.TabIndex = 12;
             OutputFolderLabel.Text = "Output Folder:";
-            // 
-            // SelectOutputFolderBtn
-            // 
-            SelectOutputFolderBtn.Location = new Point(6, 242);
-            SelectOutputFolderBtn.Name = "SelectOutputFolderBtn";
-            SelectOutputFolderBtn.Size = new Size(75, 23);
-            SelectOutputFolderBtn.TabIndex = 11;
-            SelectOutputFolderBtn.Text = "Select";
-            SelectOutputFolderBtn.UseVisualStyleBackColor = true;
-            SelectOutputFolderBtn.Click += SelectOutputFolderBtn_Click;
             // 
             // panel3
             // 
@@ -486,15 +474,15 @@
             TypeComboBox.TabIndex = 5;
             TypeComboBox.SelectedIndexChanged += TypeComboBox_SelectedIndexChanged;
             // 
-            // ExportSelectedBtn
+            // button1
             // 
-            ExportSelectedBtn.Location = new Point(124, 6);
-            ExportSelectedBtn.Name = "ExportSelectedBtn";
-            ExportSelectedBtn.Size = new Size(102, 23);
-            ExportSelectedBtn.TabIndex = 1;
-            ExportSelectedBtn.Text = "Export Selected";
-            ExportSelectedBtn.UseVisualStyleBackColor = true;
-            ExportSelectedBtn.Click += ExportSelectedBtn_Click;
+            button1.Location = new Point(6, 242);
+            button1.Name = "button1";
+            button1.Size = new Size(97, 23);
+            button1.TabIndex = 18;
+            button1.Text = "Copy to Others";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
             // 
             // FileRenamerForm
             // 
@@ -537,9 +525,7 @@
         private Label label1;
         private Button TmdbBtn;
         private Button ExportAllBtn;
-        private Button SelectOutputFolderBtn;
         private Panel panel3;
-        private Button CreateFolderBtn;
         private Label OutputFolderLabel;
         private TextBox ShowNameTextBox;
         private Label label5;
@@ -560,5 +546,6 @@
         private Label ExtraName;
         private TextBox ExtraNameTextBox;
         private Button ExportSelectedBtn;
+        private Button button1;
     }
 }

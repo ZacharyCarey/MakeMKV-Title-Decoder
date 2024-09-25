@@ -176,7 +176,8 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
         public void DeleteFileAndTracks(AppendedFile file) {
             // Cleanup any appended files (if needed)
-            foreach(var appended in file.AppendedFiles)
+            List<AppendedFile> temp = new(file.AppendedFiles);
+            foreach(var appended in temp)
             {
                 DeleteFileAndTracks(appended);
             }
