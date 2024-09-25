@@ -31,6 +31,34 @@ namespace MakeMKV_Title_Decoder.Forms.TmdbBrowser {
             this.Episode = copy.Episode;
         }
 
+        public string GetTmdbWebsite() {
+            string addr = "https://www.themoviedb.org/";
+            if (this.Type == ShowType.Movie)
+            {
+                addr += "movie/";
+            } else if (this.Type == ShowType.TV)
+            {
+                addr += "tv/";
+            } else
+            {
+                return addr;
+            }
+
+            addr += $"{ID}/";
+
+            if (this.Season != null)
+            {
+                addr += $"season/{Season}/";
+                
+                if (this.Episode != null)
+                {
+                    addr += $"episode/{Episode}/";
+                }
+            }
+
+            return addr;
+        }
+
         public override string ToString() {
             List<string> strings = new();
             strings.Add($"{this.Type.ToString()}={this.ID}");

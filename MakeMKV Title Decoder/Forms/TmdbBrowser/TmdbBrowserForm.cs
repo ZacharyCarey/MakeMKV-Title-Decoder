@@ -19,14 +19,20 @@ namespace MakeMKV_Title_Decoder.Forms.TmdbBrowser {
         private bool RequireSeason;
         private bool RequireEpisode;
 
-        public TmdbBrowserForm(bool restoreLastPage, bool requireSeason, bool requireEpisode) {
+        public TmdbBrowserForm(bool restoreLastPage, bool requireSeason, bool requireEpisode, TmdbID? defaultPage) {
             InitializeComponent();
 
             if (restoreLastPage && LastPage != null)
             {
                 WebView1.Source = LastPage;
             } else {
-                WebView1.Source = new Uri(TmdbHome);
+                if (defaultPage != null)
+                {
+                    WebView1.Source = new Uri(defaultPage.GetTmdbWebsite());
+                } else
+                {
+                    WebView1.Source = new Uri(TmdbHome);
+                }
             }
             
             this.DialogResult = DialogResult.None;

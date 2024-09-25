@@ -120,7 +120,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         }
 
         private void TmdbBtn_Click(object sender, EventArgs e) {
-            var form = new TmdbBrowserForm(!FirstTmdb, false, false);
+            var form = new TmdbBrowserForm(/*!FirstTmdb*/false, false, false, ParseID());
             FirstTmdb = false;
             if (form.ShowDialog() == DialogResult.OK)
             {

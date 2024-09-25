@@ -68,7 +68,6 @@ namespace MakeMKV_Title_Decoder.Data
         public FeatureType? Type;
         public string? ExtraName;
 
-
         public string GetFolderPath() {
             List<string> folders = new();
 
