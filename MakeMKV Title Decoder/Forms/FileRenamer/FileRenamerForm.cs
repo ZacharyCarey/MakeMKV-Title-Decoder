@@ -367,8 +367,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                             optional = $" {Renames.Disc.Data.SetNumber?.ToString() ?? "_"} of {Renames.Disc.Data.NumberOfSets?.ToString() ?? "_"}";
                         }
 
-                        string file = Path.Combine(fullPath, ".metadata", $"{Utils.GetFileSafeName($"{Renames.Disc.Identity.Title}{optional}")}.json");
-                        Directory.CreateDirectory(Path.Combine(fullPath, ".metadata"));
+                        string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Utils.GetFileSafeName($"{Renames.Disc.Identity.Title}{optional}")}.json");
+                        Directory.CreateDirectory(Path.Combine(rootFolder, outputFolder, ".metadata"));
                         if (File.Exists(file))
                         {
                             File.Delete(file);
