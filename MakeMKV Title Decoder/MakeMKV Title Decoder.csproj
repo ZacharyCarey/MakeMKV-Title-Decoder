@@ -36,7 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DiscUtils" Version="0.16.13" />
     <PackageReference Include="JsonSerializable" Version="1.2.5" />
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.0" />
@@ -45,6 +44,30 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="libs\ffmpeg\bin\ffmpeg.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\bin\ffplay.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\bin\ffprobe.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\presets\libvpx-1080p.ffpreset">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\presets\libvpx-1080p50_60.ffpreset">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\presets\libvpx-360p.ffpreset">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\presets\libvpx-720p.ffpreset">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libs\ffmpeg\presets\libvpx-720p50_60.ffpreset">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="libs\MkvToolNix\lib\mkvextract.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

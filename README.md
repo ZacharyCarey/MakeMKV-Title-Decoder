@@ -29,3 +29,6 @@ When "Movie" is selected, the main feature is considered the longest file in the
 When "TV" is selected, the main feature is found, but deselected. Instead the individual files that make up that main feature are kept i.e. it tries to keep the individual episodes.
 If you would rather keep all the episodes as one long "play all" file, simply select "Movie" instead.
 
+# References
+http://www.mpucoder.com/DVD/
+https://en.wikipedia.org/wiki/DVD-Video

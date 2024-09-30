@@ -366,4 +366,4 @@ FodyWeavers.xsd
 MakeMKV Title Decoder/lib/mkvtoolnix/cache/
 
 #ffmpeg
-!MakeMKV Title Decoder/lib/ffmpeg/bin/
+!MakeMKV Title Decoder/lib/ffmpeg/bin/ffmpeg.exe
