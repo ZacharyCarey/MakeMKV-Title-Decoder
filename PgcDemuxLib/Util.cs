@@ -7,15 +7,28 @@ using System.Threading.Tasks;
 namespace PgcDemuxLib {
     internal static class Util {
 
-        public static int GetNbytes(int nNumber, ReadOnlySpan<byte> address) {
-            int ret, i;
+        public static int GetNbytes(this byte[] buffer, int index, int count)
+        {
+            return GetNbytes(buffer.AsSpan(index, count));
+        }
 
-            for (i = ret = 0; i < nNumber; i++)
+        public static int GetNbytes(this ReadOnlySpan<byte> buffer) {
+            uint result = 0;
+
+            for (int i = 0; i < buffer.Length; i++)
             {
-                ret = ret * 256 + address[i];
+                //result = result * 256 + buffer[i];
+                result = (result << 8) | buffer[i];
             }
 
-            return ret;
+            return (int)result;
+        }
+
+        public static string GetString(this byte[] buffer, int index = -1, int count = -1)
+        {
+            if (index < 0) index = 0;
+            if (count < 0) count = buffer.Length;
+            return Encoding.ASCII.GetString(buffer, index, count);
         }
 
         public static int BCD2Dec(int BCD) {
@@ -75,7 +88,7 @@ namespace PgcDemuxLib {
         public static bool IsSynch(Span<byte> buffer) {
             int startcode;
 
-            startcode = GetNbytes(4, buffer);
+            startcode = GetNbytes(buffer.Slice(0, 4));
 
             if (startcode == 0x1BA) return true;
             else return false;
@@ -85,7 +98,7 @@ namespace PgcDemuxLib {
 
             int startcode;
 
-            startcode = GetNbytes(4, buffer.Slice(14));
+            startcode = GetNbytes(buffer.Slice(14, 4));
 
             if (startcode == 443) return true;
             else return false;
@@ -109,7 +122,7 @@ namespace PgcDemuxLib {
         public static bool IsAudio(ReadOnlySpan<byte> buffer) {
             int startcode, st_i;
 
-            startcode = GetNbytes(4, buffer.Slice(14));
+            startcode = GetNbytes(buffer.Slice(14, 4));
             st_i = 0x17 + buffer[0x16];
             /*
             0x80-0x87: ac3
@@ -144,7 +157,7 @@ namespace PgcDemuxLib {
 
             int startcode, st_i;
 
-            startcode = GetNbytes(4, buffer.Slice(14));
+            startcode = GetNbytes(buffer.Slice(14, 4));
             st_i = 0x17 + buffer[0x16];
 
 
@@ -184,7 +197,7 @@ namespace PgcDemuxLib {
 
             int startcode;
 
-            startcode = GetNbytes(4, buffer.Slice(14));
+            startcode = GetNbytes(buffer.Slice(14, 4));
 
             if (startcode == 480) return true;
             else return false;
@@ -220,7 +233,7 @@ namespace PgcDemuxLib {
 
             int startcode;
 
-            startcode = GetNbytes(4, buffer.Slice(14));
+            startcode = GetNbytes(buffer.Slice(14, 4));
 
             if ((startcode >= 0x1c0 && startcode <= 0x1c7) ||
                 (startcode >= 0x1d0 && startcode <= 0x1d7))
@@ -233,11 +246,64 @@ namespace PgcDemuxLib {
 
             int startcode;
 
-            startcode = GetNbytes(4, buffer.Slice(14));
+            startcode = GetNbytes(buffer.Slice(14, 4));
 
             if (startcode == 446) return true;
             else return false;
 
+        }
+
+        public static void FillWithNew<T>(this T[] array) where T : new()
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = new T();
+            }
+        }
+
+
+        public static bool TryParseEnum<T>(int input, out T value) where T : struct, Enum
+        {
+            if (!Enum.IsDefined(typeof(T), input))
+            {
+                value = default(T);
+                return false;
+            }
+
+            value = (T)Enum.ToObject(typeof(T), input);
+            return true;
+        }
+
+        public static bool TryParseEnum<T>(string input, out T value) where T : struct, Enum
+        {
+            if (!Enum.IsDefined(typeof(T), input))
+            {
+                value = default(T);
+                return false;
+            }
+
+            value = (T)Enum.ToObject(typeof(T), input);
+            return true;
+        }
+
+        public static T ParseEnum<T>(int input) where T : struct, Enum
+        {
+            if (!Enum.IsDefined(typeof(T), input))
+            {
+                throw new Exception($"Value of '{input}' is not a valid member of enum '{nameof(T)}'.");
+            }
+
+            return (T)Enum.ToObject(typeof(T), input);
+        }
+
+        public static T ParseEnum<T>(string input) where T : struct, Enum
+        {
+            if (!Enum.IsDefined(typeof(T), input))
+            {
+                throw new Exception($"Value of '{input}' is not a valid member of enum '{nameof(T)}'.");
+            }
+
+            return (T)Enum.ToObject(typeof(T), input);
         }
     }
 }

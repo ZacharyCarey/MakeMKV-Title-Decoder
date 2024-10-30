@@ -1,23 +1,13 @@
-﻿using System;
+﻿using PgcDemuxLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace PgcDemuxLib {
-    internal class ADT_CELL_LIST {
-        public int VID, CID;
-        public int iSize;
-        public int iIniSec, iEndSec;
-        public UInt64 dwDuration;
-    }
-
-    internal class ADT_VID_LIST {
-        public int VobID;
-        public int iSize;
-        public int NumberOfCells;
-        public UInt64 dwDuration;
-    }
 
     internal enum AudioType {
         UNK = 0,
@@ -35,11 +25,6 @@ namespace PgcDemuxLib {
         CID = 2
     }
 
-    public enum DemuxingDomain {
-        Titles = 1,
-        Menus = 0
-    }
-
     public class PgcDemux {
 
         const string PGCDEMUX_VERSION = "1.2.0.5";
@@ -49,15 +34,14 @@ namespace PgcDemuxLib {
         const int MAX_MPGC = 32768;
         const int MODUPDATE = 100;
         const int MAXLOOKFORAUDIO = 10000; // Max number of explored packs in audio delay check
+        const int SECTOR_SIZE = 2048;
+        const int CELL_SIZE = 24;
 
         private static byte[] pcmheader = new byte[44] {
             0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45, 0x66, 0x6D, 0x74, 0x20,
             0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x80, 0xBB, 0x00, 0x00, 0x70, 0x17, 0x00, 0x00,
             0x04, 0x00, 0x10, 0x00, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00, 0x00
         };
-
-        byte[] m_pIFO = null;
-        byte[] m_buffer = new byte[2050];
 
         bool m_bInProcess, m_bAbort, m_bCLI;
 
@@ -77,11 +61,6 @@ namespace PgcDemuxLib {
         bool m_bCheckCellt;
         bool m_bCheckEndTime;
 
-        string m_csInputIFO;
-        string m_csInputPath;
-        //string m_csOutputPath;
-        int NumberOfPGCsInTitles, NumberOfPGCsInMenus;
-        int m_iIFOlen;
         public int m_nSelPGC;
         public int m_nSelAng;
         public int m_nVid, m_nCid;
@@ -90,40 +69,11 @@ namespace PgcDemuxLib {
         int m_nVobout, m_nVidout, m_nCidout;
         int m_nCurrVid;     // Used to write in different VOB files, one per VID
         public DemuxingDomain m_iDomain;
-        int NumberOfVideoPacks, NumberOfAudioPacks, NumberOfSubPacks, NumberOfNavPacks, NumberOfPadPacks, NumberOfUnknownPacks;
+        int m_nVidPacks, m_nAudPacks, m_nSubPacks, m_nNavPacks, m_nPadPacks, m_nUnkPacks;
         bool m_bVMGM;
-        int TotalNumberOfFrames;
+        int m_nTotalFrames;
         bool bNewCell;
         int m_nLastVid, m_nLastCid;
-
-        internal List<ADT_CELL_LIST> CellsInTitles = new();
-        internal List<ADT_CELL_LIST> CellsInMenus = new();
-        internal List<ADT_VID_LIST> VobIDsInTitles = new();
-        internal List<ADT_VID_LIST> VobIDsInMenus = new();
-
-        int m_iVTS_PTT_SRPT, m_iVTS_PGCI, m_iVTS_C_ADT;
-        int m_iVTS_VOBU_ADMAP, m_iVTS_TMAPTI;
-        int m_iVTSM_PGCI, m_iVTSM_C_ADT, m_iVTSM_VOBU_ADMAP;
-        int[] m_iVTS_PGC = new int[MAX_PGC];
-        int[] m_C_PBKT = new int[MAX_PGC];
-        int[] m_C_POST = new int[MAX_PGC];
-        int[] NumberOfCells = new int[MAX_PGC];
-        int[] m_nAngles = new int[MAX_PGC];
-
-        int[] m_iVTSM_LU = new int[MAX_LU];
-        int[] m_nIniPGCinLU = new int[MAX_LU];
-        int[] m_nPGCinLU = new int[MAX_LU];
-        int[] m_iMENU_PGC = new int[MAX_MPGC];
-        int[] m_M_C_PBKT = new int[MAX_MPGC];
-        int[] m_M_C_POST = new int[MAX_MPGC];
-        int[] NumberOfMenuCells = new int[MAX_MPGC];
-        int[] m_nLU_MPGC = new int[MAX_MPGC];
-
-        UInt64[] m_dwDuration = new UInt64[MAX_PGC];
-        UInt64[] m_dwMDuration = new UInt64[MAX_MPGC];
-
-        Int64[] m_i64VOBSize = new Int64[10];
-        int m_nVobFiles;
 
         Stream[] fsub = new Stream[32];
         Stream[] faud = new Stream[8];
@@ -138,18 +88,17 @@ namespace PgcDemuxLib {
         int m_iSubPTS, m_iAudPTS, m_iVidPTS, m_iNavPTS0_old, m_iNavPTS0, m_iNavPTS1_old, m_iNavPTS1;
         int m_iOffsetPTS;
 
-        int nLU, nAbsPGC;
-        int m_nLUs;
-
         // Only in PCM
         int[] nbitspersample = new int[8];
         int[] nchannels = new int[8];
         int[] fsample = new int[8];
 
+        public Ifo ifo { get; private set; }
+        private byte[] m_buffer = new byte[2050];
+
         public PgcDemux(string ifo_path, IfoOptions options) {
             int i, k;
 
-            m_pIFO = null;
             for (i = 0; i < 32; i++) fsub[i] = null;
             for (i = 0; i < 8; i++) faud[i] = null;
             fvob = fvid = null;
@@ -157,7 +106,6 @@ namespace PgcDemuxLib {
             m_bInProcess = false;
             m_bCLI = false;
             m_bAbort = false;
-            m_bVMGM = false;
 
             m_bCheckAud = m_bCheckSub = m_bCheckLog = m_bCheckCellt = true;
             m_bCheckVid = m_bCheckVob = m_bCheckVob2 = m_bCheckEndTime = false;
@@ -247,30 +195,16 @@ namespace PgcDemuxLib {
             m_bCheckEndTime = options.IncludeEndTime;
             m_iDomain = options.DomainType;
 
-            m_csInputIFO = ifo_path;
-
-            m_csInputPath = Path.GetDirectoryName(m_csInputIFO);
-
-            m_csInputIFO = m_csInputIFO.ToUpper();
-            //m_csOutputPath = m_csOutputPath.ToUpper();
-            m_csInputPath = m_csInputPath.ToUpper();
-
-            csAux = Path.GetFileName(m_csInputIFO); //m_csInputIFO.Right(m_csInputIFO.GetLength() - m_csInputIFO.ReverseFind('\\') - 1);
-            csAux1 = csAux.Substring(0, 4);
-            csAux = m_csInputIFO.Substring(m_csInputIFO.Length - 6);
-            csAux2 = m_csInputIFO.Substring(m_csInputIFO.Length - 12);
-            if ((csAux != "_0.IFO" || csAux1 != "VTS_") && csAux2 != "VIDEO_TS.IFO")
+            ifo = Ifo.TryParseFile(ifo_path);
+            if (ifo == null)
             {
-                throw new Exception("Invalid input file!");
+                throw new Exception("Could not decode IFO file.");
             }
 
-            if (csAux2 == "VIDEO_TS.IFO")
+            if (ifo.IsVideoManager)
             {
-                m_bVMGM = true;
                 m_iDomain = DemuxingDomain.Menus;
-            } else m_bVMGM = false;
-
-            ReadIFO();
+            }
         }
 
         public static PgcDemux? TryOpenFile(string input, IfoOptions options) {
@@ -280,6 +214,7 @@ namespace PgcDemuxLib {
             } catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return null;
             }
         }
@@ -298,13 +233,13 @@ namespace PgcDemuxLib {
                 int nSelVid = -1;
                 if (m_iDomain == DemuxingDomain.Titles)
                 {
-                    for (int k = 0; k < VobIDsInTitles.Count && nSelVid == -1; k++)
-                        if (VobIDsInTitles[k].VobID == m_nVid)
+                    for (int k = 0; k < ifo.m_AADT_Vid_list.Count && nSelVid == -1; k++)
+                        if (ifo.m_AADT_Vid_list[k].VobID == m_nVid)
                             nSelVid = k;
                 } else
                 {
-                    for (int k = 0; k < VobIDsInMenus.Count && nSelVid == -1; k++)
-                        if (VobIDsInMenus[k].VobID == m_nVid)
+                    for (int k = 0; k < ifo.m_MADT_Vid_list.Count && nSelVid == -1; k++)
+                        if (ifo.m_MADT_Vid_list[k].VobID == m_nVid)
                             nSelVid = k;
                 }
                 if (nSelVid == -1)
@@ -322,13 +257,13 @@ namespace PgcDemuxLib {
                 int nSelCid = -1;
                 if (m_iDomain == DemuxingDomain.Titles)
                 {
-                    for (int k = 0; k < CellsInTitles.Count && nSelCid == -1; k++)
-                        if (CellsInTitles[k].VID == m_nVid && CellsInTitles[k].CID == m_nCid)
+                    for (int k = 0; k < ifo.m_AADT_Cell_list.Count && nSelCid == -1; k++)
+                        if (ifo.m_AADT_Cell_list[k].VobID == m_nVid && ifo.m_AADT_Cell_list[k].CellID == m_nCid)
                             nSelCid = k;
                 } else
                 {
-                    for (int k = 0; k < CellsInMenus.Count && nSelCid == -1; k++)
-                        if (CellsInMenus[k].VID == m_nVid && CellsInMenus[k].CID == m_nCid)
+                    for (int k = 0; k < ifo.m_AADT_Cell_list.Count && nSelCid == -1; k++)
+                        if (ifo.m_AADT_Cell_list[k].VobID == m_nVid && ifo.m_AADT_Cell_list[k].CellID == m_nCid)
                             nSelCid = k;
                 }
                 if (nSelCid == -1)
@@ -346,460 +281,6 @@ namespace PgcDemuxLib {
             }
         }
 
-        private void ReadIFO() {
-            string csAux, csAux2;
-            int i, j, k, nCell, nVIDs;
-            int kk = 0;
-            ADT_CELL_LIST myADT_Cell;
-            ADT_VID_LIST myADT_Vid;
-            int nTotADT, nADT, VidADT, CidADT;
-            int iArraysize;
-            bool bAlready, bEndAngle;
-            Stream in_;
-            int iIniSec, iEndSec;
-
-            FileInfo statbuf;
-            int iSize, iCat;
-            int iIFOSize;
-
-            statbuf = new FileInfo(m_csInputIFO);
-            iIFOSize = (int)statbuf.Length;
-
-            if (iIFOSize > MAXLENGTH)
-            {
-                throw new Exception($"IFO too big {m_csInputIFO}");
-            }
-
-            try
-            {
-                in_ = File.OpenRead(m_csInputIFO);
-            } catch (Exception)
-            {
-                in_ = null;
-            }
-            if (in_ == null)
-            {
-                throw new Exception($"Unable to open {m_csInputIFO}");
-            }
-
-            m_pIFO = new byte[iIFOSize + 2048];
-
-            // Read IFO
-
-            m_iIFOlen = in_.Read(m_pIFO, 0, Math.Min(MAXLENGTH, m_pIFO.Length));
-
-            CellsInTitles.Clear();
-            CellsInMenus.Clear();
-            VobIDsInTitles.Clear();
-            VobIDsInMenus.Clear();
-
-
-            // Get Title Cells
-            if (m_bVMGM)
-            {
-                m_iVTS_PTT_SRPT = 0;
-                m_iVTS_PGCI = 0;
-                m_iVTSM_PGCI = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xC8));
-                m_iVTS_TMAPTI = 0;
-                m_iVTSM_C_ADT = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xD8));
-                m_iVTSM_VOBU_ADMAP = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xDC));
-                m_iVTS_C_ADT = 0;
-                m_iVTS_VOBU_ADMAP = 0;
-            } else
-            {
-                m_iVTS_PTT_SRPT = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xC8));
-                m_iVTS_PGCI = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xCC));
-                m_iVTSM_PGCI = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xD0));
-                m_iVTS_TMAPTI = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xD4));
-                m_iVTSM_C_ADT = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xD8));
-                m_iVTSM_VOBU_ADMAP = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xDC));
-                m_iVTS_C_ADT = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xE0));
-                m_iVTS_VOBU_ADMAP = 2048 * Util.GetNbytes(4, m_pIFO.AsSpan(0xE4));
-            }
-            if (m_bVMGM)
-                NumberOfPGCsInTitles = 0;
-            else
-                NumberOfPGCsInTitles = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTS_PGCI));
-
-
-            // Title PGCs	
-            if (NumberOfPGCsInTitles > MAX_PGC)
-            {
-                throw new Exception($"ERROR: Max PGCs limit ({MAX_PGC}) has been reached.");
-            }
-            for (k = 0; k < NumberOfPGCsInTitles; k++)
-            {
-                m_iVTS_PGC[k] = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTS_PGCI + 0x04 + (k + 1) * 8)) + m_iVTS_PGCI;
-                m_dwDuration[k] = (ulong)Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTS_PGC[k] + 4));
-
-                m_C_PBKT[k] = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTS_PGC[k] + 0xE8));
-                if (m_C_PBKT[k] != 0) m_C_PBKT[k] += m_iVTS_PGC[k];
-
-                m_C_POST[k] = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTS_PGC[k] + 0xEA));
-                if (m_C_POST[k] != 0) m_C_POST[k] += m_iVTS_PGC[k];
-
-                NumberOfCells[k] = m_pIFO[m_iVTS_PGC[k] + 3];
-
-
-                m_nAngles[k] = 1;
-
-                for (nCell = 0, bEndAngle = false; nCell < NumberOfCells[k] && bEndAngle == false; nCell++)
-                {
-                    iCat = Util.GetNbytes(1, m_pIFO.AsSpan(m_C_PBKT[k] + 24 * nCell));
-                    iCat = iCat & 0xF0;
-                    //			0101=First; 1001=Middle ;	1101=Last
-                    if (iCat == 0x50)
-                        m_nAngles[k] = 1;
-                    else if (iCat == 0x90)
-                        m_nAngles[k]++;
-                    else if (iCat == 0xD0)
-                    {
-                        m_nAngles[k]++;
-                        bEndAngle = true;
-                    }
-                }
-            }
-
-
-            // Menu PGCs
-            if (m_iVTSM_PGCI == 0)
-                m_nLUs = 0;
-            else
-                m_nLUs = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTSM_PGCI));
-
-            NumberOfPGCsInMenus = 0;
-            if (m_nLUs > MAX_LU)
-            {
-                throw new Exception($"ERROR: Max LUs limit ({MAX_LU}) has been reached.");
-            }
-
-            for (nLU = 0; nLU < m_nLUs; nLU++)
-            {
-                m_iVTSM_LU[nLU] = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTSM_PGCI + 0x04 + (nLU + 1) * 8)) + m_iVTSM_PGCI;
-                m_nPGCinLU[nLU] = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTSM_LU[nLU]));
-                m_nIniPGCinLU[nLU] = NumberOfPGCsInMenus;
-
-                for (j = 0; j < m_nPGCinLU[nLU]; j++)
-                {
-                    if ((NumberOfPGCsInMenus + m_nPGCinLU[nLU]) > MAX_MPGC)
-                    {
-                        throw new Exception($"ERROR: Max MPGCs limit ({MAX_MPGC}) has been reached.");
-                    }
-                    nAbsPGC = j + NumberOfPGCsInMenus;
-                    m_nLU_MPGC[nAbsPGC] = nLU;
-                    m_iMENU_PGC[nAbsPGC] = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTSM_LU[nLU] + 0x04 + (j + 1) * 8)) + m_iVTSM_LU[nLU];
-
-                    m_M_C_PBKT[nAbsPGC] = Util.GetNbytes(2, m_pIFO.AsSpan(m_iMENU_PGC[nAbsPGC] + 0xE8));
-                    if (m_M_C_PBKT[nAbsPGC] != 0) m_M_C_PBKT[nAbsPGC] += m_iMENU_PGC[nAbsPGC];
-                    m_M_C_POST[nAbsPGC] = Util.GetNbytes(2, m_pIFO.AsSpan(m_iMENU_PGC[nAbsPGC] + 0xEA));
-                    if (m_M_C_POST[nAbsPGC] != 0) m_M_C_POST[nAbsPGC] += m_iMENU_PGC[nAbsPGC];
-
-                    NumberOfMenuCells[nAbsPGC] = m_pIFO[m_iMENU_PGC[nAbsPGC] + 3];
-
-                    if ((m_M_C_PBKT[nAbsPGC] == 0 || m_M_C_POST[nAbsPGC] == 0) && NumberOfMenuCells[nAbsPGC] != 0)
-                    // There is something wrong...
-                    {
-                        NumberOfMenuCells[nAbsPGC] = 0;
-                        throw new Exception($"ERROR: There is something wrong in number of cells in LU {nLU:00}, Menu PGC {j:00}.");
-                    }
-                    m_dwMDuration[nAbsPGC] = (ulong)Util.GetNbytes(4, m_pIFO.AsSpan(m_iMENU_PGC[nAbsPGC] + 4));
-
-                } // For PGCs
-                NumberOfPGCsInMenus += m_nPGCinLU[nLU];
-            }
-
-
-            ///////////// VTS_C_ADT  ///////////////////////
-            if (m_iVTS_C_ADT == 0) nTotADT = 0;
-            else
-            {
-                nTotADT = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTS_C_ADT + 4));
-                nTotADT = (nTotADT - 7) / 12;
-            }
-
-            //Cells
-            for (nADT = 0; nADT < nTotADT; nADT++)
-            {
-                VidADT = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTS_C_ADT + 8 + 12 * nADT));
-                CidADT = m_pIFO[m_iVTS_C_ADT + 8 + 12 * nADT + 2];
-
-                iArraysize = CellsInTitles.Count;
-                for (k = 0, bAlready = false; k < iArraysize; k++)
-                {
-                    if (CidADT == CellsInTitles[k].CID &&
-                        VidADT == CellsInTitles[k].VID)
-                    {
-                        bAlready = true;
-                        kk = k;
-                    }
-                }
-                if (!bAlready)
-                {
-                    myADT_Cell = new();
-                    myADT_Cell.CID = CidADT;
-                    myADT_Cell.VID = VidADT;
-                    myADT_Cell.iSize = 0;
-                    myADT_Cell.iIniSec = 0x7fffffff;
-                    myADT_Cell.iEndSec = 0;
-                    kk = InsertCell(myADT_Cell, DemuxingDomain.Titles);
-                    //			m_AADT_Cell_list.SetAtGrow(iArraysize,myADT_Cell);
-                    //			kk=iArraysize;
-                }
-                iIniSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTS_C_ADT + 8 + 12 * nADT + 4));
-                iEndSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTS_C_ADT + 8 + 12 * nADT + 8));
-                if (iIniSec < CellsInTitles[kk].iIniSec) CellsInTitles[kk].iIniSec = iIniSec;
-                if (iEndSec > CellsInTitles[kk].iEndSec) CellsInTitles[kk].iEndSec = iEndSec;
-                iSize = (iEndSec - iIniSec + 1);
-                CellsInTitles[kk].iSize += (iEndSec - iIniSec + 1);
-            }
-
-            ///////////// VTSM_C_ADT  ///////////////////////
-            if (m_iVTSM_C_ADT == 0) nTotADT = 0;
-            else
-            {
-                nTotADT = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTSM_C_ADT + 4));
-                nTotADT = (nTotADT - 7) / 12;
-            }
-
-            // Cells
-            for (nADT = 0; nADT < nTotADT; nADT++)
-            {
-                VidADT = Util.GetNbytes(2, m_pIFO.AsSpan(m_iVTSM_C_ADT + 8 + 12 * nADT));
-                CidADT = m_pIFO[m_iVTSM_C_ADT + 8 + 12 * nADT + 2];
-
-                iArraysize = CellsInMenus.Count;
-                for (k = 0, bAlready = false; k < iArraysize; k++)
-                {
-                    if (CidADT == CellsInMenus[k].CID &&
-                        VidADT == CellsInMenus[k].VID)
-                    {
-                        bAlready = true;
-                        kk = k;
-                    }
-                }
-                if (!bAlready)
-                {
-                    myADT_Cell = new();
-                    myADT_Cell.CID = CidADT;
-                    myADT_Cell.VID = VidADT;
-                    myADT_Cell.iSize = 0;
-                    myADT_Cell.iIniSec = 0x7fffffff;
-                    myADT_Cell.iEndSec = 0;
-                    kk = InsertCell(myADT_Cell, DemuxingDomain.Menus);
-                    //			m_MADT_Cell_list.SetAtGrow(iArraysize,myADT_Cell);
-                    //			kk=iArraysize;
-                }
-                iIniSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTSM_C_ADT + 8 + 12 * nADT + 4));
-                iEndSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_iVTSM_C_ADT + 8 + 12 * nADT + 8));
-                if (iIniSec < CellsInMenus[kk].iIniSec) CellsInMenus[kk].iIniSec = iIniSec;
-                if (iEndSec > CellsInMenus[kk].iEndSec) CellsInMenus[kk].iEndSec = iEndSec;
-                iSize = (iEndSec - iIniSec + 1);
-                CellsInMenus[kk].iSize += (iEndSec - iIniSec + 1);
-            }
-
-            FillDurations();
-
-            //////////////////////////////////////////////////////////////	
-            /////////////   VIDs
-            // VIDs in Titles
-            iArraysize = CellsInTitles.Count;
-            for (i = 0; i < iArraysize; i++)
-            {
-                VidADT = CellsInTitles[i].VID;
-
-                nVIDs = VobIDsInTitles.Count;
-                for (k = 0, bAlready = false; k < nVIDs; k++)
-                {
-                    if (VidADT == VobIDsInTitles[k].VobID)
-                    {
-                        bAlready = true;
-                        kk = k;
-                    }
-                }
-                if (!bAlready)
-                {
-                    myADT_Vid = new();
-                    myADT_Vid.VobID = VidADT;
-                    myADT_Vid.iSize = 0;
-                    myADT_Vid.NumberOfCells = 0;
-                    myADT_Vid.dwDuration = 0;
-                    VobIDsInTitles.Add(myADT_Vid);
-                    kk = nVIDs;
-                }
-                VobIDsInTitles[kk].iSize += CellsInTitles[i].iSize;
-                VobIDsInTitles[kk].NumberOfCells++;
-                VobIDsInTitles[kk].dwDuration = Util.AddDuration(CellsInTitles[i].dwDuration, VobIDsInTitles[kk].dwDuration);
-            }
-
-            // VIDs in Menus
-            iArraysize = CellsInMenus.Count;
-            for (i = 0; i < iArraysize; i++)
-            {
-                VidADT = CellsInMenus[i].VID;
-
-                nVIDs = VobIDsInMenus.Count;
-                for (k = 0, bAlready = false; k < nVIDs; k++)
-                {
-                    if (VidADT == VobIDsInMenus[k].VobID)
-                    {
-                        bAlready = true;
-                        kk = k;
-                    }
-                }
-                if (!bAlready)
-                {
-                    myADT_Vid = new();
-                    myADT_Vid.VobID = VidADT;
-                    myADT_Vid.iSize = 0;
-                    myADT_Vid.NumberOfCells = 0;
-                    myADT_Vid.dwDuration = 0;
-                    VobIDsInMenus.Add(myADT_Vid);
-                    kk = nVIDs;
-                }
-                VobIDsInMenus[kk].iSize += CellsInMenus[i].iSize;
-                VobIDsInMenus[kk].NumberOfCells++;
-                VobIDsInMenus[kk].dwDuration = Util.AddDuration(CellsInMenus[i].dwDuration, VobIDsInMenus[kk].dwDuration);
-            }
-
-            // Fill VOB file size
-            if (m_bVMGM)
-            {
-                m_nVobFiles = 0;
-
-                for (k = 0; k < 10; k++)
-                    m_i64VOBSize[k] = 0;
-
-                csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 3);
-                csAux = csAux2 + "VOB";
-                statbuf = new FileInfo(csAux);
-                m_i64VOBSize[0] = statbuf.Length;
-            } else
-            {
-                for (k = 0; k < 10; k++)
-                {
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
-                    csAux = $"{k}.VOB";
-                    csAux = csAux2 + csAux;
-                    if (File.Exists(csAux))
-                    {
-                        statbuf = new FileInfo(csAux);
-                        m_i64VOBSize[k] = statbuf.Length;
-                        m_nVobFiles = k;
-                    } else
-                        m_i64VOBSize[k] = 0;
-                }
-            }
-        }
-
-        int InsertCell(ADT_CELL_LIST myADT_Cell, DemuxingDomain iDomain) {
-            int iArraysize, i;
-            int ii = -1;
-            bool bIsHigher;
-
-            if (iDomain == DemuxingDomain.Titles)
-            {
-                iArraysize = CellsInTitles.Count;
-                ii = iArraysize;
-                for (i = 0, bIsHigher = true; i < iArraysize && bIsHigher; i++)
-                {
-                    if (myADT_Cell.VID < CellsInTitles[i].VID) { ii = i; bIsHigher = false; } else if (myADT_Cell.VID > CellsInTitles[i].VID) bIsHigher = true;
-                    else
-                    {
-                        if (myADT_Cell.CID < CellsInTitles[i].CID) { ii = i; bIsHigher = false; } else if (myADT_Cell.CID > CellsInTitles[i].CID) bIsHigher = true;
-                    }
-
-                }
-                CellsInTitles.Insert(ii, myADT_Cell);
-            }
-            if (iDomain == DemuxingDomain.Menus)
-            {
-                iArraysize = CellsInMenus.Count;
-                ii = iArraysize;
-                for (i = 0, bIsHigher = true; i < iArraysize && bIsHigher; i++)
-                {
-                    if (myADT_Cell.VID < CellsInMenus[i].VID) { ii = i; bIsHigher = false; } else if (myADT_Cell.VID > CellsInMenus[i].VID) bIsHigher = true;
-                    else
-                    {
-                        if (myADT_Cell.CID < CellsInMenus[i].CID) { ii = i; bIsHigher = false; } else if (myADT_Cell.CID > CellsInMenus[i].CID) bIsHigher = true;
-                    }
-
-                }
-                //		if (i>0 && bIsHigher) i--;
-                CellsInMenus.Insert(ii, myADT_Cell);
-            }
-            return ii;
-        }
-
-        void FillDurations() {
-            int iArraysize;
-            int i, j, k;
-            int VIDa, CIDa, VIDb, CIDb;
-            bool bFound;
-            int iVideoAttr, iFormat;
-
-
-            iArraysize = CellsInTitles.Count;
-
-            for (i = 0; i < iArraysize; i++)
-            {
-                VIDb = CellsInTitles[i].VID;
-                CIDb = CellsInTitles[i].CID;
-                for (j = 0, bFound = false; j < NumberOfPGCsInTitles && !bFound; j++)
-                {
-                    for (k = 0; k < NumberOfCells[j]; k++)
-                    {
-                        VIDa = Util.GetNbytes(2, m_pIFO.AsSpan(m_C_POST[j] + k * 4));
-                        CIDa = m_pIFO[m_C_POST[j] + k * 4 + 3];
-                        if (VIDa == VIDb && CIDa == CIDb)
-                        {
-                            bFound = true;
-                            CellsInTitles[i].dwDuration = (ulong)Util.GetNbytes(4, m_pIFO.AsSpan(m_C_PBKT[j] + 0x18 * k + 4));
-                        }
-                    }
-                }
-                if (!bFound)
-                {
-                    iVideoAttr = m_pIFO[0x200] * 256 + m_pIFO[0x201];
-                    iFormat = (iVideoAttr & 0x1000) >> 12;
-                    if (iFormat == 0) // NTSC
-                        CellsInTitles[i].dwDuration = 0xC0;
-                    else // PAL
-                        CellsInTitles[i].dwDuration = 0x40;
-                }
-            }
-
-            iArraysize = CellsInMenus.Count;
-
-            for (i = 0; i < iArraysize; i++)
-            {
-                VIDb = CellsInMenus[i].VID;
-                CIDb = CellsInMenus[i].CID;
-                for (j = 0, bFound = false; j < NumberOfPGCsInMenus && !bFound; j++)
-                {
-                    for (k = 0; k < NumberOfMenuCells[j]; k++)
-                    {
-                        VIDa = Util.GetNbytes(2, m_pIFO.AsSpan(m_M_C_POST[j] + k * 4));
-                        CIDa = m_pIFO[m_M_C_POST[j] + k * 4 + 3];
-                        if (VIDa == VIDb && CIDa == CIDb)
-                        {
-                            bFound = true;
-                            CellsInMenus[i].dwDuration = (ulong)Util.GetNbytes(4, m_pIFO.AsSpan(m_M_C_PBKT[j] + 0x18 * k + 4));
-                        }
-                    }
-                }
-                if (!bFound)
-                {
-                    iVideoAttr = m_pIFO[0x100] * 256 + m_pIFO[0x101];
-                    iFormat = (iVideoAttr & 0x1000) >> 12;
-                    if (iFormat == 0) // NTSC
-                        CellsInMenus[i].dwDuration = 0xC0;
-                    else // PAL
-                        CellsInMenus[i].dwDuration = 0x40;
-                }
-            }
-
-        }
-
         bool Demux(string m_csOutputPath, int nPGC, int nAng, object? pDlg) {
             int nTotalSectors;
             int nSector, nCell;
@@ -807,18 +288,17 @@ namespace PgcDemuxLib {
             int CID, VID;
             Int64 i64IniSec, i64EndSec;
             Int64 i64sectors;
-            int nVobin = 0;
+            int nVobin = -1;
             string csAux, csAux2;
-            Stream in_;
-            Stream fout;
+            Stream in_, fout;
             Int64 i64;
             bool bMyCell;
             bool iRet;
             ulong dwCellDuration;
             int nFrames;
-            int nCurrAngle, iCat;
+            int nCurrAngle;
 
-            if (nPGC >= NumberOfPGCsInTitles)
+            if (nPGC >= ifo.m_nPGCs)
             {
                 Console.WriteLine("Error: PGC does not exist");
                 m_bInProcess = false;
@@ -831,69 +311,83 @@ namespace PgcDemuxLib {
 
             // Calculate  the total number of sectors
             nTotalSectors = 0;
-            iArraysize = CellsInTitles.Count;
-            for (nCell = nCurrAngle = 0; nCell < NumberOfCells[nPGC]; nCell++)
+            iArraysize = ifo.m_AADT_Cell_list.Count;
+            for (nCell = nCurrAngle = 0; nCell < ifo.m_nCells[nPGC]; nCell++)
             {
-                VID = Util.GetNbytes(2, m_pIFO.AsSpan(m_C_POST[nPGC] + 4 * nCell));
-                CID = m_pIFO[m_C_POST[nPGC] + 3 + 4 * nCell];
+                var cellPosInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPositionInformationTable[nCell];
+                VID = cellPosInfo.VobID;
+                CID = cellPosInfo.CellID;
 
-                iCat = m_pIFO[m_C_PBKT[nPGC] + 24 * nCell];
-                iCat = iCat & 0xF0;
+                var cellPlaybackInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPlaybackInformationTable[nCell];
+                var cellType = cellPlaybackInfo.CellType;
+                var blockType = cellPlaybackInfo.BlockType;
                 //		0101=First; 1001=Middle ;	1101=Last
-                if (iCat == 0x50)
+                bool isNormalCell = (cellType == CellType.Normal && blockType == BlockType.Normal);
+                bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
+                bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
+                bool isLastAngle = (cellType == CellType.LastOfAngleBlock && blockType == BlockType.AngleBlock);
+                if (isFirstAngle)
                     nCurrAngle = 1;
-                else if ((iCat == 0x90 || iCat == 0xD0) && nCurrAngle != 0)
+                else if ((isMiddleAngle || isLastAngle) && nCurrAngle != 0)
+                {
                     nCurrAngle++;
-                if (iCat == 0 || (nAng + 1) == nCurrAngle)
+                }
+                if (isNormalCell || (nAng + 1) == nCurrAngle)
                 {
                     for (k = 0; k < iArraysize; k++)
                     {
-                        if (CID == CellsInTitles[k].CID &&
-                            VID == CellsInTitles[k].VID)
+                        if (CID == ifo.m_AADT_Cell_list[k].CellID &&
+                            VID == ifo.m_AADT_Cell_list[k].VobID)
                         {
-                            nTotalSectors += CellsInTitles[k].iSize;
+                            nTotalSectors += ifo.m_AADT_Cell_list[k].Size;
                         }
                     }
                 }
-                if (iCat == 0xD0) nCurrAngle = 0;
+                if (isLastAngle) nCurrAngle = 0;
             }
 
             nSector = 0;
             iRet = true;
-            for (nCell = nCurrAngle = 0; nCell < NumberOfCells[nPGC] && m_bInProcess == true; nCell++)
+            for (nCell = nCurrAngle = 0; nCell < ifo.m_nCells[nPGC] && m_bInProcess == true; nCell++)
             {
-                iCat = m_pIFO[m_C_PBKT[nPGC] + 24 * nCell];
-                iCat = iCat & 0xF0;
+                var cellPlaybackInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPlaybackInformationTable[nCell];
+                var cellType = cellPlaybackInfo.CellType;
+                var blockType = cellPlaybackInfo.BlockType;
                 //		0101=First; 1001=Middle ;	1101=Last
-                if (iCat == 0x50)
+                bool isNormalCell = (cellType == CellType.Normal && blockType == BlockType.Normal);
+                bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
+                bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
+                bool isLastAngle = (cellType == CellType.LastOfAngleBlock && blockType == BlockType.AngleBlock);
+                if (isFirstAngle)
                     nCurrAngle = 1;
-                else if ((iCat == 0x90 || iCat == 0xD0) && nCurrAngle != 0)
+                else if ((isMiddleAngle || isLastAngle) && nCurrAngle != 0)
                     nCurrAngle++;
-                if (iCat == 0 || (nAng + 1) == nCurrAngle)
+                if (isNormalCell || (nAng + 1) == nCurrAngle)
                 {
+                    var cellPosInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPositionInformationTable[nCell];
+                    VID = cellPosInfo.VobID;
+                    CID = cellPosInfo.CellID;
 
-                    VID = Util.GetNbytes(2, m_pIFO.AsSpan(m_C_POST[nPGC] + 4 * nCell));
-                    CID = m_pIFO[m_C_POST[nPGC] + 3 + 4 * nCell];
-
-                    i64IniSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_C_PBKT[nPGC] + nCell * 24 + 8));
-                    i64EndSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_C_PBKT[nPGC] + nCell * 24 + 0x14));
+                    i64IniSec = cellPlaybackInfo.FirstVobuStartSector;
+                    i64EndSec = cellPlaybackInfo.LastVobuEndSector;
                     for (k = 1, i64sectors = 0; k < 10; k++)
                     {
-                        i64sectors += (m_i64VOBSize[k] / 2048);
+                        i64sectors += (ifo.m_i64VOBSize[k] / 2048);
                         if (i64IniSec < i64sectors)
                         {
-                            i64sectors -= (m_i64VOBSize[k] / 2048);
+                            i64sectors -= (ifo.m_i64VOBSize[k] / 2048);
                             nVobin = k;
                             k = 20;
                         }
                     }
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                     csAux = $"{nVobin}.VOB";
                     csAux = csAux2 + csAux;
                     try
                     {
-                        in_ = File.OpenRead(csAux);
-                    } catch (Exception)
+                        in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                    }
+                    catch (Exception)
                     {
                         in_ = null;
                     }
@@ -913,10 +407,10 @@ namespace PgcDemuxLib {
                         {
                             if (in_ != null) in_.Close();
                             nVobin++;
-                            csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                             csAux = $"{nVobin}.VOB";
                             csAux = csAux2 + csAux;
-                            in_ = File.OpenRead(csAux);
+                            in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
                             if (Util.readbuffer(m_buffer, in_) != 2048)
                             {
                                 Console.WriteLine("Input error: Reached end of VOB too early");
@@ -954,7 +448,7 @@ namespace PgcDemuxLib {
                     if (in_ != null) in_.Close();
                     in_ = null;
                 }  // if (iCat==0 || (nAng+1) == nCurrAngle)
-                if (iCat == 0xD0) nCurrAngle = 0;
+                if (isLastAngle) nCurrAngle = 0;
             }   // For Cells 
 
             CloseAndNull();
@@ -964,36 +458,41 @@ namespace PgcDemuxLib {
             {
                 csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
-                for (nCell = 0, nCurrAngle = 0; nCell < NumberOfCells[nPGC] && m_bInProcess == true; nCell++)
+                for (nCell = 0, nCurrAngle = 0; nCell < ifo.m_nCells[nPGC] && m_bInProcess == true; nCell++)
                 {
-                    dwCellDuration = (ulong)Util.GetNbytes(4, m_pIFO.AsSpan(m_C_PBKT[nPGC] + 24 * nCell + 4));
+                    var cellPlaybackInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPlaybackInformationTable[nCell];
+                    dwCellDuration = (ulong)cellPlaybackInfo.RawDuration;
 
-                    iCat = m_pIFO[m_C_PBKT[nPGC] + 24 * nCell];
-                    iCat = iCat & 0xF0;
+                    var cellType = cellPlaybackInfo.CellType;
+                    var blockType = cellPlaybackInfo.BlockType;
+                    bool isNormal = (cellType == CellType.Normal && blockType == BlockType.Normal);
+                    bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
+                    bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
+                    bool isLastAngle = (cellType == CellType.LastOfAngleBlock && blockType == BlockType.AngleBlock);
                     //			0101=First; 1001=Middle ;	1101=Last
-                    if (iCat == 0x50)
+                    if (isFirstAngle)
                         nCurrAngle = 1;
-                    else if ((iCat == 0x90 || iCat == 0xD0) && nCurrAngle != 0)
+                    else if ((isMiddleAngle || isLastAngle) && nCurrAngle != 0)
                         nCurrAngle++;
-                    if (iCat == 0 || (nAng + 1) == nCurrAngle)
+                    if (isNormal || (nAng + 1) == nCurrAngle)
                     {
                         nFrames += Util.DurationInFrames(dwCellDuration);
-                        if (nCell != (NumberOfCells[nPGC] - 1) || m_bCheckEndTime)
+                        if (nCell != (ifo.m_nCells[nPGC] - 1) || m_bCheckEndTime)
                         {
-                            var writer = new StreamWriter(fout, Encoding.ASCII);
+                            var writer = new StreamWriter(fout);
                             writer.Write($"{nFrames}\n");
                             writer.Flush();
                         }
                     }
 
-                    if (iCat == 0xD0) nCurrAngle = 0;
+                    if (isLastAngle) nCurrAngle = 0;
                 }
                 fout.Close();
             }
 
-            TotalNumberOfFrames = nFrames;
+            m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(nPGC, nAng, DemuxingDomain.Titles, Console.Out);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, nPGC, nAng, DemuxingDomain.Titles);
 
             return iRet;
         }
@@ -1017,7 +516,7 @@ namespace PgcDemuxLib {
             m_iNavPTS0_old = m_iNavPTS0 = 0;
             m_iNavPTS1_old = m_iNavPTS1 = 0;
 
-            NumberOfNavPacks = NumberOfVideoPacks = NumberOfAudioPacks = NumberOfSubPacks = NumberOfUnknownPacks = NumberOfPadPacks = 0;
+            m_nNavPacks = m_nVidPacks = m_nAudPacks = m_nSubPacks = m_nUnkPacks = m_nPadPacks = 0;
             m_i64OutputLBA = 0;
             m_nVobout = m_nVidout = m_nCidout = 0;
             m_nLastVid = 0;
@@ -1064,9 +563,9 @@ namespace PgcDemuxLib {
                 if (Util.IsNav(m_buffer))
                 {
                     if (m_bCheckLBA) Util.ModifyLBA(m_buffer, m_i64OutputLBA);
-                    m_nVidout = (int)Util.GetNbytes(2, m_buffer.AsSpan(0x41f));
+                    m_nVidout = m_buffer.GetNbytes(0x41f, 2);
                     m_nCidout = (int)m_buffer[0x422];
-                    nFirstRef = (int)Util.GetNbytes(4, m_buffer.AsSpan(0x413));
+                    nFirstRef = m_buffer.GetNbytes(0x413, 4);
                     nPack = 0;
 
                     bNewCell = false;
@@ -1076,7 +575,8 @@ namespace PgcDemuxLib {
                         m_nLastVid = m_nVidout;
                         m_nLastCid = m_nCidout;
                     }
-                } else
+                }
+                else
                     nPack++;
                 if ((Util.IsNav(m_buffer) && m_bCheckNavPack) ||
                      (Util.IsAudio(m_buffer) && m_bCheckAudioPack) ||
@@ -1099,9 +599,9 @@ namespace PgcDemuxLib {
             if (Util.IsNav(m_buffer))
             {
                 // do nothing
-                NumberOfNavPacks++;
-                m_iNavPTS0 = (int)Util.GetNbytes(4, m_buffer.AsSpan(0x39));
-                m_iNavPTS1 = (int)Util.GetNbytes(4, m_buffer.AsSpan(0x3d));
+                m_nNavPacks++;
+                m_iNavPTS0 = m_buffer.GetNbytes(0x39, 4);
+                m_iNavPTS1 = m_buffer.GetNbytes(0x3d, 4);
                 if (m_iFirstNavPTS0 == 0) m_iFirstNavPTS0 = m_iNavPTS0;
                 if (m_iNavPTS1_old > m_iNavPTS0)
                 {
@@ -1110,18 +610,20 @@ namespace PgcDemuxLib {
                 }
                 m_iNavPTS0_old = m_iNavPTS0;
                 m_iNavPTS1_old = m_iNavPTS1;
-            } else if (Util.IsVideo(m_buffer))
+            }
+            else if (Util.IsVideo(m_buffer))
             {
-                NumberOfVideoPacks++;
+                m_nVidPacks++;
                 if ((m_buffer[0x15] & 0x80) != 0)
                 {
                     m_iVidPTS = Util.readpts(m_buffer.AsSpan(0x17));
                     if (m_iFirstVidPTS == 0) m_iFirstVidPTS = m_iVidPTS;
                 }
                 if (bWrite && m_bCheckVid) demuxvideo(m_buffer);
-            } else if (Util.IsAudio(m_buffer))
+            }
+            else if (Util.IsAudio(m_buffer))
             {
-                NumberOfAudioPacks++;
+                m_nAudPacks++;
                 nBytesOffset = 0;
 
                 sID = Util.getAudId(m_buffer) & 0x07;
@@ -1151,9 +653,10 @@ namespace PgcDemuxLib {
                 {
                     demuxaudio(m_csOutputPath, m_buffer, nBytesOffset);
                 }
-            } else if (Util.IsSubs(m_buffer))
+            }
+            else if (Util.IsSubs(m_buffer))
             {
-                NumberOfSubPacks++;
+                m_nSubPacks++;
                 sID = m_buffer[0x17 + m_buffer[0x16]] & 0x1F;
 
                 if ((m_buffer[0x15] & 0x80) != 0)
@@ -1163,12 +666,14 @@ namespace PgcDemuxLib {
                         m_iFirstSubPTS[sID] = m_iSubPTS;
                 }
                 if (bWrite && m_bCheckSub) demuxsubs(m_csOutputPath, m_buffer);
-            } else if (Util.IsPad(m_buffer))
+            }
+            else if (Util.IsPad(m_buffer))
             {
-                NumberOfPadPacks++;
-            } else
+                m_nPadPacks++;
+            }
+            else
             {
-                NumberOfUnknownPacks++;
+                m_nUnkPacks++;
             }
             return true;
         }
@@ -1653,7 +1158,7 @@ namespace PgcDemuxLib {
             int nFrames;
 
 
-            if (nPGC >= NumberOfPGCsInMenus)
+            if (nPGC >= ifo.m_nMPGCs)
             {
                 Console.WriteLine("Error: PGC does not exist");
                 m_bInProcess = false;
@@ -1666,17 +1171,18 @@ namespace PgcDemuxLib {
 
             // Calculate  the total number of sectors
             nTotalSectors = 0;
-            iArraysize = CellsInMenus.Count;
-            for (nCell = 0; nCell < NumberOfMenuCells[nPGC]; nCell++)
+            iArraysize = ifo.m_MADT_Cell_list.Count;
+            for (nCell = 0; nCell < ifo.m_nMCells[nPGC]; nCell++)
             {
-                VID = Util.GetNbytes(2, m_pIFO.AsSpan(m_M_C_POST[nPGC] + 4 * nCell));
-                CID = m_pIFO[m_M_C_POST[nPGC] + 3 + 4 * nCell];
+                var cellPosInfo = ifo.MenuPGCs[nPGC].CellPositionInformationTable[nCell];
+                VID = cellPosInfo.VobID;
+                CID = cellPosInfo.CellID;
                 for (k = 0; k < iArraysize; k++)
                 {
-                    if (CID == CellsInMenus[k].CID &&
-                        VID == CellsInMenus[k].VID)
+                    if (CID == ifo.m_MADT_Cell_list[k].CellID &&
+                        VID == ifo.m_MADT_Cell_list[k].VobID)
                     {
-                        nTotalSectors += CellsInMenus[k].iSize;
+                        nTotalSectors += ifo.m_MADT_Cell_list[k].Size;
                     }
                 }
             }
@@ -1684,26 +1190,29 @@ namespace PgcDemuxLib {
             nSector = 0;
             iRet = true;
 
-            for (nCell = 0; nCell < NumberOfMenuCells[nPGC] && m_bInProcess == true; nCell++)
+            for (nCell = 0; nCell < ifo.m_nMCells[nPGC] && m_bInProcess == true; nCell++)
             {
-                VID = Util.GetNbytes(2, m_pIFO.AsSpan(m_M_C_POST[nPGC] + 4 * nCell));
-                CID = m_pIFO[m_M_C_POST[nPGC] + 3 + 4 * nCell];
+                var cellPosInfo = ifo.MenuPGCs[nPGC].CellPositionInformationTable[nCell];
+                VID = cellPosInfo.VobID;
+                CID = cellPosInfo.CellID;
 
-                i64IniSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_M_C_PBKT[nPGC] + nCell * 24 + 8));
-                i64EndSec = Util.GetNbytes(4, m_pIFO.AsSpan(m_M_C_PBKT[nPGC] + nCell * 24 + 0x14));
+                var cellPlaybackInfo = ifo.MenuPGCs[nPGC].CellPlaybackInformationTable[nCell];
+                i64IniSec = cellPlaybackInfo.FirstVobuStartSector;
+                i64EndSec = cellPlaybackInfo.LastVobuEndSector;
 
                 if (m_bVMGM)
                 {
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 3);
+                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
                     csAux = csAux2 + "VOB";
-                } else
+                }
+                else
                 {
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                     csAux = csAux2 + "0.VOB";
                 }
                 try
                 {
-                    in_ = File.OpenRead(csAux);
+                    in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
                 } catch (Exception)
                 {
                     in_ = null;
@@ -1763,13 +1272,13 @@ namespace PgcDemuxLib {
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = m_csOutputPath + '\\' + "Celltimes.txt";
-                fout = File.Open(csAux, FileMode.Create); ;
-                for (nCell = 0; nCell < NumberOfMenuCells[nPGC] && m_bInProcess == true; nCell++)
+                csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
+                fout = File.Open(csAux, FileMode.Create);
+                for (nCell = 0; nCell < ifo.m_nMCells[nPGC] && m_bInProcess == true; nCell++)
                 {
-                    dwCellDuration = (ulong)Util.GetNbytes(4, m_pIFO.AsSpan(m_M_C_PBKT[nPGC] + 24 * nCell + 4));
+                    dwCellDuration = (ulong)ifo.MenuPGCs[nPGC].CellPlaybackInformationTable[nCell].RawDuration;
                     nFrames += Util.DurationInFrames(dwCellDuration);
-                    if (nCell != (NumberOfMenuCells[nPGC] - 1) || m_bCheckEndTime)
+                    if (nCell != (ifo.m_nMCells[nPGC] - 1) || m_bCheckEndTime)
                     {
                         var writer = new StreamWriter(fout);
                         writer.Write($"{nFrames}\n");
@@ -1779,9 +1288,9 @@ namespace PgcDemuxLib {
                 fout.Close();
             }
 
-            TotalNumberOfFrames = nFrames;
+            m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(nPGC, 1, DemuxingDomain.Menus, Console.Out);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, nPGC, 1, DemuxingDomain.Menus);
 
             return iRet;
         }
@@ -1793,7 +1302,7 @@ namespace PgcDemuxLib {
             int CID, VID, nDemuxedVID;
             Int64 i64IniSec, i64EndSec;
             Int64 i64sectors;
-            int nVobin = 0;
+            int nVobin = -1;
             string csAux, csAux2;
             Stream in_, fout;
             Int64 i64;
@@ -1802,7 +1311,7 @@ namespace PgcDemuxLib {
             int nFrames;
             int nLastCell;
 
-            if (nVid >= VobIDsInTitles.Count)
+            if (nVid >= ifo.m_AADT_Vid_list.Count)
             {
                 Console.WriteLine("Error: Selected Vid does not exist");
                 m_bInProcess = false;
@@ -1814,39 +1323,38 @@ namespace PgcDemuxLib {
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = VobIDsInTitles[nVid].iSize;
+            nTotalSectors = ifo.m_AADT_Vid_list[nVid].iSize;
             nSector = 0;
             iRet = true;
-            nDemuxedVID = VobIDsInTitles[nVid].VobID;
+            nDemuxedVID = ifo.m_AADT_Vid_list[nVid].VobID;
 
-            iArraysize = CellsInTitles.Count;
+            iArraysize = ifo.m_AADT_Cell_list.Count;
             for (nCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
             {
-                VID = CellsInTitles[nCell].VID;
-                CID = CellsInTitles[nCell].CID;
+                VID = ifo.m_AADT_Cell_list[nCell].VobID;
+                CID = ifo.m_AADT_Cell_list[nCell].CellID;
 
                 if (VID == nDemuxedVID)
                 {
-                    i64IniSec = CellsInTitles[nCell].iIniSec;
-                    i64EndSec = CellsInTitles[nCell].iEndSec;
+                    i64IniSec = ifo.m_AADT_Cell_list[nCell].StartSector;
+                    i64EndSec = ifo.m_AADT_Cell_list[nCell].EndSector;
                     for (k = 1, i64sectors = 0; k < 10; k++)
                     {
-                        i64sectors += (m_i64VOBSize[k] / 2048);
+                        i64sectors += (ifo.m_i64VOBSize[k] / 2048);
                         if (i64IniSec < i64sectors)
                         {
-                            i64sectors -= (m_i64VOBSize[k] / 2048);
+                            i64sectors -= (ifo.m_i64VOBSize[k] / 2048);
                             nVobin = k;
                             k = 20;
                         }
                     }
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                     csAux = $"{nVobin}.VOB";
                     csAux = csAux2 + csAux;
                     try
                     {
-                        in_ = File.OpenRead(csAux);
-                    } catch (Exception)
-                    {
+                        in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                    } catch (Exception) {
                         in_ = null;
                     }
                     if (in_ == null)
@@ -1865,10 +1373,16 @@ namespace PgcDemuxLib {
                         {
                             if (in_ != null) in_.Close();
                             nVobin++;
-                            csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                             csAux = $"{nVobin}.VOB";
                             csAux = csAux2 + csAux;
-                            in_ = File.OpenRead(csAux);
+                            try
+                            {
+                                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                            } catch (Exception)
+                            {
+                                in_ = null;
+                            }
                             if (Util.readbuffer(m_buffer, in_) != 2048)
                             {
                                 Console.WriteLine("Input error: Reached end of VOB too early");
@@ -1915,23 +1429,23 @@ namespace PgcDemuxLib {
                 csAux = Path.Combine(output_folder, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
 
-                nDemuxedVID = VobIDsInTitles[nVid].VobID;
+                nDemuxedVID = ifo.m_AADT_Vid_list[nVid].VobID;
 
-                iArraysize = CellsInTitles.Count;
+                iArraysize = ifo.m_AADT_Cell_list.Count;
                 for (nCell = nLastCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
                 {
-                    VID = CellsInTitles[nCell].VID;
+                    VID = ifo.m_AADT_Cell_list[nCell].VobID;
                     if (VID == nDemuxedVID)
                         nLastCell = nCell;
                 }
 
                 for (nCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
                 {
-                    VID = CellsInTitles[nCell].VID;
+                    VID = ifo.m_AADT_Cell_list[nCell].VobID;
 
                     if (VID == nDemuxedVID)
                     {
-                        nFrames += Util.DurationInFrames(CellsInTitles[nCell].dwDuration);
+                        nFrames += Util.DurationInFrames(ifo.m_AADT_Cell_list[nCell].dwDuration);
                         if (nCell != nLastCell || m_bCheckEndTime)
                         {
                             var writer = new StreamWriter(fout);
@@ -1943,9 +1457,9 @@ namespace PgcDemuxLib {
                 fout.Close();
             }
 
-            TotalNumberOfFrames = nFrames;
+            m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(nVid, 1, DemuxingDomain.Titles, Console.Out);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(output_folder, nVid, 1, DemuxingDomain.Titles);
 
             return iRet;
         }
@@ -1964,7 +1478,7 @@ namespace PgcDemuxLib {
             int nFrames;
             int nLastCell;
 
-            if (nVid >= VobIDsInMenus.Count)
+            if (nVid >= ifo.m_MADT_Vid_list.Count)
             {
                 Console.WriteLine("Error: Selected Vid does not exist");
                 m_bInProcess = false;
@@ -1976,33 +1490,34 @@ namespace PgcDemuxLib {
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = VobIDsInMenus[nVid].iSize;
+            nTotalSectors = ifo.m_MADT_Vid_list[nVid].iSize;
             nSector = 0;
             iRet = true;
-            nDemuxedVID = VobIDsInMenus[nVid].VobID;
+            nDemuxedVID = ifo.m_MADT_Vid_list[nVid].VobID;
 
-            iArraysize = CellsInMenus.Count;
+            iArraysize = ifo.m_MADT_Cell_list.Count;
             for (nCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
             {
-                VID = CellsInMenus[nCell].VID;
-                CID = CellsInMenus[nCell].CID;
+                VID = ifo.m_MADT_Cell_list[nCell].VobID;
+                CID = ifo.m_MADT_Cell_list[nCell].CellID;
 
                 if (VID == nDemuxedVID)
                 {
-                    i64IniSec = CellsInMenus[nCell].iIniSec;
-                    i64EndSec = CellsInMenus[nCell].iEndSec;
+                    i64IniSec = ifo.m_MADT_Cell_list[nCell].StartSector;
+                    i64EndSec = ifo.m_MADT_Cell_list[nCell].EndSector;
                     if (m_bVMGM)
                     {
-                        csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 3);
+                        csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
                         csAux = csAux2 + "VOB";
-                    } else
+                    }
+                    else
                     {
-                        csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                        csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                         csAux = csAux2 + "0.VOB";
                     }
                     try
                     {
-                        in_ = File.OpenRead(csAux);
+                        in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
                     } catch (Exception)
                     {
                         in_ = null;
@@ -2066,28 +1581,28 @@ namespace PgcDemuxLib {
                 csAux = Path.Combine(output_folder, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
 
-                nDemuxedVID = VobIDsInMenus[nVid].VobID;
+                nDemuxedVID = ifo.m_MADT_Vid_list[nVid].VobID;
 
-                iArraysize = CellsInMenus.Count;
+                iArraysize = ifo.m_MADT_Cell_list.Count;
 
                 for (nCell = nLastCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
                 {
-                    VID = CellsInMenus[nCell].VID;
+                    VID = ifo.m_MADT_Cell_list[nCell].VobID;
                     if (VID == nDemuxedVID) nLastCell = nCell;
                 }
 
 
                 for (nCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
                 {
-                    VID = CellsInMenus[nCell].VID;
+                    VID = ifo.m_MADT_Cell_list[nCell].VobID;
 
                     if (VID == nDemuxedVID)
                     {
-                        nFrames += Util.DurationInFrames(CellsInMenus[nCell].dwDuration);
+                        nFrames += Util.DurationInFrames(ifo.m_MADT_Cell_list[nCell].dwDuration);
                         if (nCell != nLastCell || m_bCheckEndTime)
                         {
                             var writer = new StreamWriter(fout);
-                            writer.WriteLine($"{nFrames}\n");
+                            writer.Write($"{nFrames}\n");
                             writer.Flush();
                         }
                     }
@@ -2095,9 +1610,9 @@ namespace PgcDemuxLib {
                 fout.Close();
             }
 
-            TotalNumberOfFrames = nFrames;
+            m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(nVid, 1, DemuxingDomain.Menus, Console.Out);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(output_folder, nVid, 1, DemuxingDomain.Menus);
 
             return iRet;
         }
@@ -2109,7 +1624,7 @@ namespace PgcDemuxLib {
             int CID, VID;
             Int64 i64IniSec, i64EndSec;
             Int64 i64sectors;
-            int nVobin = 0;
+            int nVobin = -1;
             string csAux, csAux2;
             Stream in_, fout;
             Int64 i64;
@@ -2117,7 +1632,7 @@ namespace PgcDemuxLib {
             bool iRet;
             int nFrames;
 
-            if (nCell >= CellsInTitles.Count)
+            if (nCell >= ifo.m_AADT_Cell_list.Count)
             {
                 Console.WriteLine("Error: Selected Cell does not exist");
                 m_bInProcess = false;
@@ -2129,31 +1644,31 @@ namespace PgcDemuxLib {
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = CellsInTitles[nCell].iSize;
+            nTotalSectors = ifo.m_AADT_Cell_list[nCell].Size;
             nSector = 0;
             iRet = true;
 
-            VID = CellsInTitles[nCell].VID;
-            CID = CellsInTitles[nCell].CID;
+            VID = ifo.m_AADT_Cell_list[nCell].VobID;
+            CID = ifo.m_AADT_Cell_list[nCell].CellID;
 
-            i64IniSec = CellsInTitles[nCell].iIniSec;
-            i64EndSec = CellsInTitles[nCell].iEndSec;
+            i64IniSec = ifo.m_AADT_Cell_list[nCell].StartSector;
+            i64EndSec = ifo.m_AADT_Cell_list[nCell].EndSector;
             for (k = 1, i64sectors = 0; k < 10; k++)
             {
-                i64sectors += (m_i64VOBSize[k] / 2048);
+                i64sectors += (ifo.m_i64VOBSize[k] / 2048);
                 if (i64IniSec < i64sectors)
                 {
-                    i64sectors -= (m_i64VOBSize[k] / 2048);
+                    i64sectors -= (ifo.m_i64VOBSize[k] / 2048);
                     nVobin = k;
                     k = 20;
                 }
             }
-            csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
             csAux = $"{nVobin}.VOB";
             csAux = csAux2 + csAux;
             try
             {
-                in_ = File.OpenRead(csAux);
+                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
             } catch (Exception)
             {
                 in_ = null;
@@ -2174,10 +1689,10 @@ namespace PgcDemuxLib {
                 {
                     if (in_ != null) in_.Close();
                     nVobin++;
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                     csAux = $"{nVobin}.VOB";
                     csAux = csAux2 + csAux;
-                    in_ = File.OpenRead(csAux);
+                    in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
                     if (Util.readbuffer(m_buffer, in_) != 2048)
                     {
                         Console.WriteLine("Input error: Reached end of VOB too early");
@@ -2222,19 +1737,19 @@ namespace PgcDemuxLib {
             {
                 csAux = Path.Combine(output_folder, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
-                nFrames = Util.DurationInFrames(CellsInTitles[nCell].dwDuration);
+                nFrames = Util.DurationInFrames(ifo.m_AADT_Cell_list[nCell].dwDuration);
                 if (m_bCheckEndTime)
                 {
                     var writer = new StreamWriter(fout);
-                    writer.WriteLine($"{nFrames}\n");
+                    writer.Write($"{nFrames}\n");
                     writer.Flush();
                 }
                 fout.Close();
             }
 
-            TotalNumberOfFrames = nFrames;
+            m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(nCell, 1, DemuxingDomain.Titles, Console.Out);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(output_folder, nCell, 1, DemuxingDomain.Titles);
 
             return iRet;
         }
@@ -2251,7 +1766,7 @@ namespace PgcDemuxLib {
             bool iRet;
             int nFrames;
 
-            if (nCell >= CellsInMenus.Count)
+            if (nCell >= ifo.m_MADT_Cell_list.Count)
             {
                 Console.WriteLine("Error: Selected Cell does not exist");
                 m_bInProcess = false;
@@ -2263,25 +1778,31 @@ namespace PgcDemuxLib {
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = CellsInMenus[nCell].iSize;
+            nTotalSectors = ifo.m_MADT_Cell_list[nCell].Size;
             nSector = 0;
             iRet = true;
 
-            VID = CellsInMenus[nCell].VID;
-            CID = CellsInMenus[nCell].CID;
+            VID = ifo.m_MADT_Cell_list[nCell].VobID;
+            CID = ifo.m_MADT_Cell_list[nCell].CellID;
 
-            i64IniSec = CellsInMenus[nCell].iIniSec;
-            i64EndSec = CellsInMenus[nCell].iEndSec;
+            i64IniSec = ifo.m_MADT_Cell_list[nCell].StartSector;
+            i64EndSec = ifo.m_MADT_Cell_list[nCell].EndSector;
             if (m_bVMGM)
             {
-                csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 3);
+                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
                 csAux = csAux2 + "VOB";
-            } else
+            }
+            else
             {
-                csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                 csAux = csAux2 + "0.VOB";
             }
-            in_ = File.OpenRead(csAux);
+            try
+            {
+                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+            } catch (Exception) {
+                in_ = null;
+            }
             if (in_ == null)
             {
                 Console.WriteLine("Error opening input VOB: " + csAux);
@@ -2337,29 +1858,29 @@ namespace PgcDemuxLib {
             {
                 csAux = Path.Combine(output_folder, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
-                nFrames = Util.DurationInFrames(CellsInMenus[nCell].dwDuration);
+                nFrames = Util.DurationInFrames(ifo.m_MADT_Cell_list[nCell].dwDuration);
                 if (m_bCheckEndTime)
                 {
                     var writer = new StreamWriter(fout);
-                    writer.WriteLine($"{nFrames}\n");
+                    writer.Write($"{nFrames}\n");
                     writer.Flush();
                 }
                 fout.Close();
             }
 
-            TotalNumberOfFrames = nFrames;
+            m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(nCell, 1, DemuxingDomain.Menus, Console.Out);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(output_folder, nCell, 1, DemuxingDomain.Menus);
 
             return iRet;
         }
 
         public bool GetAudioDelay(string output_folder, DemuxingMode iMode, int nSelection) {
-            int VID = 0, CID = 0;
+            int VID = -1, CID = -1;
             int k, nCell;
             Int64 i64IniSec, i64EndSec;
             Int64 i64sectors;
-            int nVobin = 0;
+            int nVobin = -1;
             string csAux, csAux2;
             Stream in_;
             Int64 i64;
@@ -2370,44 +1891,47 @@ namespace PgcDemuxLib {
 
             if (iMode == DemuxingMode.PGC)
             {
-                if (nSelection >= NumberOfPGCsInTitles)
+                if (nSelection >= ifo.m_nPGCs)
                 {
                     Console.WriteLine("Error: PGC does not exist");
                     return false;
                 }
                 nCell = 0;
-                VID = Util.GetNbytes(2, m_pIFO.AsSpan(m_C_POST[nSelection] + 4 * nCell));
-                CID = m_pIFO[m_C_POST[nSelection] + 3 + 4 * nCell];
-            } else if (iMode == DemuxingMode.VID)
+                var cellPosInfo = ifo.TitleProgramChainTable.PGCs[nSelection].CellPositionInformationTable[nCell];
+                VID = cellPosInfo.VobID;
+                CID = cellPosInfo.CellID;
+            }
+            else if (iMode == DemuxingMode.VID)
             {
-                if (nSelection >= VobIDsInTitles.Count)
+                if (nSelection >= ifo.m_AADT_Vid_list.Count)
                 {
                     Console.WriteLine("Error: VID does not exist");
                     return false;
                 }
-                VID = VobIDsInTitles[nSelection].VobID;
+                VID = ifo.m_AADT_Vid_list[nSelection].VobID;
                 CID = -1;
-                for (k = 0; k < CellsInTitles.Count && CID == -1; k++)
+                for (k = 0; k < ifo.m_AADT_Cell_list.Count && CID == -1; k++)
                 {
-                    if (VID == CellsInTitles[k].VID)
-                        CID = CellsInTitles[k].CID;
+                    if (VID == ifo.m_AADT_Cell_list[k].VobID)
+                        CID = ifo.m_AADT_Cell_list[k].CellID;
                 }
 
-            } else if (iMode == DemuxingMode.CID)
+            }
+            else if (iMode == DemuxingMode.CID)
             {
-                if (nSelection >= CellsInTitles.Count)
+                if (nSelection >= ifo.m_AADT_Cell_list.Count)
                 {
                     Console.WriteLine("Error: CID does not exist");
                     return false;
                 }
-                VID = CellsInTitles[nSelection].VID;
-                CID = CellsInTitles[nSelection].CID;
+                VID = ifo.m_AADT_Cell_list[nSelection].VobID;
+                CID = ifo.m_AADT_Cell_list[nSelection].CellID;
             }
 
-            for (k = 0, nCell = -1; k < CellsInTitles.Count && nCell == -1; k++)
+            for (k = 0, nCell = -1; k < ifo.m_AADT_Cell_list.Count && nCell == -1; k++)
             {
-                if (VID == CellsInTitles[k].VID &&
-                    CID == CellsInTitles[k].CID)
+                if (VID == ifo.m_AADT_Cell_list[k].VobID &&
+                    CID == ifo.m_AADT_Cell_list[k].CellID)
                     nCell = k;
             }
 
@@ -2419,24 +1943,24 @@ namespace PgcDemuxLib {
             //
             // Now we have VID; CID; and the index in Cell Array "nCell".
             // So we are going to open the VOB and read the delays using ProcessPack(false)
-            i64IniSec = CellsInTitles[nCell].iIniSec;
-            i64EndSec = CellsInTitles[nCell].iEndSec;
+            i64IniSec = ifo.m_AADT_Cell_list[nCell].StartSector;
+            i64EndSec = ifo.m_AADT_Cell_list[nCell].EndSector;
 
             iRet = true;
             for (k = 1, i64sectors = 0; k < 10; k++)
             {
-                i64sectors += (m_i64VOBSize[k] / 2048);
+                i64sectors += (ifo.m_i64VOBSize[k] / 2048);
                 if (i64IniSec < i64sectors)
                 {
-                    i64sectors -= (m_i64VOBSize[k] / 2048);
+                    i64sectors -= (ifo.m_i64VOBSize[k] / 2048);
                     nVobin = k;
                     k = 20;
                 }
             }
-            csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
             csAux = $"{nVobin}.VOB";
             csAux = csAux2 + csAux;
-            in_ = File.OpenRead(csAux);
+            in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
             if (in_ == null)
             {
                 Console.WriteLine("Error opening input VOB: " + csAux);
@@ -2451,10 +1975,10 @@ namespace PgcDemuxLib {
                 {
                     if (in_ != null) in_.Close();
                     nVobin++;
-                    csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                     csAux = $"{nVobin}.VOB";
                     csAux = csAux2 + csAux;
-                    in_ = File.OpenRead(csAux);
+                    in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
                     if (Util.readbuffer(m_buffer, in_) != 2048)
                     {
                         Console.WriteLine("Input error: Reached end of VOB too early");
@@ -2492,7 +2016,7 @@ namespace PgcDemuxLib {
         }
 
         bool GetMAudioDelay(string output_folder, DemuxingMode iMode, int nSelection) {
-            int VID = 0, CID = 0;
+            int VID = -1, CID = -1;
             int k, nCell;
             Int64 i64IniSec, i64EndSec;
             string csAux, csAux2;
@@ -2505,44 +2029,47 @@ namespace PgcDemuxLib {
 
             if (iMode == DemuxingMode.PGC)
             {
-                if (nSelection >= NumberOfPGCsInMenus)
+                if (nSelection >= ifo.m_nMPGCs)
                 {
                     Console.WriteLine("Error: PGC does not exist");
                     return false;
                 }
                 nCell = 0;
-                VID = Util.GetNbytes(2, m_pIFO.AsSpan(m_M_C_POST[nSelection] + 4 * nCell));
-                CID = m_pIFO[m_M_C_POST[nSelection] + 3 + 4 * nCell];
-            } else if (iMode == DemuxingMode.VID)
+                var cellPosInfo = ifo.MenuPGCs[nSelection].CellPositionInformationTable[nCell];
+                VID = cellPosInfo.VobID;
+                CID = cellPosInfo.CellID;
+            }
+            else if (iMode == DemuxingMode.VID)
             {
-                if (nSelection >= VobIDsInMenus.Count)
+                if (nSelection >= ifo.m_MADT_Vid_list.Count)
                 {
                     Console.WriteLine("Error: VID does not exist");
                     return false;
                 }
-                VID = VobIDsInMenus[nSelection].VobID;
+                VID = ifo.m_MADT_Vid_list[nSelection].VobID;
                 CID = -1;
-                for (k = 0; k < CellsInMenus.Count && CID == -1; k++)
+                for (k = 0; k < ifo.m_MADT_Cell_list.Count && CID == -1; k++)
                 {
-                    if (VID == CellsInMenus[k].VID)
-                        CID = CellsInMenus[k].CID;
+                    if (VID == ifo.m_MADT_Cell_list[k].VobID)
+                        CID = ifo.m_MADT_Cell_list[k].CellID;
                 }
 
-            } else if (iMode == DemuxingMode.CID)
+            }
+            else if (iMode == DemuxingMode.CID)
             {
-                if (nSelection >= CellsInMenus.Count)
+                if (nSelection >= ifo.m_MADT_Cell_list.Count)
                 {
                     Console.WriteLine("Error: CID does not exist");
                     return false;
                 }
-                VID = CellsInMenus[nSelection].VID;
-                CID = CellsInMenus[nSelection].CID;
+                VID = ifo.m_MADT_Cell_list[nSelection].VobID;
+                CID = ifo.m_MADT_Cell_list[nSelection].CellID;
             }
 
-            for (k = 0, nCell = -1; k < CellsInMenus.Count && nCell == -1; k++)
+            for (k = 0, nCell = -1; k < ifo.m_MADT_Cell_list.Count && nCell == -1; k++)
             {
-                if (VID == CellsInMenus[k].VID &&
-                    CID == CellsInMenus[k].CID)
+                if (VID == ifo.m_MADT_Cell_list[k].VobID &&
+                    CID == ifo.m_MADT_Cell_list[k].CellID)
                     nCell = k;
             }
 
@@ -2554,23 +2081,24 @@ namespace PgcDemuxLib {
             //
             // Now we have VID; CID; and the index in Cell Array "nCell".
             // So we are going to open the VOB and read the delays using ProcessPack(false)
-            i64IniSec = CellsInMenus[nCell].iIniSec;
-            i64EndSec = CellsInMenus[nCell].iEndSec;
+            i64IniSec = ifo.m_MADT_Cell_list[nCell].StartSector;
+            i64EndSec = ifo.m_MADT_Cell_list[nCell].EndSector;
 
             iRet = true;
 
             if (m_bVMGM)
             {
-                csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 3);
+                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
                 csAux = csAux2 + "VOB";
-            } else
+            }
+            else
             {
-                csAux2 = m_csInputIFO.Substring(0, m_csInputIFO.Length - 5);
+                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                 csAux = csAux2 + "0.VOB";
             }
             try
             {
-                in_ = File.OpenRead(csAux);
+                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
             } catch (Exception)
             {
                 in_ = null;
@@ -2626,9 +2154,11 @@ namespace PgcDemuxLib {
             try
             {
                 file = File.Open(csFilePath, FileMode.Create);
-            } catch (Exception)
+            } catch (Exception ex)
             {
                 Console.WriteLine("Failed to open log file!");
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
                 return;
             }
             var writer = new StreamWriter(file);
@@ -2644,12 +2174,12 @@ namespace PgcDemuxLib {
             int AudDelay;
 
             stream.WriteLine("[General]");
-            stream.WriteLine($"Total Number of PGCs   in Titles={NumberOfPGCsInTitles}");
-            stream.WriteLine($"Total Number of PGCs   in  Menus={NumberOfPGCsInMenus}");
-            stream.WriteLine($"Total Number of VobIDs in Titles={VobIDsInTitles.Count}");
-            stream.WriteLine($"Total Number of VobIDs in  Menus={VobIDsInMenus.Count}");
-            stream.WriteLine($"Total Number of Cells  in Titles={CellsInTitles.Count}");
-            stream.WriteLine($"Total Number of Cells  in  Menus={CellsInMenus.Count}");
+            stream.WriteLine($"Total Number of PGCs   in Titles={ifo.m_nPGCs}");
+            stream.WriteLine($"Total Number of PGCs   in  Menus={ifo.m_nMPGCs}");
+            stream.WriteLine($"Total Number of VobIDs in Titles={ifo.m_AADT_Vid_list.Count}");
+            stream.WriteLine($"Total Number of VobIDs in  Menus={ifo.m_MADT_Vid_list.Count}");
+            stream.WriteLine($"Total Number of Cells  in Titles={ifo.m_AADT_Cell_list.Count}");
+            stream.WriteLine($"Total Number of Cells  in  Menus={ifo.m_MADT_Cell_list.Count}");
 
             switch (m_iMode)
             {
@@ -2667,19 +2197,19 @@ namespace PgcDemuxLib {
                 default: csAux = "[unknown]"; break;
             }
             stream.WriteLine($"Demuxing Domain={csAux}");
-            stream.WriteLine($"Total Number of Frames={TotalNumberOfFrames}");
+            stream.WriteLine($"Total Number of Frames={m_nTotalFrames}");
 
             if (m_iMode == DemuxingMode.PGC)
             {
                 stream.WriteLine($"Selected PGC={(nItem + 1)}");
-                stream.WriteLine($"Number of Cells in Selected PGC={(iDomain == DemuxingDomain.Titles ? NumberOfCells : NumberOfMenuCells)[nItem]}");
+                stream.WriteLine($"Number of Cells in Selected PGC={(iDomain == DemuxingDomain.Titles ? ifo.m_nCells[nItem] : ifo.m_nMCells[nItem])}");
                 stream.WriteLine($"Selected VOBID=None");
                 stream.WriteLine($"Number of Cells in Selected VOB=None");
             } else if (m_iMode == DemuxingMode.VID)
             {
-                List<ADT_VID_LIST> vid_list = (iDomain == DemuxingDomain.Titles ? VobIDsInTitles : VobIDsInMenus);
-                stream.WriteLine($"Selected VOBID={vid_list[nItem].VobID}");
-                stream.WriteLine($"Number of Cells in Selected VOB={vid_list[nItem].NumberOfCells}");
+                ADT_VID vid_list = (iDomain == DemuxingDomain.Titles ? ifo.m_AADT_Vid_list[nItem] : ifo.m_MADT_Vid_list[nItem]);
+                stream.WriteLine($"Selected VOBID={vid_list.VobID}");
+                stream.WriteLine($"Number of Cells in Selected VOB={vid_list.NumberOfCells}");
                 stream.WriteLine($"Selected PGC=None");
                 stream.WriteLine($"Number of Cells in Selected PGC=None");
             } else if (m_iMode == DemuxingMode.CID)
@@ -2695,12 +2225,12 @@ namespace PgcDemuxLib {
 
             stream.WriteLine();
             stream.WriteLine("[Demux]");
-            stream.WriteLine($"Number of Video Packs={NumberOfVideoPacks}");
-            stream.WriteLine($"Number of Audio Packs={NumberOfAudioPacks}");
-            stream.WriteLine($"Number of Subs  Packs={NumberOfSubPacks}");
-            stream.WriteLine($"Number of Nav   Packs={NumberOfNavPacks}");
-            stream.WriteLine($"Number of Pad   Packs={NumberOfPadPacks}");
-            stream.WriteLine($"Number of Unkn  Packs={NumberOfUnknownPacks}");
+            stream.WriteLine($"Number of Video Packs={m_nVidPacks}");
+            stream.WriteLine($"Number of Audio Packs={m_nAudPacks}");
+            stream.WriteLine($"Number of Subs  Packs={m_nSubPacks}");
+            stream.WriteLine($"Number of Nav   Packs={m_nNavPacks}");
+            stream.WriteLine($"Number of Pad   Packs={m_nPadPacks}");
+            stream.WriteLine($"Number of Unkn  Packs={m_nUnkPacks}");
 
             stream.WriteLine();
             stream.WriteLine("[Audio Streams]");

@@ -1,8 +1,8 @@
 ﻿using PgcDemuxLib;
 
-string folder = "F:\\Video\\backup\\ANIMUSIC_2\\VIDEO_TS";
+string folder = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2\\VIDEO_TS";
 string file = "VTS_21_0.IFO";
-string output = "C:\\Users\\Zach\\Downloads\\TEST OUTPUT";
+string output = "C:\\Users\\Zack\\Downloads\\TestOutput";
 
 IfoOptions options = new();
 options.PGC = 1; // 6
