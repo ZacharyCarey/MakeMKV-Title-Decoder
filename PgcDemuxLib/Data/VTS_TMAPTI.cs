@@ -4,18 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PgcDemuxLib
+namespace PgcDemuxLib.Data
 {
-    public class VTS_VOBU_ADMAP
+    public class VTS_TMAPTI
     {
         /// <summary>
         /// Byte index in file
         /// </summary>
         internal readonly int Address;
 
-        internal VTS_VOBU_ADMAP(byte[] file, int addr)
+        internal VTS_TMAPTI(byte[] file, int addr)
         {
-            this.Address = addr;
+            Address = addr;
         }
     }
 }

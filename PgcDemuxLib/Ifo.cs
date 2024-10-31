@@ -4,23 +4,10 @@ using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using PgcDemuxLib.Data;
 
 namespace PgcDemuxLib
 {
-    internal class IfoParseContext
-    {
-        public Ifo ifo;
-        // Maps address in file to their respective object
-        public Dictionary<int, PGC> VTS_PGC = new();
-        public Dictionary<int, VTS_CPIT> VTS_CPIT = new();
-        public Dictionary<int, VTS_CPsIT> VTS_CPsIT = new();
-        public Dictionary<int, VMGM_LU> VMGM_LU = new();
-
-        public IfoParseContext(Ifo ifo)
-        {
-            this.ifo = ifo;
-        }
-    }
 
     internal class ADT_CELL
     {
@@ -29,7 +16,7 @@ namespace PgcDemuxLib
         public int StartSector; 
         public int EndSector;
         public int Size;
-        public UInt64 dwDuration;
+        public TimeSpan dwDuration;
     }
 
     internal class ADT_VID
@@ -37,7 +24,7 @@ namespace PgcDemuxLib
         public int VobID;
         public int iSize;
         public int NumberOfCells;
-        public UInt64 dwDuration;
+        public TimeSpan dwDuration;
     }
 
     /// <summary>
@@ -83,56 +70,8 @@ namespace PgcDemuxLib
         internal Int64[] m_i64VOBSize = new long[10];
         #endregion
 
-
-        #region TODO Remove old variable names
-        internal bool m_bVMGM => this.IsVideoManager;
-        internal int m_iVTS_PTT_SRPT => TitlesTable.Address;
-        internal int m_iVTS_PGCI => TitleProgramChainTable.Address;
-        internal int m_iVTSM_PGCI => MenuProgramChainTable?.Address ?? 0;
-        internal int m_iVTS_TMAPTI => TimeMap.Address;
-        internal int m_iVTSM_C_ADT => MenuCellAddressTable.Address;
-        internal int m_iVTSM_VOBU_ADMAP => MenuVobuAddressMap.Address;
-        internal int m_iVTS_C_ADT => TitleSetCellAddressTable.Address;
-        internal int m_iVTS_VOBU_ADMAP => TitleSetVobuAddressMap.Address;
-        internal int m_nPGCs => TitleProgramChainTable?.NumberOfProgramChains ?? 0;
-        internal ReadOnlyIndexedProperty<int, int> m_iVTS_PGC;
-        internal ReadOnlyIndexedProperty<int, int> m_dwDuration;
-        internal ReadOnlyIndexedProperty<int, int> m_C_PBKT;
-        internal ReadOnlyIndexedProperty<int, int> m_C_POST;
-        internal ReadOnlyIndexedProperty<int, int> m_nCells;
-        internal ReadOnlyIndexedProperty<int, int> m_nAngles;
-        internal int m_nLUs => MenuProgramChainTable?.NumberOfLanguageUnits ?? 0;
-        internal ReadOnlyIndexedProperty<int, int> m_iVTSM_LU;
-        internal ReadOnlyIndexedProperty<int, int> m_nPGCinLU;
-        internal int m_nMPGCs => this.MenuPGCs.Count;
-        internal ReadOnlyIndexedProperty<int, int> m_nIniPGCinLU;
-        internal ReadOnlyIndexedProperty<int, int> m_iMENU_PGC;
-        internal ReadOnlyIndexedProperty<int, int> m_M_C_PBKT;
-        internal ReadOnlyIndexedProperty<int, int> m_M_C_POST;
-        internal ReadOnlyIndexedProperty<int, int> m_nMCells;
-        internal ReadOnlyIndexedProperty<int, int> m_dwMDuration;
-        internal int nTotADT => TitleSetCellAddressTable?.NumberOfADTs ?? 0;
-        #endregion
-
         private Ifo(string parent, string fileName, byte[] file)
         {
-            #region Indexed Properties
-            m_iVTS_PGC = new((index) => TitleProgramChainTable.PGCs[index].Address);
-            m_dwDuration = new((index) => TitleProgramChainTable.PGCs[index].RawDuration);
-            m_C_PBKT = new((index) => TitleProgramChainTable.PGCs[index].CellPlaybackInformationTable?.Address ?? 0);
-            m_C_POST = new((index) => TitleProgramChainTable.PGCs[index].CellPositionInformationTable?.Address ?? 0);
-            m_nCells = new((index) => TitleProgramChainTable.PGCs[index].NumberOfCells);
-            m_nAngles = new((index) => TitleProgramChainTable.PGCs[index].CellPlaybackInformationTable?.NumberOfAngles ?? 1);
-            m_iVTSM_LU = new((index) => MenuProgramChainTable.LanguageUnits[index].Address);
-            m_nPGCinLU = new((index) => MenuProgramChainTable.LanguageUnits[index].NumberOfProgramChains);
-            m_nIniPGCinLU = new((index) => MenuProgramChainTable.LanguageUnits[index].nIniPGCinLU);
-            m_iMENU_PGC = new((index) => MenuPGCs[index].Address);
-            m_M_C_PBKT = new((index) => MenuPGCs[index].CellPlaybackInformationTable?.Address ?? 0);
-            m_M_C_POST = new((index) => MenuPGCs[index].CellPositionInformationTable?.Address ?? 0);
-            m_nMCells = new((index) => MenuPGCs[index].NumberOfCells);
-            m_dwMDuration = new((index) => MenuPGCs[index].RawDuration);
-            #endregion
-
             this.ParentFolder = parent;
             this.FileName = fileName;
 
@@ -145,24 +84,22 @@ namespace PgcDemuxLib
 
             int addr;
 
-            IfoParseContext context = new(this);
-
             if (IsVideoManager)
             {
                 this.TitlesTable = null;
                 this.TitleProgramChainTable = null;
 
-                addr = 2048 * file.GetNbytes(0xC8, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xC8, 4);
                 if (addr == 0) this.MenuProgramChainTable = null;
-                else this.MenuProgramChainTable = new VMGM_PGCI_UT(file, addr, context);
+                else this.MenuProgramChainTable = new VMGM_PGCI_UT(file, addr, this);
 
                 this.TimeMap = null;
 
-                addr = 2048 * file.GetNbytes(0xD8, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
                 if (addr == 0) this.MenuCellAddressTable = null;
-                else this.MenuCellAddressTable = new VTS_C_ADT(file, addr, context);
+                else this.MenuCellAddressTable = new VTS_C_ADT(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xDC, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
                 this.MenuVobuAddressMap = new VTS_VOBU_ADMAP(file, addr);
 
                 this.TitleSetCellAddressTable = null;
@@ -170,31 +107,31 @@ namespace PgcDemuxLib
                 this.VideoAttributes = null;
             } else
             {
-                addr = 2048 * file.GetNbytes(0xC8, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xC8, 4);
                 this.TitlesTable = new VTS_PTT_SRPT(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xCC, 4);
-                this.TitleProgramChainTable = new VTS_PGCI(context, file, addr);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xCC, 4);
+                this.TitleProgramChainTable = new VTS_PGCI(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xD0, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD0, 4);
                 if (addr == 0) this.MenuProgramChainTable = null;
-                else this.MenuProgramChainTable = new VMGM_PGCI_UT(file, addr, context);
+                else this.MenuProgramChainTable = new VMGM_PGCI_UT(file, addr, this);
 
-                addr = 2048 * file.GetNbytes(0xD4, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD4, 4);
                 this.TimeMap = new VTS_TMAPTI(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xD8, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
                 if (addr == 0) this.MenuCellAddressTable = null;
-                else this.MenuCellAddressTable = new VTS_C_ADT(file, addr, context);
+                else this.MenuCellAddressTable = new VTS_C_ADT(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xDC, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
                 this.MenuVobuAddressMap = new VTS_VOBU_ADMAP(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xE0, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xE0, 4);
                 if (addr == 0) this.TitleSetCellAddressTable = null;
-                else this.TitleSetCellAddressTable = new VTS_C_ADT(file, addr, context);
+                else this.TitleSetCellAddressTable = new VTS_C_ADT(file, addr);
 
-                addr = 2048 * file.GetNbytes(0xE4, 4);
+                addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xE4, 4);
                 this.TitleSetVobuAddressMap = new VTS_VOBU_ADMAP(file, addr);
 
                 this.VideoAttributes = new VTS_VideoAttributes(file);
@@ -205,7 +142,7 @@ namespace PgcDemuxLib
             {
                 for (int i = 0; i < this.TitleSetCellAddressTable.NumberOfADTs; i++)
                 {
-                    var adt = this.TitleSetCellAddressTable.ADTs[i];
+                    var adt = this.TitleSetCellAddressTable[i];
 
                     int iArraysize = m_AADT_Cell_list.Count;
                     ADT_CELL? kk = null;
@@ -244,7 +181,7 @@ namespace PgcDemuxLib
             {
                 for (int i = 0; i < this.MenuCellAddressTable.NumberOfADTs; i++)
                 {
-                    var adt = this.MenuCellAddressTable.ADTs[i];
+                    var adt = this.MenuCellAddressTable[i];
 
                     int iArraySize = m_MADT_Cell_list.Count;
                     ADT_CELL? kk = null;
@@ -301,13 +238,13 @@ namespace PgcDemuxLib
                     myADT_Vid.VobID = VidADT;
                     myADT_Vid.iSize = 0;
                     myADT_Vid.NumberOfCells = 0;
-                    myADT_Vid.dwDuration = 0;
+                    myADT_Vid.dwDuration = new TimeSpan();
                     m_AADT_Vid_list.Add(myADT_Vid);
                     kk = myADT_Vid;
                 }
                 kk.iSize += m_AADT_Cell_list[i].Size;
                 kk.NumberOfCells++;
-                kk.dwDuration = Util.AddDuration(m_AADT_Cell_list[i].dwDuration, kk.dwDuration);
+                kk.dwDuration += m_AADT_Cell_list[i].dwDuration;
             }
 
             // VIDs in Menus
@@ -331,24 +268,24 @@ namespace PgcDemuxLib
                     myADT_Vid.VobID = VidADT;
                     myADT_Vid.iSize = 0;
                     myADT_Vid.NumberOfCells = 0;
-                    myADT_Vid.dwDuration = 0;
+                    myADT_Vid.dwDuration = new TimeSpan();
                     m_MADT_Vid_list.Add(myADT_Vid);
                     kk = myADT_Vid;
                 }
                 kk.iSize += m_MADT_Cell_list[i].Size;
                 kk.NumberOfCells++;
-                kk.dwDuration = Util.AddDuration(m_MADT_Cell_list[i].dwDuration, kk.dwDuration);
+                kk.dwDuration += m_MADT_Cell_list[i].dwDuration;
             }
 
             // Fill VOB file size
-            if (m_bVMGM)
+            if (IsVideoManager)
             {
                 m_nVobFiles = 0;
 
                 for (int k = 0; k < 10; k++)
                     m_i64VOBSize[k] = 0;
 
-                string temp = fileName.Substring(0, fileName.Length - 3);
+                string temp = fileName[..^3];
                 temp += "VOB";
                 try
                 {
@@ -362,7 +299,7 @@ namespace PgcDemuxLib
             {
                 for (int k = 0; k < 10; k++)
                 {
-                    string temp2 = fileName.Substring(0, fileName.Length - 5);
+                    string temp2 = fileName[..^5];
                     string temp = $"{k}.VOB";
                     temp = temp2 + temp;
 
@@ -384,9 +321,9 @@ namespace PgcDemuxLib
             string parent = Path.GetDirectoryName(filePath);
             string name = Path.GetFileName(filePath);
 
-            string temp1 = name.Substring(name.Length - 6).ToUpper();
-            string temp2 = name.Substring(name.Length - 12).ToUpper();
-            string temp3 = name.Substring(0, 4).ToUpper();
+            string temp1 = name[^6..].ToUpper();
+            string temp2 = name[^12..].ToUpper();
+            string temp3 = name[..4].ToUpper();
             if ((temp1 != "_0.IFO" || temp3 != "VTS_") && temp2 != "VIDEO_TS.IFO")
             {
                 Console.WriteLine("Invalid input file!");
@@ -462,26 +399,26 @@ namespace PgcDemuxLib
             {
                 VIDb = m_AADT_Cell_list[i].VobID;
                 CIDb = m_AADT_Cell_list[i].CellID;
-                for (j = 0, bFound = false; j < m_nPGCs && !bFound; j++)
+                for (j = 0, bFound = false; j < (TitleProgramChainTable?.NumberOfProgramChains ?? 0) && !bFound; j++)
                 {
-                    for (k = 0; k < m_nCells[j]; k++)
+                    for (k = 0; k < TitleProgramChainTable[j].NumberOfCells; k++)
                     {
-                        var cellPosInfo = TitleProgramChainTable.PGCs[j].CellPositionInformationTable[k];
-                        VIDa = cellPosInfo.VobID;
-                        CIDa = cellPosInfo.CellID;
+                        var cellInfo = TitleProgramChainTable[j].CellInfo[k];
+                        VIDa = cellInfo.VobID;
+                        CIDa = cellInfo.CellID;
                         if (VIDa == VIDb && CIDa == CIDb)
                         {
                             bFound = true;
-                            m_AADT_Cell_list[i].dwDuration = (ulong)TitleProgramChainTable.PGCs[j].CellPlaybackInformationTable[k].RawDuration;
+                            m_AADT_Cell_list[i].dwDuration = cellInfo.RawDuration;
                         }
                     }
                 }
                 if (!bFound)
                 {
                     if (this.VideoAttributes == null || this.VideoAttributes.Format == VideoFormat.NTSC) // NTSC
-                        m_AADT_Cell_list[i].dwDuration = 0xC0;
+                        m_AADT_Cell_list[i].dwDuration = Util.ParseDuration(0xC0); // TODO parse static value
                     else // PAL
-                        m_AADT_Cell_list[i].dwDuration = 0x40;
+                        m_AADT_Cell_list[i].dwDuration = Util.ParseDuration(0x40); // TODO parse static value
                 }
             }
 
@@ -491,26 +428,26 @@ namespace PgcDemuxLib
             {
                 VIDb = m_MADT_Cell_list[i].VobID;
                 CIDb = m_MADT_Cell_list[i].CellID;
-                for (j = 0, bFound = false; j < m_nMPGCs && !bFound; j++)
+                for (j = 0, bFound = false; j < MenuPGCs.Count && !bFound; j++)
                 {
-                    for (k = 0; k < m_nMCells[j]; k++)
+                    for (k = 0; k < MenuPGCs[j].NumberOfCells; k++)
                     {
-                        var cellPosInfo = MenuPGCs[j].CellPositionInformationTable[k];
-                        VIDa = cellPosInfo.VobID;
-                        CIDa = cellPosInfo.CellID;
+                        var cellInfo = MenuPGCs[j].CellInfo[k];
+                        VIDa = cellInfo.VobID;
+                        CIDa = cellInfo.CellID;
                         if (VIDa == VIDb && CIDa == CIDb)
                         {
                             bFound = true;
-                            m_MADT_Cell_list[i].dwDuration = (ulong)MenuPGCs[j].CellPlaybackInformationTable[k].RawDuration;
+                            m_MADT_Cell_list[i].dwDuration = cellInfo.RawDuration;
                         }
                     }
                 }
                 if (!bFound)
                 {
                     if (this.VideoAttributes == null || this.VideoAttributes.Format == VideoFormat.NTSC) // NTSC
-                        m_MADT_Cell_list[i].dwDuration = 0xC0;
+                        m_MADT_Cell_list[i].dwDuration = Util.ParseDuration(0xC0); // TODO parse static value
                     else // PAL
-                        m_MADT_Cell_list[i].dwDuration = 0x40;
+                        m_MADT_Cell_list[i].dwDuration = Util.ParseDuration(0x40); // TODO parse static value
                 }
             }
 

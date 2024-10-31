@@ -39,43 +39,6 @@ namespace PgcDemuxLib {
             return (Dec / 10) * 0x10 + (Dec % 10);
         }
 
-        public static ulong AddDuration(ulong dwDuration1, ulong dwDuration2) {
-            ulong ret;
-            int ifps, hh, mm, ss, ff;
-            Int64 i64Dur1, i64Dur2, i64DurT;
-
-            if (((dwDuration1 % 256) & 0x0c0) == 0x0c0)
-                ifps = 30;
-            else
-                ifps = 25;
-
-            i64Dur1 = BCD2Dec((int)((dwDuration1 % 256) & 0x3f));
-            i64Dur1 += BCD2Dec((int)((dwDuration1 / 256) % 256)) * ifps;
-            i64Dur1 += BCD2Dec((int)((dwDuration1 / (256 * 256)) % 256)) * ifps * 60;
-            i64Dur1 += BCD2Dec((int)(dwDuration1 / (256 * 256 * 256))) * ifps * 60 * 60;
-
-            i64Dur2 = BCD2Dec((int)((dwDuration2 % 256) & 0x3f));
-            i64Dur2 += BCD2Dec((int)((dwDuration2 / 256) % 256)) * ifps;
-            i64Dur2 += BCD2Dec((int)((dwDuration2 / (256 * 256)) % 256)) * ifps * 60;
-            i64Dur2 += BCD2Dec((int)(dwDuration2 / (256 * 256 * 256))) * ifps * 60 * 60;
-
-            i64DurT = i64Dur2 + i64Dur1;
-
-            ff = Dec2BCD((int)(i64DurT % ifps));
-            ss = Dec2BCD((int)((i64DurT / ifps) % 60));
-            mm = Dec2BCD((int)((i64DurT / ifps / 60) % 60));
-            hh = Dec2BCD((int)(i64DurT / ifps / 60 / 60));
-
-            ret = (ulong)ff + (ulong)ss * 256 + (ulong)mm * 256 * 256 + (ulong)hh * 256 * 256 * 256;
-
-            if (ifps == 30)
-                ret += 0x0c0;
-            else
-                ret += 0x040;
-
-            return ret;
-        }
-
         public static int readbuffer(Span<byte> caracter, Stream in_) {
             int j;
 
@@ -173,9 +136,9 @@ namespace PgcDemuxLib {
             return;
         }
 
-        public static int DurationInFrames(ulong dwDuration) {
+        public static int DurationInFrames(TimeSpan dwDuration) {
 
-            int ifps, ret;
+            /*int ifps, ret;
             Int64 i64Dur;
 
             if (((dwDuration % 256) & 0x0c0) == 0x0c0)
@@ -190,7 +153,8 @@ namespace PgcDemuxLib {
 
             ret = (int)(i64Dur);
 
-            return ret;
+            return ret;*/
+            return (int)(dwDuration.TotalSeconds * 30.0);
         }
 
         public static bool IsVideo(ReadOnlySpan<byte> buffer) {
@@ -305,5 +269,35 @@ namespace PgcDemuxLib {
 
             return (T)Enum.ToObject(typeof(T), input);
         }
+
+        /// <summary>
+        /// cell playback time, BCD, hh:mm:ss:ff with bits 7&6 of frame (last) byte indicating frame rate
+        /// 11 = 30 fps, 10 = illegal, 01 = 25 fps, 00 = illegal
+        /// </summary>
+        public static TimeSpan ParseDuration(int duration)
+        {
+            if (duration < 0)
+                return new TimeSpan();
+            else
+            {
+                int h = BCD2Dec(duration / (256 * 256 * 256));
+                int m = BCD2Dec((duration / (256 * 256)) % 256);
+                int s = BCD2Dec((duration / 256) % 256);
+                int frames = BCD2Dec((duration % 256) & 0x3f);
+                int fps;
+
+                //TODO handle in pgc/VideoAttributes
+                switch ((duration % 256) & 0xC0)
+                {
+                    case 0xC0: fps = 30; break;
+                    default: fps = 25; break;
+                }
+
+                int ms = (frames * 1000) / fps;
+
+                return new TimeSpan(0, h, m, s, ms);
+            }
+        }
+
     }
 }

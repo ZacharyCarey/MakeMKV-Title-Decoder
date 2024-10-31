@@ -1,4 +1,4 @@
-﻿using PgcDemuxLib;
+﻿using PgcDemuxLib.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace PgcDemuxLib {
+namespace PgcDemuxLib
+{
 
     internal enum AudioType {
         UNK = 0,
@@ -28,22 +29,17 @@ namespace PgcDemuxLib {
     public class PgcDemux {
 
         const string PGCDEMUX_VERSION = "1.2.0.5";
-        const int MAXLENGTH = 20 * 1024 * 1024;
-        const int MAX_PGC = 32768;
-        const int MAX_LU = 100;
-        const int MAX_MPGC = 32768;
         const int MODUPDATE = 100;
         const int MAXLOOKFORAUDIO = 10000; // Max number of explored packs in audio delay check
-        const int SECTOR_SIZE = 2048;
-        const int CELL_SIZE = 24;
+        internal const int SECTOR_SIZE = 2048;
 
-        private static byte[] pcmheader = new byte[44] {
+        private static readonly byte[] pcmheader = [
             0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45, 0x66, 0x6D, 0x74, 0x20,
             0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x80, 0xBB, 0x00, 0x00, 0x70, 0x17, 0x00, 0x00,
             0x04, 0x00, 0x10, 0x00, 0x64, 0x61, 0x74, 0x61, 0x00, 0x00, 0x00, 0x00
-        };
+        ];
 
-        bool m_bInProcess, m_bAbort, m_bCLI;
+        bool m_bInProcess;
 
         bool m_bCheckIFrame;
         bool m_bCheckVideoPack;
@@ -97,15 +93,13 @@ namespace PgcDemuxLib {
         private byte[] m_buffer = new byte[2050];
 
         public PgcDemux(string ifo_path, IfoOptions options) {
-            int i, k;
+            int i;
 
             for (i = 0; i < 32; i++) fsub[i] = null;
             for (i = 0; i < 8; i++) faud[i] = null;
             fvob = fvid = null;
 
             m_bInProcess = false;
-            m_bCLI = false;
-            m_bAbort = false;
 
             m_bCheckAud = m_bCheckSub = m_bCheckLog = m_bCheckCellt = true;
             m_bCheckVid = m_bCheckVob = m_bCheckVob2 = m_bCheckEndTime = false;
@@ -114,9 +108,6 @@ namespace PgcDemuxLib {
             m_bCheckLBA = m_bCheckVideoPack = m_bCheckAudioPack = m_bCheckNavPack = m_bCheckSubPack = true;
 
             // Parse options
-            string csPar, csPar2;
-            string csAux, csAux1, csAux2;
-
             m_nSelPGC = m_nSelAng = 0;
             m_iMode = DemuxingMode.PGC;
             m_iDomain = DemuxingDomain.Titles;
@@ -294,11 +285,11 @@ namespace PgcDemuxLib {
             Int64 i64;
             bool bMyCell;
             bool iRet;
-            ulong dwCellDuration;
+            TimeSpan dwCellDuration;
             int nFrames;
             int nCurrAngle;
 
-            if (nPGC >= ifo.m_nPGCs)
+            if (nPGC >= (ifo.TitleProgramChainTable?.NumberOfProgramChains ?? 0))
             {
                 Console.WriteLine("Error: PGC does not exist");
                 m_bInProcess = false;
@@ -312,15 +303,14 @@ namespace PgcDemuxLib {
             // Calculate  the total number of sectors
             nTotalSectors = 0;
             iArraysize = ifo.m_AADT_Cell_list.Count;
-            for (nCell = nCurrAngle = 0; nCell < ifo.m_nCells[nPGC]; nCell++)
+            for (nCell = nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells; nCell++)
             {
-                var cellPosInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPositionInformationTable[nCell];
-                VID = cellPosInfo.VobID;
-                CID = cellPosInfo.CellID;
+                var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
+                VID = cellInfo.VobID;
+                CID = cellInfo.CellID;
 
-                var cellPlaybackInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPlaybackInformationTable[nCell];
-                var cellType = cellPlaybackInfo.CellType;
-                var blockType = cellPlaybackInfo.BlockType;
+                var cellType = cellInfo.CellType;
+                var blockType = cellInfo.BlockType;
                 //		0101=First; 1001=Middle ;	1101=Last
                 bool isNormalCell = (cellType == CellType.Normal && blockType == BlockType.Normal);
                 bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
@@ -348,11 +338,11 @@ namespace PgcDemuxLib {
 
             nSector = 0;
             iRet = true;
-            for (nCell = nCurrAngle = 0; nCell < ifo.m_nCells[nPGC] && m_bInProcess == true; nCell++)
+            for (nCell = nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
             {
-                var cellPlaybackInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPlaybackInformationTable[nCell];
-                var cellType = cellPlaybackInfo.CellType;
-                var blockType = cellPlaybackInfo.BlockType;
+                var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
+                var cellType = cellInfo.CellType;
+                var blockType = cellInfo.BlockType;
                 //		0101=First; 1001=Middle ;	1101=Last
                 bool isNormalCell = (cellType == CellType.Normal && blockType == BlockType.Normal);
                 bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
@@ -364,12 +354,11 @@ namespace PgcDemuxLib {
                     nCurrAngle++;
                 if (isNormalCell || (nAng + 1) == nCurrAngle)
                 {
-                    var cellPosInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPositionInformationTable[nCell];
-                    VID = cellPosInfo.VobID;
-                    CID = cellPosInfo.CellID;
+                    VID = cellInfo.VobID;
+                    CID = cellInfo.CellID;
 
-                    i64IniSec = cellPlaybackInfo.FirstVobuStartSector;
-                    i64EndSec = cellPlaybackInfo.LastVobuEndSector;
+                    i64IniSec = cellInfo.FirstVobuStartSector;
+                    i64EndSec = cellInfo.LastVobuEndSector;
                     for (k = 1, i64sectors = 0; k < 10; k++)
                     {
                         i64sectors += (ifo.m_i64VOBSize[k] / 2048);
@@ -397,7 +386,7 @@ namespace PgcDemuxLib {
                         m_bInProcess = false;
                         iRet = false;
                     }
-                    if (m_bInProcess) in_.Seek((long)((i64IniSec - i64sectors) * 2048), SeekOrigin.Begin);
+                    if (m_bInProcess) in_.Seek((long)((i64IniSec - i64sectors) * SECTOR_SIZE), SeekOrigin.Begin);
 
                     for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
                     {
@@ -458,13 +447,13 @@ namespace PgcDemuxLib {
             {
                 csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
-                for (nCell = 0, nCurrAngle = 0; nCell < ifo.m_nCells[nPGC] && m_bInProcess == true; nCell++)
+                for (nCell = 0, nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
                 {
-                    var cellPlaybackInfo = ifo.TitleProgramChainTable.PGCs[nPGC].CellPlaybackInformationTable[nCell];
-                    dwCellDuration = (ulong)cellPlaybackInfo.RawDuration;
+                    var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
+                    dwCellDuration = cellInfo.RawDuration;
 
-                    var cellType = cellPlaybackInfo.CellType;
-                    var blockType = cellPlaybackInfo.BlockType;
+                    var cellType = cellInfo.CellType;
+                    var blockType = cellInfo.BlockType;
                     bool isNormal = (cellType == CellType.Normal && blockType == BlockType.Normal);
                     bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
                     bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
@@ -477,7 +466,7 @@ namespace PgcDemuxLib {
                     if (isNormal || (nAng + 1) == nCurrAngle)
                     {
                         nFrames += Util.DurationInFrames(dwCellDuration);
-                        if (nCell != (ifo.m_nCells[nPGC] - 1) || m_bCheckEndTime)
+                        if (nCell != (ifo.TitleProgramChainTable[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
                         {
                             var writer = new StreamWriter(fout);
                             writer.Write($"{nFrames}\n");
@@ -499,7 +488,6 @@ namespace PgcDemuxLib {
 
         void IniDemuxGlobalVars() {
             int k;
-            string csAux;
 
             // clear PTS
             for (k = 0; k < 32; k++)
@@ -1154,11 +1142,11 @@ namespace PgcDemuxLib {
             Int64 i64;
             bool bMyCell;
             bool iRet;
-            ulong dwCellDuration;
+            TimeSpan dwCellDuration;
             int nFrames;
 
 
-            if (nPGC >= ifo.m_nMPGCs)
+            if (nPGC >= ifo.MenuPGCs.Count)
             {
                 Console.WriteLine("Error: PGC does not exist");
                 m_bInProcess = false;
@@ -1172,11 +1160,11 @@ namespace PgcDemuxLib {
             // Calculate  the total number of sectors
             nTotalSectors = 0;
             iArraysize = ifo.m_MADT_Cell_list.Count;
-            for (nCell = 0; nCell < ifo.m_nMCells[nPGC]; nCell++)
+            for (nCell = 0; nCell < ifo.MenuPGCs[nPGC].NumberOfCells; nCell++)
             {
-                var cellPosInfo = ifo.MenuPGCs[nPGC].CellPositionInformationTable[nCell];
-                VID = cellPosInfo.VobID;
-                CID = cellPosInfo.CellID;
+                var cellInfo = ifo.MenuPGCs[nPGC].CellInfo[nCell];
+                VID = cellInfo.VobID;
+                CID = cellInfo.CellID;
                 for (k = 0; k < iArraysize; k++)
                 {
                     if (CID == ifo.m_MADT_Cell_list[k].CellID &&
@@ -1190,15 +1178,13 @@ namespace PgcDemuxLib {
             nSector = 0;
             iRet = true;
 
-            for (nCell = 0; nCell < ifo.m_nMCells[nPGC] && m_bInProcess == true; nCell++)
+            for (nCell = 0; nCell < ifo.MenuPGCs[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
             {
-                var cellPosInfo = ifo.MenuPGCs[nPGC].CellPositionInformationTable[nCell];
-                VID = cellPosInfo.VobID;
-                CID = cellPosInfo.CellID;
-
-                var cellPlaybackInfo = ifo.MenuPGCs[nPGC].CellPlaybackInformationTable[nCell];
-                i64IniSec = cellPlaybackInfo.FirstVobuStartSector;
-                i64EndSec = cellPlaybackInfo.LastVobuEndSector;
+                var cellInfo = ifo.MenuPGCs[nPGC].CellInfo[nCell];
+                VID = cellInfo.VobID;
+                CID = cellInfo.CellID;
+                i64IniSec = cellInfo.FirstVobuStartSector;
+                i64EndSec = cellInfo.LastVobuEndSector;
 
                 if (m_bVMGM)
                 {
@@ -1274,11 +1260,11 @@ namespace PgcDemuxLib {
             {
                 csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
-                for (nCell = 0; nCell < ifo.m_nMCells[nPGC] && m_bInProcess == true; nCell++)
+                for (nCell = 0; nCell < ifo.MenuPGCs[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
                 {
-                    dwCellDuration = (ulong)ifo.MenuPGCs[nPGC].CellPlaybackInformationTable[nCell].RawDuration;
+                    dwCellDuration = ifo.MenuPGCs[nPGC].CellInfo[nCell].RawDuration;
                     nFrames += Util.DurationInFrames(dwCellDuration);
-                    if (nCell != (ifo.m_nMCells[nPGC] - 1) || m_bCheckEndTime)
+                    if (nCell != (ifo.MenuPGCs[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
                     {
                         var writer = new StreamWriter(fout);
                         writer.Write($"{nFrames}\n");
@@ -1891,15 +1877,15 @@ namespace PgcDemuxLib {
 
             if (iMode == DemuxingMode.PGC)
             {
-                if (nSelection >= ifo.m_nPGCs)
+                if (nSelection >= (ifo.TitleProgramChainTable?.NumberOfProgramChains ?? 0))
                 {
                     Console.WriteLine("Error: PGC does not exist");
                     return false;
                 }
                 nCell = 0;
-                var cellPosInfo = ifo.TitleProgramChainTable.PGCs[nSelection].CellPositionInformationTable[nCell];
-                VID = cellPosInfo.VobID;
-                CID = cellPosInfo.CellID;
+                var cellInfo = ifo.TitleProgramChainTable[nSelection].CellInfo[nCell];
+                VID = cellInfo.VobID;
+                CID = cellInfo.CellID;
             }
             else if (iMode == DemuxingMode.VID)
             {
@@ -2029,15 +2015,15 @@ namespace PgcDemuxLib {
 
             if (iMode == DemuxingMode.PGC)
             {
-                if (nSelection >= ifo.m_nMPGCs)
+                if (nSelection >= ifo.MenuPGCs.Count)
                 {
                     Console.WriteLine("Error: PGC does not exist");
                     return false;
                 }
                 nCell = 0;
-                var cellPosInfo = ifo.MenuPGCs[nSelection].CellPositionInformationTable[nCell];
-                VID = cellPosInfo.VobID;
-                CID = cellPosInfo.CellID;
+                var cellInfo = ifo.MenuPGCs[nSelection].CellInfo[nCell];
+                VID = cellInfo.VobID;
+                CID = cellInfo.CellID;
             }
             else if (iMode == DemuxingMode.VID)
             {
@@ -2169,13 +2155,13 @@ namespace PgcDemuxLib {
         }
 
         void OutputLog(int nItem, int nAng, DemuxingDomain iDomain, TextWriter stream) {
-            string csFilePath, csAux, csAux1, csAux2;
+            string csAux;
             int k;
             int AudDelay;
 
             stream.WriteLine("[General]");
-            stream.WriteLine($"Total Number of PGCs   in Titles={ifo.m_nPGCs}");
-            stream.WriteLine($"Total Number of PGCs   in  Menus={ifo.m_nMPGCs}");
+            stream.WriteLine($"Total Number of PGCs   in Titles={(ifo.TitleProgramChainTable?.NumberOfProgramChains ?? 0)}");
+            stream.WriteLine($"Total Number of PGCs   in  Menus={ifo.MenuPGCs.Count}");
             stream.WriteLine($"Total Number of VobIDs in Titles={ifo.m_AADT_Vid_list.Count}");
             stream.WriteLine($"Total Number of VobIDs in  Menus={ifo.m_MADT_Vid_list.Count}");
             stream.WriteLine($"Total Number of Cells  in Titles={ifo.m_AADT_Cell_list.Count}");
@@ -2202,7 +2188,7 @@ namespace PgcDemuxLib {
             if (m_iMode == DemuxingMode.PGC)
             {
                 stream.WriteLine($"Selected PGC={(nItem + 1)}");
-                stream.WriteLine($"Number of Cells in Selected PGC={(iDomain == DemuxingDomain.Titles ? ifo.m_nCells[nItem] : ifo.m_nMCells[nItem])}");
+                stream.WriteLine($"Number of Cells in Selected PGC={(iDomain == DemuxingDomain.Titles ? ifo.TitleProgramChainTable[nItem].NumberOfCells : ifo.MenuPGCs[nItem].NumberOfCells)}");
                 stream.WriteLine($"Selected VOBID=None");
                 stream.WriteLine($"Number of Cells in Selected VOB=None");
             } else if (m_iMode == DemuxingMode.VID)

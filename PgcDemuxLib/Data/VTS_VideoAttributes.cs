@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace PgcDemuxLib
+namespace PgcDemuxLib.Data
 {
     /// <summary>
     /// https://dvd.sourceforge.net/dvdinfo/ifo.html#vidatt
@@ -13,34 +14,48 @@ namespace PgcDemuxLib
     {
         const int Address = 0x200;
 
+        [JsonInclude]
         public readonly CodingMode Encoding;
+
+        [JsonInclude]
         public readonly VideoFormat Format;
+
+        [JsonInclude]
         public readonly AspectRatio AspectRatio;
+
+        [JsonInclude]
         public readonly bool AutoScanAllowed;
+
+        [JsonInclude]
         public readonly bool AutoLetterboxAllowed;
+
+        [JsonInclude]
         public readonly VideoResolution Resolution;
+
+        [JsonInclude]
         public readonly bool Letterboxed;
 
         /// <summary>
         /// PAL only
         /// </summary>
+        [JsonInclude]
         public readonly CameraType CameraType;
 
         internal VTS_VideoAttributes(byte[] file)
         {
             int temp = file[Address];
 
-            this.Encoding = Util.ParseEnum<CodingMode>((temp >> 6) & 0b11);
-            this.Format = Util.ParseEnum<VideoFormat>((temp >> 4) & 0b11);
-            this.AspectRatio = Util.ParseEnum<AspectRatio>((temp >> 2) & 0b11);
-            this.AutoScanAllowed = ((temp >> 1) & 0b1) == 0;
-            this.AutoLetterboxAllowed = (temp & 0b1) == 0;
+            Encoding = Util.ParseEnum<CodingMode>(temp >> 6 & 0b11);
+            Format = Util.ParseEnum<VideoFormat>(temp >> 4 & 0b11);
+            AspectRatio = Util.ParseEnum<AspectRatio>(temp >> 2 & 0b11);
+            AutoScanAllowed = (temp >> 1 & 0b1) == 0;
+            AutoLetterboxAllowed = (temp & 0b1) == 0;
 
             temp = file[Address + 1];
 
-            this.Resolution = Util.ParseEnum<VideoResolution>((temp >> 3) & 0b111);
-            this.Letterboxed = ((temp >> 2) & 0b1) != 0;
-            this.CameraType = Util.ParseEnum<CameraType>(temp & 0b1);
+            Resolution = Util.ParseEnum<VideoResolution>(temp >> 3 & 0b111);
+            Letterboxed = (temp >> 2 & 0b1) != 0;
+            CameraType = Util.ParseEnum<CameraType>(temp & 0b1);
         }
     }
 
