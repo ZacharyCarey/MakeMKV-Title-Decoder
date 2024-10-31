@@ -14,13 +14,13 @@ namespace PgcDemuxLib.Data
     {
         const int Address = 0x200;
 
-        [JsonInclude]
+        [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly CodingMode Encoding;
 
-        [JsonInclude]
+        [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly VideoFormat Format;
 
-        [JsonInclude]
+        [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly AspectRatio AspectRatio;
 
         [JsonInclude]
@@ -29,7 +29,7 @@ namespace PgcDemuxLib.Data
         [JsonInclude]
         public readonly bool AutoLetterboxAllowed;
 
-        [JsonInclude]
+        [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly VideoResolution Resolution;
 
         [JsonInclude]
@@ -38,7 +38,7 @@ namespace PgcDemuxLib.Data
         /// <summary>
         /// PAL only
         /// </summary>
-        [JsonInclude]
+        [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly CameraType CameraType;
 
         internal VTS_VideoAttributes(byte[] file)
