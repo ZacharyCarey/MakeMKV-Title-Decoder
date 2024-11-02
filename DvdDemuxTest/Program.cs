@@ -1,26 +1,36 @@
 ﻿using PgcDemuxLib;
+using PgcDemuxLib.Data;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 
+string animusic = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2";
+string willywonka = "C:\\Users\\Zack\\Downloads\\WILLY_WONKA";
+
 string folder = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2\\VIDEO_TS";
-string file = "VTS_03_0.IFO";
+string file = "VTS_22_0.IFO";
 string output = "C:\\Users\\Zack\\Downloads\\TestOutput";
+
+Dvd? dvd = Dvd.ParseFolder(animusic);
+var ifo = dvd.TitleSets[21];
 
 IfoOptions options = new();
 options.PGC = 1; // 6
 options.Angle = 1;
 options.ExportVOB = true;
 options.DomainType = DemuxingDomain.Titles; // Menus
-var app = PgcDemux.TryOpenFile(Path.Combine(folder, file), options);
+var app = new PgcDemux(Path.Combine(folder, file), options, new IfoOld(dvd.Folder, ifo.FileName, ifo));
 if (app == null)
 {
     Console.WriteLine("Failed to read IFO file.");
     return;
 }
 
-Print();
+//Print();
 app.Demux(output);
+
+if (dvd == null) throw new Exception("Failed to parse!");
+Print(dvd);
 
 static long BCD2Dec(long BCD)
 {
@@ -100,15 +110,28 @@ JsonNode PrintMenus()
     return result;
 }
 */
-void Print()
+/*void Print()
 {
     /*JsonObject doc = new();
 
     doc["Menus (Language Unuts)"] = PrintMenus();
     doc["Titles"] = PrintTitles();
 
-    Console.WriteLine(doc.ToJsonString(options));*/
+    Console.WriteLine(doc.ToJsonString(options));
     var options = new JsonSerializerOptions { WriteIndented = true, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
-    string jsonString = JsonSerializer.Serialize<Ifo>(app.ifo, options);
+    string jsonString = JsonSerializer.Serialize<VtsIfo>(app.ifo, options);
     Console.WriteLine(jsonString);
+}*/
+
+void Print<T>(T obj)
+{
+    var options = new JsonSerializerOptions { WriteIndented = true, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+    //string jsonString = JsonSerializer.Serialize<T>(obj, options);
+    //Console.WriteLine(jsonString);
+
+    string path = Path.Combine(output, "Log.json");
+    using var stream = File.Create(path);
+    JsonSerializer.Serialize<T>(stream, obj, options);
+    stream.Flush();
+    Console.WriteLine("Wrote log to " + path);
 }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace PgcDemuxLib.Data
+namespace PgcDemuxLib.Data.VTS
 {
     /// <summary>
     /// https://dvd.sourceforge.net/dvdinfo/ifo_vts.html#pgci
@@ -15,6 +15,7 @@ namespace PgcDemuxLib.Data
         /// <summary>
         /// Byte index in file
         /// </summary>
+        [JsonInclude]
         internal readonly int Address;
 
         public int NumberOfProgramChains => PGCs.Length;
@@ -24,25 +25,25 @@ namespace PgcDemuxLib.Data
 
         public PGC this[int index]
         {
-            get => this.PGCs[index];
+            get => PGCs[index];
         }
 
         internal VTS_PGCI(byte[] file, int addr)
         {
             Address = addr;
 
-            int numPGCs = file.GetNbytes(Address, 2);
+            int numPGCs = file.GetNbytes(addr, 2);
+            int lastByte = file.GetNbytes(addr + 4, 4);
+            ReadOnlySpan<byte> data = file.AsSpan(addr, lastByte + 1);
+
             PGCs = new PGC[numPGCs];
 
-            // TODO Create struct to store the PGC category
             for (int i = 0; i < numPGCs; i++)
             {
-                int offset = i * 8 + 8;
-
-                int PgcCategory = file.GetNbytes(offset, 4); // TODO parse PgcCategory
-
-                int PgcAddr = file.GetNbytes(Address + offset + 4, 4) + Address;
-                PGCs[i] = new PGC(file, PgcAddr, i);
+                ReadOnlySpan<byte> entry = data.Slice(8 + i * 8, 8);
+                int PgcCategory = entry.GetNbytes(0, 4);
+                int PgcOffset = entry.GetNbytes(4, 4);
+                PGCs[i] = new PGC(data.Slice(PgcOffset), addr + PgcOffset, i, PgcCategory >> 31 & 0b1, 0, PgcCategory >> 24 & 0b1111111);
             }
         }
     }

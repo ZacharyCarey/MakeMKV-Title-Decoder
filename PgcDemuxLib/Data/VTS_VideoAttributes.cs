@@ -10,9 +10,9 @@ namespace PgcDemuxLib.Data
     /// <summary>
     /// https://dvd.sourceforge.net/dvdinfo/ifo.html#vidatt
     /// </summary>
-    public class VTS_VideoAttributes
+    public struct VTS_VideoAttributes
     {
-        const int Address = 0x200;
+        internal int Address;
 
         [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly CodingMode Encoding;
@@ -41,8 +41,9 @@ namespace PgcDemuxLib.Data
         [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly CameraType CameraType;
 
-        internal VTS_VideoAttributes(byte[] file)
+        internal VTS_VideoAttributes(byte[] file, int addr)
         {
+            this.Address = addr;
             int temp = file[Address];
 
             Encoding = Util.ParseEnum<CodingMode>(temp >> 6 & 0b11);

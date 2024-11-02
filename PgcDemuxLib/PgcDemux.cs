@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -89,10 +90,10 @@ namespace PgcDemuxLib
         int[] nchannels = new int[8];
         int[] fsample = new int[8];
 
-        public Ifo ifo { get; private set; }
+        public IfoOld ifo { get; private set; }
         private byte[] m_buffer = new byte[2050];
 
-        public PgcDemux(string ifo_path, IfoOptions options) {
+        public PgcDemux(string ifo_path, IfoOptions options, IfoOld dvdIfo) {
             int i;
 
             for (i = 0; i < 32; i++) fsub[i] = null;
@@ -186,7 +187,7 @@ namespace PgcDemuxLib
             m_bCheckEndTime = options.IncludeEndTime;
             m_iDomain = options.DomainType;
 
-            ifo = Ifo.TryParseFile(ifo_path);
+            ifo = dvdIfo;//IfoOld.TryParseFile(ifo_path);
             if (ifo == null)
             {
                 throw new Exception("Could not decode IFO file.");
@@ -198,7 +199,7 @@ namespace PgcDemuxLib
             }
         }
 
-        public static PgcDemux? TryOpenFile(string input, IfoOptions options) {
+        /*public static PgcDemux? TryOpenFile(string input, IfoOptions options) {
             try
             {
                 return new PgcDemux(input, options);
@@ -208,7 +209,7 @@ namespace PgcDemuxLib
                 Console.WriteLine(e.StackTrace);
                 return null;
             }
-        }
+        }*/
 
         public bool Demux(string output_folder) {
             if (m_iMode == DemuxingMode.PGC)
@@ -301,40 +302,7 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = 0;
-            iArraysize = ifo.m_AADT_Cell_list.Count;
-            for (nCell = nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells; nCell++)
-            {
-                var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
-                VID = cellInfo.VobID;
-                CID = cellInfo.CellID;
-
-                var cellType = cellInfo.CellType;
-                var blockType = cellInfo.BlockType;
-                //		0101=First; 1001=Middle ;	1101=Last
-                bool isNormalCell = (cellType == CellType.Normal && blockType == BlockType.Normal);
-                bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
-                bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
-                bool isLastAngle = (cellType == CellType.LastOfAngleBlock && blockType == BlockType.AngleBlock);
-                if (isFirstAngle)
-                    nCurrAngle = 1;
-                else if ((isMiddleAngle || isLastAngle) && nCurrAngle != 0)
-                {
-                    nCurrAngle++;
-                }
-                if (isNormalCell || (nAng + 1) == nCurrAngle)
-                {
-                    for (k = 0; k < iArraysize; k++)
-                    {
-                        if (CID == ifo.m_AADT_Cell_list[k].CellID &&
-                            VID == ifo.m_AADT_Cell_list[k].VobID)
-                        {
-                            nTotalSectors += ifo.m_AADT_Cell_list[k].Size;
-                        }
-                    }
-                }
-                if (isLastAngle) nCurrAngle = 0;
-            }
+            nTotalSectors = calculateTotalSectors(ifo.TitleProgramChainTable[nPGC], ifo.m_AADT_Cell_list, nAng);
 
             nSector = 0;
             iRet = true;
@@ -344,15 +312,11 @@ namespace PgcDemuxLib
                 var cellType = cellInfo.CellType;
                 var blockType = cellInfo.BlockType;
                 //		0101=First; 1001=Middle ;	1101=Last
-                bool isNormalCell = (cellType == CellType.Normal && blockType == BlockType.Normal);
-                bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
-                bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
-                bool isLastAngle = (cellType == CellType.LastOfAngleBlock && blockType == BlockType.AngleBlock);
-                if (isFirstAngle)
+                if (cellInfo.IsFirstAngle)
                     nCurrAngle = 1;
-                else if ((isMiddleAngle || isLastAngle) && nCurrAngle != 0)
+                else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && nCurrAngle != 0)
                     nCurrAngle++;
-                if (isNormalCell || (nAng + 1) == nCurrAngle)
+                if (cellInfo.IsNormal || (nAng + 1) == nCurrAngle)
                 {
                     VID = cellInfo.VobID;
                     CID = cellInfo.CellID;
@@ -437,7 +401,7 @@ namespace PgcDemuxLib
                     if (in_ != null) in_.Close();
                     in_ = null;
                 }  // if (iCat==0 || (nAng+1) == nCurrAngle)
-                if (isLastAngle) nCurrAngle = 0;
+                if (cellInfo.IsLastAngle) nCurrAngle = 0;
             }   // For Cells 
 
             CloseAndNull();
@@ -450,20 +414,14 @@ namespace PgcDemuxLib
                 for (nCell = 0, nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
                 {
                     var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
-                    dwCellDuration = cellInfo.RawDuration;
+                    dwCellDuration = cellInfo.Duration;
 
-                    var cellType = cellInfo.CellType;
-                    var blockType = cellInfo.BlockType;
-                    bool isNormal = (cellType == CellType.Normal && blockType == BlockType.Normal);
-                    bool isFirstAngle = (cellType == CellType.FirstOfAngleBlock && blockType == BlockType.AngleBlock);
-                    bool isMiddleAngle = (cellType == CellType.MiddleOfAngleBlock && blockType == BlockType.AngleBlock);
-                    bool isLastAngle = (cellType == CellType.LastOfAngleBlock && blockType == BlockType.AngleBlock);
                     //			0101=First; 1001=Middle ;	1101=Last
-                    if (isFirstAngle)
+                    if (cellInfo.IsFirstAngle)
                         nCurrAngle = 1;
-                    else if ((isMiddleAngle || isLastAngle) && nCurrAngle != 0)
+                    else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && nCurrAngle != 0)
                         nCurrAngle++;
-                    if (isNormal || (nAng + 1) == nCurrAngle)
+                    if (cellInfo.IsNormal || (nAng + 1) == nCurrAngle)
                     {
                         nFrames += Util.DurationInFrames(dwCellDuration);
                         if (nCell != (ifo.TitleProgramChainTable[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
@@ -474,7 +432,7 @@ namespace PgcDemuxLib
                         }
                     }
 
-                    if (isLastAngle) nCurrAngle = 0;
+                    if (cellInfo.IsLastAngle) nCurrAngle = 0;
                 }
                 fout.Close();
             }
@@ -484,6 +442,42 @@ namespace PgcDemuxLib
             if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, nPGC, nAng, DemuxingDomain.Titles);
 
             return iRet;
+        }
+
+        static int calculateTotalSectors(PGC pgc, List<ADT_CELL> adt, int selectedAngle = -1, bool forceAllCells = false)
+        {
+            int nTotalSectors = 0;
+            int currentAngle = 0;
+            for (int nCell = 0; nCell < pgc.NumberOfCells; nCell++)
+            {
+                var cellInfo = pgc.CellInfo[nCell];
+
+                var cellType = cellInfo.CellType;
+                var blockType = cellInfo.BlockType;
+                //		0101=First; 1001=Middle ;	1101=Last
+                if (cellInfo.IsFirstAngle)
+                    currentAngle = 1;
+                else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && currentAngle != 0)
+                {
+                    currentAngle++;
+                }
+
+                bool isSelectedAngle = (selectedAngle < 0 ? false : (selectedAngle + 1) == currentAngle);
+                if (forceAllCells || cellInfo.IsNormal || isSelectedAngle)
+                {
+                    for (int k = 0; k < adt.Count; k++)
+                    {
+                        if (cellInfo.CellID == adt[k].CellID &&
+                            cellInfo.VobID == adt[k].VobID)
+                        {
+                            nTotalSectors += adt[k].Size;
+                        }
+                    }
+                }
+                if (cellInfo.IsLastAngle) currentAngle = 0;
+            }
+
+            return nTotalSectors;
         }
 
         void IniDemuxGlobalVars() {
@@ -1158,22 +1152,7 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = 0;
-            iArraysize = ifo.m_MADT_Cell_list.Count;
-            for (nCell = 0; nCell < ifo.MenuPGCs[nPGC].NumberOfCells; nCell++)
-            {
-                var cellInfo = ifo.MenuPGCs[nPGC].CellInfo[nCell];
-                VID = cellInfo.VobID;
-                CID = cellInfo.CellID;
-                for (k = 0; k < iArraysize; k++)
-                {
-                    if (CID == ifo.m_MADT_Cell_list[k].CellID &&
-                        VID == ifo.m_MADT_Cell_list[k].VobID)
-                    {
-                        nTotalSectors += ifo.m_MADT_Cell_list[k].Size;
-                    }
-                }
-            }
+            nTotalSectors = calculateTotalSectors(ifo.MenuPGCs[nPGC], ifo.m_MADT_Cell_list, -1, true);
 
             nSector = 0;
             iRet = true;
@@ -1262,7 +1241,7 @@ namespace PgcDemuxLib
                 fout = File.Open(csAux, FileMode.Create);
                 for (nCell = 0; nCell < ifo.MenuPGCs[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
                 {
-                    dwCellDuration = ifo.MenuPGCs[nPGC].CellInfo[nCell].RawDuration;
+                    dwCellDuration = ifo.MenuPGCs[nPGC].CellInfo[nCell].Duration;
                     nFrames += Util.DurationInFrames(dwCellDuration);
                     if (nCell != (ifo.MenuPGCs[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
                     {

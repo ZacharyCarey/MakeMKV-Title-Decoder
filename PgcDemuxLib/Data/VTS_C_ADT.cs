@@ -15,6 +15,7 @@ namespace PgcDemuxLib.Data
         /// <summary>
         /// Byte index in file
         /// </summary>
+        [JsonInclude]
         internal readonly int Address;
 
         public int NumberOfADTs => ADTs.Length;
@@ -31,26 +32,25 @@ namespace PgcDemuxLib.Data
         {
             Address = addr;
 
-            //this.NumberOfADTs = file.GetNbytes(addr, 2);
-            int numADTs = file.GetNbytes(addr + 4, 4);
-            numADTs = (numADTs - 7) / 12;
+            int numADTs = file.GetNbytes(addr, 2);
+            int lastByte = file.GetNbytes(addr + 4, 4);
+            ReadOnlySpan<byte> data = file.AsSpan(addr, lastByte + 1);
 
             // TODO verify if this is needed or not
-            // This is how NumberOfVobIDs was calculated in the original program, so verify our number is the same
-            /*int check = file.GetNbytes(addr + 4, 4);
-            check = (check - 7) / 12;
-            if (check != this.NumberOfADTs)
+            int numEntries = (data.Length - 8) / 12;
+            if (numADTs > numEntries)
             {
-                throw new Exception("Assert failed: NumberOfVobIDs did not match the number of given bytes");
-            }*/
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"WARNING: VTS_C_ADT has {numADTs} ADTs, but there are enough bytes for {numEntries} entries. Data may be truncated.");
+                Console.ResetColor();
+                numADTs = numEntries;
+            }
 
             ADTs = new ADT[numADTs];
-
             //Cells
             for (int nADT = 0; nADT < numADTs; nADT++)
             {
-                int offset = 8 + 12 * nADT;
-                ADTs[nADT] = new ADT(file, addr + offset);
+                ADTs[nADT] = new ADT(data.Slice(8 + 12 * nADT, 12), addr + 8 + 12 * nADT);
             }
         }
     }
@@ -63,19 +63,28 @@ namespace PgcDemuxLib.Data
         /// <summary>
         /// Byte index in file
         /// </summary>
+        [JsonInclude]
         internal readonly int Address;
 
+        [JsonInclude]
         public readonly int VobID;
+
+        [JsonInclude]
         public readonly int CellID;
+
+        [JsonInclude]
         public readonly int StartSector;
+
+        [JsonInclude]
         public readonly int EndSector;
 
-        internal ADT(byte[] file, int addr)
+        internal ADT(ReadOnlySpan<byte> data, int globalAddr)
         {
-            VobID = file.GetNbytes(addr, 2);
-            CellID = file[addr + 2];
-            StartSector = file.GetNbytes(addr + 4, 4);
-            EndSector = file.GetNbytes(addr + 8, 4);
+            this.Address = globalAddr;
+            VobID = data.GetNbytes(0, 2);
+            CellID = data[2];
+            StartSector = data.GetNbytes(4, 4);
+            EndSector = data.GetNbytes(8, 4);
         }
     }
 }

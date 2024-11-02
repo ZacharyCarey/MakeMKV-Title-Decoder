@@ -12,23 +12,40 @@ namespace PgcDemuxLib {
             return GetNbytes(buffer.AsSpan(index, count));
         }
 
-        public static int GetNbytes(this ReadOnlySpan<byte> buffer) {
+        public static int GetNbytes(this ReadOnlySpan<byte> buffer, int index = -1, int count = -1) {
             uint result = 0;
 
-            for (int i = 0; i < buffer.Length; i++)
+            if (index < 0) index = 0;
+            if (count < 0) count = buffer.Length;
+
+            for (int i = 0; i < count; i++)
             {
                 //result = result * 256 + buffer[i];
-                result = (result << 8) | buffer[i];
+                result = (result << 8) | buffer[index + i];
             }
 
             return (int)result;
         }
 
-        public static string GetString(this byte[] buffer, int index = -1, int count = -1)
+        public static string GetString(this byte[] buffer, int index = -1, int count = -1, bool trim = false)
         {
             if (index < 0) index = 0;
             if (count < 0) count = buffer.Length;
+            if (trim) {
+                for (int i = 0; i < count; i++)
+                {
+                    if (buffer[index + i] == 0)
+                    {
+                        count = i;
+                    }
+                }
+            }
             return Encoding.ASCII.GetString(buffer, index, count);
+        }
+
+        public static string GetString(this ReadOnlySpan<byte> buffer, int index = -1, int count = -1, bool trim = false)
+        {
+            return GetString(buffer.ToArray(), index, count, trim);
         }
 
         public static int BCD2Dec(int BCD) {
@@ -155,6 +172,14 @@ namespace PgcDemuxLib {
 
             return ret;*/
             return (int)(dwDuration.TotalSeconds * 30.0);
+        }
+
+        public static void AssertValidAddress(int addr, string structName)
+        {
+            if (addr == 0)
+            {
+                throw new Exception($"Expected a valid address for '{structName}', got 0 instead.");
+            }
         }
 
         public static bool IsVideo(ReadOnlySpan<byte> buffer) {
