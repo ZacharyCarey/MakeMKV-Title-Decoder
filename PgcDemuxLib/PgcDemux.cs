@@ -104,6 +104,23 @@ namespace PgcDemuxLib
                 }
             }
         }
+
+        public static IEnumerable<(T Element, bool IsLast)> DetectLast<T>(this IEnumerable<T> source)
+        {
+            using (var e = source.GetEnumerator())
+            {
+                // If the list is empty, nothing is returned
+                if (e.MoveNext())
+                {
+                    T element;
+                    for (element = e.Current; e.MoveNext(); element = e.Current)
+                    {
+                        yield return (element, false);
+                    }
+                    yield return (element, true);
+                }
+            }
+        }
     }
 
     internal class PgcDemux {
@@ -372,21 +389,14 @@ namespace PgcDemuxLib
         }
 
         bool Demux(string m_csOutputPath, int nPGC, int nAng, object? pDlg) {
-            int nTotalSectors;
-            int nSector, nCell;
-            int k, iArraysize;
+            int nSector;
             int CID, VID;
-            Int64 i64IniSec, i64EndSec;
-            Int64 i64sectors;
-            int nVobin = -1;
-            string csAux, csAux2;
-            Stream in_, fout;
-            Int64 i64;
+            string csAux;
+            Stream fout;
             bool bMyCell;
             bool iRet;
             TimeSpan dwCellDuration;
             int nFrames;
-            int nCurrAngle;
 
             if (nPGC >= (ifo.TitleProgramChainTable?.NumberOfProgramChains ?? 0))
             {
@@ -400,107 +410,70 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = ifo.TitleProgramChainTable[nPGC].GetMatchingCells(ifo.SortedTitleCells, nAng).Sum(cell => cell.Size);
+            int nTotalSectors = ifo.TitleProgramChainTable[nPGC].GetMatchingCells(ifo.SortedTitleCells, nAng).Sum(cell => cell.Size);
+
+            VobStream vobStream = new VobStream(ifo);
 
             nSector = 0;
             iRet = true;
-            for (nCell = nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
+            foreach(var cellInfo in ifo.TitleProgramChainTable[nPGC].CellInfo.FilterByAngle(nAng))
             {
-                var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
-                var cellType = cellInfo.CellType;
-                var blockType = cellInfo.BlockType;
-                //		0101=First; 1001=Middle ;	1101=Last
-                if (cellInfo.IsFirstAngle)
-                    nCurrAngle = 1;
-                else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && nCurrAngle != 0)
-                    nCurrAngle++;
-                if (cellInfo.IsNormal || (nAng + 1) == nCurrAngle)
-                {
-                    VID = cellInfo.VobID;
-                    CID = cellInfo.CellID;
+                VID = cellInfo.VobID;
+                CID = cellInfo.CellID;
 
-                    i64IniSec = cellInfo.FirstVobuStartSector;
-                    i64EndSec = cellInfo.LastVobuEndSector;
-                    for (k = 1, i64sectors = 0; k < 10; k++)
+                // TODO is this section still needed?
+                int startSector = cellInfo.FirstVobuStartSector;
+                int endSector = cellInfo.LastVobuEndSector;
+
+                if (m_bInProcess) vobStream.Seek((startSector * SECTOR_SIZE), SeekOrigin.Begin);
+
+                bool myCell = true;
+                for (long i64 = 0; i64 < (endSector - startSector + 1) && m_bInProcess == true; i64++)
+                {
+                    //readpack
+                    if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
+                    if (Util.readbuffer(m_buffer, vobStream) != 2048)
                     {
-                        i64sectors += (ifo.VobSize[k] / 2048);
-                        if (i64IniSec < i64sectors)
-                        {
-                            i64sectors -= (ifo.VobSize[k] / 2048);
-                            nVobin = k;
-                            k = 20;
-                        }
-                    }
-                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
-                    csAux = $"{nVobin}.VOB";
-                    csAux = csAux2 + csAux;
-                    try
-                    {
-                        in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
-                    }
-                    catch (Exception)
-                    {
-                        in_ = null;
-                    }
-                    if (in_ == null)
-                    {
-                        Console.WriteLine("Error opening input VOB: " + csAux);
+                        Console.WriteLine("Input error: Reached end of VOB too early");
                         m_bInProcess = false;
                         iRet = false;
                     }
-                    if (m_bInProcess) in_.Seek((long)((i64IniSec - i64sectors) * SECTOR_SIZE), SeekOrigin.Begin);
 
-                    for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
+                    if (m_bInProcess == true)
                     {
-                        //readpack
-                        if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                        if (Util.readbuffer(m_buffer, in_) != 2048)
+                        if (Util.IsSynch(m_buffer) != true)
                         {
-                            if (in_ != null) in_.Close();
-                            nVobin++;
-                            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
-                            csAux = $"{nVobin}.VOB";
-                            csAux = csAux2 + csAux;
-                            in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
-                            if (Util.readbuffer(m_buffer, in_) != 2048)
-                            {
-                                Console.WriteLine("Input error: Reached end of VOB too early");
-                                m_bInProcess = false;
-                                iRet = false;
-                            }
+                            Console.WriteLine("Error reading input VOB: Unsynchronized");
+                            m_bInProcess = false;
+                            iRet = false;
+                        }
+                        if (Util.IsNav(m_buffer))
+                        {
+                            if (m_buffer[0x420] == (byte)(VID % 256) &&
+                                m_buffer[0x41F] == (byte)(VID / 256) &&
+                                m_buffer[0x422] == (byte)CID)
+                                myCell = true;
+                            else
+                                myCell = false;
                         }
 
-                        if (m_bInProcess == true)
+                        if (myCell)
                         {
-                            if (Util.IsSynch(m_buffer) != true)
-                            {
-                                Console.WriteLine("Error reading input VOB: Unsynchronized");
-                                m_bInProcess = false;
-                                iRet = false;
-                            }
-                            if (Util.IsNav(m_buffer))
-                            {
-                                if (m_buffer[0x420] == (byte)(VID % 256) &&
-                                    m_buffer[0x41F] == (byte)(VID / 256) &&
-                                    m_buffer[0x422] == (byte)CID)
-                                    bMyCell = true;
-                                else
-                                    bMyCell = false;
-                            }
-
-                            if (bMyCell)
-                            {
-                                nSector++;
-                                iRet = ProcessPack(m_csOutputPath, true);
-                            }
-
+                            nSector++;
+                            iRet = ProcessPack(m_csOutputPath, true);
                         }
-                    } // For readpacks
-                    if (in_ != null) in_.Close();
-                    in_ = null;
-                }  // if (iCat==0 || (nAng+1) == nCurrAngle)
-                if (cellInfo.IsLastAngle) nCurrAngle = 0;
-            }   // For Cells 
+
+                    }
+                } // For readpacks
+
+                if (!m_bInProcess)
+                {
+                    break;
+                }
+            }
+
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             CloseAndNull();
             nFrames = 0;
@@ -509,28 +482,16 @@ namespace PgcDemuxLib
             {
                 csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
                 fout = File.Open(csAux, FileMode.Create);
-                for (nCell = 0, nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
+                foreach((var cellInfo, bool IsLast) in ifo.TitleProgramChainTable[nPGC].CellInfo.FilterByAngle(nAng).DetectLast())
                 {
-                    var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
                     dwCellDuration = cellInfo.Duration;
-
-                    //			0101=First; 1001=Middle ;	1101=Last
-                    if (cellInfo.IsFirstAngle)
-                        nCurrAngle = 1;
-                    else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && nCurrAngle != 0)
-                        nCurrAngle++;
-                    if (cellInfo.IsNormal || (nAng + 1) == nCurrAngle)
+                    nFrames += Util.DurationInFrames(dwCellDuration);
+                    if (!IsLast || m_bCheckEndTime)
                     {
-                        nFrames += Util.DurationInFrames(dwCellDuration);
-                        if (nCell != (ifo.TitleProgramChainTable[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
-                        {
-                            var writer = new StreamWriter(fout);
-                            writer.Write($"{nFrames}\n");
-                            writer.Flush();
-                        }
+                        var writer = new StreamWriter(fout);
+                        writer.Write($"{nFrames}\n");
+                        writer.Flush();
                     }
-
-                    if (cellInfo.IsLastAngle) nCurrAngle = 0;
                 }
                 fout.Close();
             }
