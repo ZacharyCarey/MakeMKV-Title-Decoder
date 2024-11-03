@@ -324,5 +324,14 @@ namespace PgcDemuxLib {
             }
         }
 
+        internal static IEnumerable<(T Value, int Index)> WithIndex<T>(this IEnumerable<T> values)
+        {
+            int index = 0;
+            foreach(T value in values)
+            {
+                yield return (value, index++);
+            }
+        }
+
     }
 }

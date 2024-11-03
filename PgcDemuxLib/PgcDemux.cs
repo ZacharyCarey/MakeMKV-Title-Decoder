@@ -186,7 +186,7 @@ namespace PgcDemuxLib
         int[] nchannels = new int[8];
         int[] fsample = new int[8];
 
-        public VtsIfo ifo { get; private set; }
+        public IfoBase ifo { get; private set; }
         private byte[] m_buffer = new byte[2050];
 
         private MenuPgc MenuPGCs;
@@ -201,13 +201,14 @@ namespace PgcDemuxLib
                 get => pgcs[index];
             }
 
-            internal MenuPgc(VtsIfo ifo)
+            internal MenuPgc(IfoBase ifo)
             {
                 this.pgcs = ifo.MenuProgramChainTable.All.SelectMany(x => x.All).ToArray();
             }
         }
 
-        public PgcDemux(VtsIfo ifo, IfoOptions options) {
+        // TODO rename IfoOptions
+        public PgcDemux(IfoBase ifo, IfoOptions options, string output_folder) {
             MenuPGCs = new(ifo);
             int i;
 
@@ -308,10 +309,25 @@ namespace PgcDemuxLib
                 throw new Exception("Could not decode IFO file.");
             }
 
+            if (m_bCheckVob)
+            {
+                if (options.VobName == null) throw new Exception();
+                fvob = File.Create(Path.Combine(output_folder, options.VobName));
+            }
+
             /*if (ifo.IsVideoManager)
             {
                 m_iDomain = DemuxingDomain.Menus;
             }*/
+        }
+
+        public void Close()
+        {
+            if (fvob != null)
+            {
+                fvob.Flush();
+                fvob.Close();
+            }
         }
 
         /*public static PgcDemux? TryOpenFile(string input, IfoOptions options) {
@@ -412,7 +428,7 @@ namespace PgcDemuxLib
             // Calculate  the total number of sectors
             int nTotalSectors = ifo.TitleProgramChainTable[nPGC].GetMatchingCells(ifo.SortedTitleCells, nAng).Sum(cell => cell.Size);
 
-            VobStream vobStream = new VobStream(ifo);
+            VobStream vobStream = new VobStream(ifo, false);
 
             nSector = 0;
             iRet = true;
@@ -422,8 +438,8 @@ namespace PgcDemuxLib
                 CID = cellInfo.CellID;
 
                 // TODO is this section still needed?
-                int startSector = cellInfo.FirstVobuStartSector;
-                int endSector = cellInfo.LastVobuEndSector;
+                long startSector = cellInfo.FirstVobuStartSector;
+                long endSector = cellInfo.LastVobuEndSector;
 
                 if (m_bInProcess) vobStream.Seek((startSector * SECTOR_SIZE), SeekOrigin.Begin);
 
@@ -688,7 +704,7 @@ namespace PgcDemuxLib
 
             if (m_bInProcess == true)
             {
-                if (m_bCheckVob2)
+                /*if (m_bCheckVob2)
                 {
                     if (fvob == null || m_nVidout != m_nCurrVid)
                     {
@@ -716,7 +732,7 @@ namespace PgcDemuxLib
                         csAux = Path.Combine(m_csOutputPath, csAux);
                         fvob = File.Open(csAux, FileMode.Create);
                     }
-                }
+                }*/
 
                 if (fvob != null) Util.writebuffer(buffer, fvob, 2048);
                 m_i64OutputLBA++;
@@ -1151,11 +1167,9 @@ namespace PgcDemuxLib
         bool MDemux(string m_csOutputPath, int nPGC, object? pDlg) {
             int nTotalSectors;
             int nSector, nCell;
-            int k, iArraysize;
             int CID, VID;
-            Int64 i64IniSec, i64EndSec;
             string csAux, csAux2;
-            Stream in_, fout;
+            Stream fout;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -1180,46 +1194,31 @@ namespace PgcDemuxLib
             nSector = 0;
             iRet = true;
 
-            for (nCell = 0; nCell < MenuPGCs[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
+            Stream vob;
+            if (m_bVMGM)
             {
-                var cellInfo = MenuPGCs[nPGC].CellInfo[nCell];
+                vob = File.OpenRead(Path.Combine(m_csOutputPath, "VIDEO_TS.VOB"));
+            } else
+            {
+                vob = new VobStream(ifo, true);
+            }
+
+            foreach (var cellInfo in MenuPGCs[nPGC].CellInfo)
+            {
                 VID = cellInfo.VobID;
                 CID = cellInfo.CellID;
-                i64IniSec = cellInfo.FirstVobuStartSector;
-                i64EndSec = cellInfo.LastVobuEndSector;
+                long startSector = cellInfo.FirstVobuStartSector;
+                long endSector = cellInfo.LastVobuEndSector;
 
-                if (m_bVMGM)
-                {
-                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
-                    csAux = csAux2 + "VOB";
-                }
-                else
-                {
-                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
-                    csAux = csAux2 + "0.VOB";
-                }
-                try
-                {
-                    in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
-                } catch (Exception)
-                {
-                    in_ = null;
-                }
-                if (in_ == null)
-                {
-                    Console.WriteLine("Error opening input VOB: " + csAux);
-                    m_bInProcess = false;
-                    iRet = false;
-                }
-                if (m_bInProcess) in_.Seek((long)((i64IniSec) * 2048), SeekOrigin.Begin);
+                if (m_bInProcess) vob.Seek((startSector * SECTOR_SIZE), SeekOrigin.Begin);
 
-                for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
+                for (i64 = 0, bMyCell = true; i64 < (endSector - startSector + 1) && m_bInProcess == true; i64++)
                 {
                     //readpack
                     if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                    if (Util.readbuffer(m_buffer, in_) != 2048)
+                    if (Util.readbuffer(m_buffer, vob) != 2048)
                     {
-                        if (in_ != null) in_.Close();
+                        if (vob != null) vob.Close();
                         Console.WriteLine("Input error: Reached end of VOB too early");
                         m_bInProcess = false;
                         iRet = false;
@@ -1250,9 +1249,14 @@ namespace PgcDemuxLib
                         }
                     }
                 } // For readpacks
-                if (in_ != null) in_.Close();
-                in_ = null;
+
+                if (!m_bInProcess)
+                {
+                    break;
+                }
             }   // For Cells 
+            if (vob != null) vob.Close();
+            vob = null;
 
             CloseAndNull();
 
@@ -1336,12 +1340,12 @@ namespace PgcDemuxLib
                             k = 20;
                         }
                     }
-                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                    //csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
                     csAux = $"{nVobin}.VOB";
-                    csAux = csAux2 + csAux;
+                    csAux = $"VTS_{ifo.TitleSet:00}_" + csAux;
                     try
                     {
-                        in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                        in_ = File.OpenRead(Path.Combine(output_folder, csAux));
                     } catch (Exception) {
                         in_ = null;
                     }
@@ -1361,12 +1365,12 @@ namespace PgcDemuxLib
                         {
                             if (in_ != null) in_.Close();
                             nVobin++;
-                            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
-                            csAux = $"{nVobin}.VOB";
-                            csAux = csAux2 + csAux;
+                            //csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                            csAux = $"{nVobin}.VOB"; // TODO replace all of these with VobStream
+                            csAux = $"VTS_{ifo.TitleSet:00}_" + csAux;
                             try
                             {
-                                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
                             } catch (Exception)
                             {
                                 in_ = null;
@@ -1495,17 +1499,17 @@ namespace PgcDemuxLib
                     i64EndSec = ifo.SortedMenuCells[nCell].EndSector;
                     if (m_bVMGM)
                     {
-                        csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
+                        csAux2 = $"VTS_{ifo.TitleSet:00}_0.";
                         csAux = csAux2 + "VOB";
                     }
                     else
                     {
-                        csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                        csAux2 = $"VTS_{ifo.TitleSet:00}_";
                         csAux = csAux2 + "0.VOB";
                     }
                     try
                     {
-                        in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                        in_ = File.OpenRead(Path.Combine(output_folder, csAux));
                     } catch (Exception)
                     {
                         in_ = null;
@@ -1651,12 +1655,12 @@ namespace PgcDemuxLib
                     k = 20;
                 }
             }
-            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+            csAux2 = $"VTS_{ifo.TitleSet:00}_";
             csAux = $"{nVobin}.VOB";
             csAux = csAux2 + csAux;
             try
             {
-                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
             } catch (Exception)
             {
                 in_ = null;
@@ -1677,10 +1681,10 @@ namespace PgcDemuxLib
                 {
                     if (in_ != null) in_.Close();
                     nVobin++;
-                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                    csAux2 = $"VTS_{ifo.TitleSet:00}_";
                     csAux = $"{nVobin}.VOB";
                     csAux = csAux2 + csAux;
-                    in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                    in_ = File.OpenRead(Path.Combine(output_folder, csAux));
                     if (Util.readbuffer(m_buffer, in_) != 2048)
                     {
                         Console.WriteLine("Input error: Reached end of VOB too early");
@@ -1777,17 +1781,17 @@ namespace PgcDemuxLib
             i64EndSec = ifo.SortedMenuCells[nCell].EndSector;
             if (m_bVMGM)
             {
-                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
+                csAux2 = $"VTS_{ifo.TitleSet:00}_0.";
                 csAux = csAux2 + "VOB";
             }
             else
             {
-                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                csAux2 = $"VTS_{ifo.TitleSet:00}_";
                 csAux = csAux2 + "0.VOB";
             }
             try
             {
-                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
             } catch (Exception) {
                 in_ = null;
             }
@@ -1945,10 +1949,10 @@ namespace PgcDemuxLib
                     k = 20;
                 }
             }
-            csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+            csAux2 = $"VTS_{ifo.TitleSet:00}_";
             csAux = $"{nVobin}.VOB";
             csAux = csAux2 + csAux;
-            in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+            in_ = File.OpenRead(Path.Combine(output_folder, csAux));
             if (in_ == null)
             {
                 Console.WriteLine("Error opening input VOB: " + csAux);
@@ -1963,10 +1967,10 @@ namespace PgcDemuxLib
                 {
                     if (in_ != null) in_.Close();
                     nVobin++;
-                    csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                    csAux2 = $"VTS_{ifo.TitleSet:00}_";
                     csAux = $"{nVobin}.VOB";
                     csAux = csAux2 + csAux;
-                    in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                    in_ = File.OpenRead(Path.Combine(output_folder, csAux));
                     if (Util.readbuffer(m_buffer, in_) != 2048)
                     {
                         Console.WriteLine("Input error: Reached end of VOB too early");
@@ -2076,17 +2080,17 @@ namespace PgcDemuxLib
 
             if (m_bVMGM)
             {
-                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 3);
+                csAux2 = $"VTS_{ifo.TitleSet:00}_0.";
                 csAux = csAux2 + "VOB";
             }
             else
             {
-                csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
+                csAux2 = $"VTS_{ifo.TitleSet:00}_";
                 csAux = csAux2 + "0.VOB";
             }
             try
             {
-                in_ = File.OpenRead(Path.Combine(ifo.ParentFolder, csAux));
+                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
             } catch (Exception)
             {
                 in_ = null;

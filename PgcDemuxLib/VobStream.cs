@@ -12,17 +12,27 @@ namespace PgcDemuxLib
     // are used, and VTS_xx_1.VOB contains position=0
     internal class VobStream : Stream
     {
-        int currentVBO;
+        int currentVBO = -1;
         FileStream? currentFile;
-        VtsIfo ifo;
+        IfoBase ifo;
         long totalLength;
         long position = 0;
+        bool isMenu;
 
-        public VobStream(VtsIfo ifo)
+        public VobStream(IfoBase ifo, bool IsMenu)
         {
             this.ifo = ifo;
-            this.totalLength = ifo.VobSize.Skip(1).Sum();
-            OpenVOB(1);
+            this.isMenu = IsMenu;
+            if (IsMenu)
+            {
+                this.totalLength = ifo.VobSize[0];
+                OpenVOB(0);
+            }
+            else
+            {
+                this.totalLength = ifo.VobSize.Skip(1).Sum();
+                OpenVOB(1);
+            }
         }
 
         protected override void Dispose(bool disposing)
@@ -70,35 +80,52 @@ namespace PgcDemuxLib
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            if (origin == SeekOrigin.Current)
+            if (isMenu)
             {
-                offset = position + offset;
-            }
-            else if (origin == SeekOrigin.End)
-            {
-                offset = this.Length + offset; // offset will be negative here
-            }
-
-            long pos = offset;
-            for (int i = 1; i < 10; i++)
-            {
-                long size = ifo.VobSize[i];
-                if (pos < size)
+                // We are in menu mode, there is only one file to seek
+                OpenVOB(0);
+                if (currentFile != null)
                 {
-                    OpenVOB(i);
-                    currentFile?.Seek(pos, SeekOrigin.Begin);
-                    position = offset;
-                    return offset;
-                }
-                else
-                {
-                    pos -= size;
+                    this.position = currentFile.Seek(offset, origin);
+                    return this.position;
                 }
             }
+            else
+            {
+                if (origin == SeekOrigin.Current)
+                {
+                    offset = position + offset;
+                }
+                else if (origin == SeekOrigin.End)
+                {
+                    offset = this.Length + offset; // offset will be negative here
+                }
 
+                if (offset < 0) throw new IOException("Offset went before the start of the stream.");
+
+                long pos = offset;
+                for (int i = 1; i < 10; i++)
+                {
+                    long size = ifo.VobSize[i];
+                    if (pos < size)
+                    {
+                        OpenVOB(i);
+                        if (currentFile == null) break;
+                        currentFile.Seek(pos, SeekOrigin.Begin);
+                        position = offset;
+                        return offset;
+                    }
+                    else
+                    {
+                        pos -= size;
+                    }
+                }
+                OpenVOB(10); // Set stream to EOF
+            }
+
+            // EOF was reached
             position = this.Length;
-            currentFile = null;
-            return 0;
+            return position;
         }
 
         public override void SetLength(long value)
@@ -121,6 +148,13 @@ namespace PgcDemuxLib
                 return;
             }
 
+            if (isMenu)
+            {
+                // Opened in menu mode, there are no VOB's remaining
+                OpenVOB(10); // Open a non-existent VOB to set the internal state. VOB=10 will never exist
+                return;
+            }
+
             for (int i = currentVBO; i <= 10; i++)
             {
                 // NOTE: when i=10 we are only calling OpenVOB to set the internal state. VOB=10 will never exist
@@ -134,6 +168,12 @@ namespace PgcDemuxLib
 
         private void OpenVOB(int id)
         {
+            if (currentVBO == id && currentFile != null)
+            {
+                currentFile.Seek(0, SeekOrigin.Begin);
+                return;
+            }
+
             if (currentFile != null)
             {
                 currentFile.Close();
@@ -141,7 +181,7 @@ namespace PgcDemuxLib
             }
 
             currentVBO = id;
-            if (currentVBO < 1 || currentVBO > 9)
+            if (currentVBO < 0 || currentVBO > 9)
             {
                 currentFile = null;
                 return;
@@ -155,17 +195,12 @@ namespace PgcDemuxLib
 
             try
             {
-                currentFile = File.OpenRead(GetVobPath(currentVBO));
+                currentFile = File.OpenRead(ifo.GetVobPath(currentVBO));
             }
             catch (Exception ex)
             {
                 throw new IOException($"Failed to open next VOB file.", ex);
             }
-        }
-
-        private string GetVobPath(int id)
-        {
-            return Path.Combine(ifo.ParentFolder, $"VTS_{ifo.TitleSet:00}_{id:0}.VOB");
         }
     }
 }

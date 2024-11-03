@@ -10,16 +10,16 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace PgcDemuxLib.Data.VTS
 {
-    public class VtsIfo
+    public class VtsIfo : IfoBase
     {
         [JsonInclude]
-        public readonly string ParentFolder;
+        public override string ParentFolder { get; protected set; }
 
         [JsonInclude]
         public readonly string FileName;
 
         [JsonInclude]
-        public readonly int TitleSet;
+        public override int TitleSet { get; protected set; }
 
         [JsonInclude]
         public readonly VersionNumber Version;
@@ -28,22 +28,22 @@ namespace PgcDemuxLib.Data.VTS
         public readonly VTS_PTT_SRPT TitleAndChapterInfoTable;
 
         [JsonInclude]
-        public readonly VTS_PGCI TitleProgramChainTable;
+        public override VTS_PGCI? TitleProgramChainTable { get; protected set; }
 
         [JsonInclude]
-        public readonly VTSM_PGCI_UT? MenuProgramChainTable;
+        public override VTSM_PGCI_UT? MenuProgramChainTable { get; protected set; }
 
         [JsonInclude]
         public readonly VTS_TMAPTI TimeMap;
 
         [JsonInclude]
-        public readonly VTS_C_ADT? MenuCellAddressTable;
+        public override VTS_C_ADT? MenuCellAddressTable { get; protected set; }
 
         [JsonInclude]
-        public readonly VTS_C_ADT MenuVobuAddressMap;
+        public readonly VTS_C_ADT? MenuVobuAddressMap;
 
         [JsonInclude]
-        public readonly VTS_C_ADT? TitleSetCellAddressTable;
+        public override VTS_C_ADT? TitleSetCellAddressTable { get; protected set; }
 
         [JsonInclude]
         public readonly VTS_C_ADT TitleSetVobuAddressMap;
@@ -65,13 +65,6 @@ namespace PgcDemuxLib.Data.VTS
 
         [JsonInclude]
         public readonly ReadOnlyArray<VTS_SubpictureAttributes> TitleSetSubpictureAttributes;
-
-        // This data is used for demuxing later
-        internal List<ADT_CELL> SortedTitleCells;
-        internal List<ADT_CELL> SortedMenuCells;
-        internal List<ADT_VID> CombinedTitleVobCells;
-        internal List<ADT_VID> CombinedMenuVobCells;
-        internal long[] VobSize = new long[10];
 
         internal VtsIfo(string folder, string fileName)
         {
@@ -111,8 +104,7 @@ namespace PgcDemuxLib.Data.VTS
             MenuCellAddressTable = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
             addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
-            Util.AssertValidAddress(addr, "VTSM_VOBU_ADMAP");
-            MenuVobuAddressMap = new VTS_C_ADT(file, addr);
+            MenuVobuAddressMap = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
             addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xE0, 4);
             TitleSetCellAddressTable = (addr == 0) ? null : new VTS_C_ADT(file, addr);
@@ -163,171 +155,48 @@ namespace PgcDemuxLib.Data.VTS
                 this.TitleSetSubpictureAttributes[i] = new VTS_SubpictureAttributes(file, 0x256 + i * 6);
             }
 
-            // Process cells for easier demuxing later
-            SortedTitleCells = GetCells(this.TitleSetCellAddressTable.All, TitleProgramChainTable.All);
-            IEnumerable<PGC> menuPGCs = MenuProgramChainTable.All.SelectMany(languageUnit => languageUnit.All);
-            SortedMenuCells = GetCells(this.MenuCellAddressTable.All, menuPGCs);
-            CombinedTitleVobCells = GetVidCells(SortedTitleCells);
-            CombinedMenuVobCells = GetVidCells(SortedMenuCells);
-
-            for (int k = 0; k < 10; k++)
-            {
-                string vobName = $"VTS_{this.TitleSet:00}_{k:0}.VOB";
-                
-                try
-                {
-                    VobSize[k] = (new FileInfo(Path.Combine(this.ParentFolder, vobName)).Length);
-                }
-                catch (Exception)
-                {
-                    continue;
-                }
-            }
+            OrganizeCells();
         }
 
-        // TODO put in relevent data structure???
-        public bool DemuxTitle(string outputFolder, int pgcIndex, int angle = 1)
+        public bool DemuxMenu(string outputFolder, int pgcIndex)
         {
             //string fileName = $"VTS-{this.TitleSet}_PGC-{pgcIndex}_Angle-{angleIndex}.vob";
             //return Demux(Path.Combine(outputFolder, fileName), this.TitleProgramChainTable[pgcIndex], this.SortedTitleCells, angleIndex, options);
             IfoOptions options = new IfoOptions();
-            options.Angle = angle;
+            options.Angle = 1;
+            options.DomainType = DemuxingDomain.Menus;
+            options.ExportVOB = true;
+            options.Mode = DemuxingMode.PGC;
+            options.PGC = pgcIndex + 1;
+            options.VobName = $"VTS-{this.TitleSet:00}_Menu-{pgcIndex:000}.VOB";
+
+            PgcDemux demux = new PgcDemux(this, options, outputFolder);
+            bool result = demux.Demux(outputFolder); ;
+            demux.Close();
+            return result;
+        }
+
+        public bool DemuxTitle(string outputFolder, int pgcIndex, int angle = 0)
+        {
+            //string fileName = $"VTS-{this.TitleSet}_PGC-{pgcIndex}_Angle-{angleIndex}.vob";
+            //return Demux(Path.Combine(outputFolder, fileName), this.TitleProgramChainTable[pgcIndex], this.SortedTitleCells, angleIndex, options);
+            IfoOptions options = new IfoOptions();
+            options.Angle = angle + 1;
             options.DomainType = DemuxingDomain.Titles;
             options.ExportVOB = true;
             options.Mode = DemuxingMode.PGC;
-            options.PGC = pgcIndex;
-            
-            PgcDemux demux = new PgcDemux(this, options);
-            return demux.Demux(outputFolder);
+            options.PGC = pgcIndex + 1;
+            options.VobName = $"VTS-{this.TitleSet:00}_Title-{options.PGC:000}_Angle-{options.Angle}.VOB";
+
+            PgcDemux demux = new PgcDemux(this, options, outputFolder);
+            bool result = demux.Demux(outputFolder);
+            demux.Close();
+            return result;
         }
 
-        /// <summary>
-        /// Given the raw cells from the DVD, returns a list of "combined" cells
-        /// that are sorted by their VobID and CellID.
-        /// 
-        /// By "combined" I mean cells that have the sam VobID and CellID are
-        /// combined into a single struct with the needed sector and duration info.
-        /// </summary>
-        /// <param name="AllCells"></param>
-        /// <param name="AllPGCs"></param>
-        /// <returns></returns>
-        internal static List<ADT_CELL> GetCells(IEnumerable<ADT> AllCells, IEnumerable<PGC> AllPGCs)
+        internal override string GetVobPath(int id)
         {
-            // Collect all relevant cells
-            List<ADT_CELL> cells = new();
-            foreach (var adt in AllCells)
-            {
-                // Check if this cell has already been added
-                ADT_CELL? newCell = null;
-                foreach(var cell in cells)  
-                {
-                    if (adt.CellID == cell.CellID && adt.VobID == cell.VobID)
-                    {
-                        newCell = cell;
-                        break;
-                    }
-                }
-
-                // If cell hasnt been been added yet, create a new one
-                if (newCell == null)
-                {
-                    newCell = new();
-                    newCell.VobID = adt.VobID;
-                    newCell.CellID = adt.CellID;
-                    newCell.Size = 0;
-                    newCell.StartSector = 0x7fffffff;
-                    newCell.EndSector = 0;
-                    cells.Add(newCell);
-                }
-
-                // Adjust sectors as needed
-                int startSector = adt.StartSector;
-                int endSector = adt.EndSector;
-                if (startSector < newCell.StartSector) newCell.StartSector = startSector;
-                if (endSector > newCell.EndSector) newCell.EndSector = endSector;
-                newCell.Size += endSector - startSector + 1;
-            }
-
-            // Put cells in order first by VobID, then CellID
-            cells.Sort((x, y) =>
-            {
-                // NOTE: return <0 means x < y
-                //       return >0 means x > y
-                //       return  0 means x = y
-
-                // First sort by VobID
-                int comp = (x.VobID - y.VobID);
-                if (comp == 0)
-                {
-                    // VobID is the same, so now sort by CellId
-                    comp = (x.CellID - y.CellID);
-                }
-
-                // If comp != 0, then returning it will return the correct sorting by VobID
-                return comp;
-            });
-
-            // Calculate duration info
-            foreach(var cell in cells)
-            {
-                bool found = false;
-                foreach(var pgc in AllPGCs)
-                {
-                    foreach (var pgcCell in pgc.CellInfo)
-                    {
-                        if (pgcCell.VobID == cell.VobID && pgcCell.CellID == cell.CellID)
-                        {
-                            found = true;
-                            cell.dwDuration = pgcCell.Duration;
-                        }
-                    }
-                }
-
-                if (!found)
-                {
-                    cell.dwDuration = TimeSpan.Zero;
-                }
-            }
-
-            return cells;
-        }
-
-        /// <summary>
-        /// Further processes combined cells by combining cells with the same VobID.
-        /// </summary>
-        /// <param name="sortedCells"></param>
-        /// <returns></returns>
-        internal static List<ADT_VID> GetVidCells(List<ADT_CELL> sortedCells)
-        {
-            List<ADT_VID> vidCells = new();
-            foreach(var cell in sortedCells)
-            {
-                // Check if we already have this cell
-                ADT_VID? newCell = null;
-                foreach(var vidCell in vidCells)
-                {
-                    if (cell.VobID == vidCell.VobID)
-                    {
-                        newCell = vidCell;
-                        break;
-                    }
-                }
-                if (newCell == null)
-                {
-                    newCell = new();
-                    newCell.VobID = cell.VobID;
-                    newCell.Size = 0;
-                    newCell.NumberOfCells = 0;
-                    newCell.dwDuration = TimeSpan.Zero;
-                    vidCells.Add(newCell);
-                }
-
-                newCell.Size += cell.Size;
-                newCell.NumberOfCells++;
-                newCell.dwDuration += cell.dwDuration;
-            }
-
-            return vidCells;
+            return Path.Combine(ParentFolder, $"VTS_{TitleSet:00}_{id:0}.VOB");
         }
     }
 }

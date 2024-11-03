@@ -31,6 +31,11 @@ namespace PgcDemuxLib.Data
         [JsonInclude]
         public readonly int NumberOfAngles;
 
+        /// <summary>
+        /// -1 = infinite
+        /// </summary>
+        [JsonInclude]
+        public readonly int StillTime;
 
         /// <summary>
         /// Playback time, BCD, hh:mm:ss:ff with bits 7&6 of frame (last) byte indicating frame rate.
@@ -86,6 +91,12 @@ namespace PgcDemuxLib.Data
             this.NextPGCN = header.GetNbytes(0x9C, 2);
             this.PreviousPGCN = header.GetNbytes(0x9E, 2);
             this.GroupPGCN = header.GetNbytes(0xA0, 2);
+
+            this.StillTime = header[0xA2];
+            if (this.StillTime == 255)
+            {
+                this.StillTime = -1;
+            }
 
             int cellPlaybackInfoTableAddr = header.GetNbytes(0xE8, 2);
             int cellPositionInfoTableAddr = header.GetNbytes(0xEA, 2);

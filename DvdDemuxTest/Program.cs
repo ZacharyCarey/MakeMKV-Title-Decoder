@@ -11,19 +11,33 @@ string folder = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2\\VIDEO_TS";
 //string file = "VTS_21_0.IFO";
 string output = "C:\\Users\\Zack\\Downloads\\TestOutput";
 
-Dvd? dvd = Dvd.ParseFolder(animusic);
+Dvd? dvd = Dvd.ParseFolder(willywonka);
 if (dvd == null) throw new Exception("Failed to parse!");
 
-var ifo = dvd.TitleSets[21];
-var pgc = 1; // 6
-var angle = 1;
-Console.WriteLine($"Selected options: TitleSet={ifo.TitleSet} PGC={pgc} Angle={angle}");
-
-//Print();
-if(!ifo.DemuxTitle(output, pgc, angle))
+if (!dvd.DemuxAll(output))
 {
-    Console.WriteLine("Demux failed");
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine("Failed to demux at least one file.");
+    Console.ResetColor();
+    return;
 }
+
+//var ifo = dvd.TitleSets[3];
+//var pgc = 0;
+//var angle = 0;
+//Console.WriteLine($"Selected options: Title -> TitleSet={ifo.TitleSet} PGC={pgc} Angle={angle}");
+//if (!ifo.DemuxTitle(output, pgc, angle))
+//{
+//    Console.WriteLine("Demux failed");
+//}
+
+//var ifo = dvd.TitleSets[21];
+//var pgc = 6;
+//Console.WriteLine($"Selected options: Menu -> TitleSet={ifo.TitleSet} PGC={pgc}");
+//if (!ifo.DemuxMenu(output, pgc))
+//{
+//    Console.WriteLine("Demux failed");
+//}
 
 Print(dvd);
 

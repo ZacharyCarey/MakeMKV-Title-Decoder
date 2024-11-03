@@ -87,6 +87,8 @@ namespace PgcDemuxLib {
         /// </summary>
         public DemuxingDomain DomainType = DemuxingDomain.Titles;
 
+        public string? VobName = null;
+
         public IfoOptions() {
 
         }

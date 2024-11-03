@@ -3,6 +3,7 @@ using PgcDemuxLib.Data.VTS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -52,6 +53,44 @@ namespace PgcDemuxLib
                 Console.ResetColor();
                 return null;
             }
+        }
+
+        public bool DemuxAll(string outputFolder)
+        {
+            foreach(var vts in this.TitleSets)
+            {
+                if (vts?.MenuProgramChainTable != null) {
+                    foreach ((var menu, int index) in vts.MenuProgramChainTable.All.SelectMany(languageUnit => languageUnit.All).WithIndex())
+                    {
+                        if (menu.NumberOfCells > 0)
+                        {
+                            if(!vts.DemuxMenu(outputFolder, index))
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                if (vts?.TitleProgramChainTable != null)
+                {
+                    foreach((var title, int index) in vts.TitleProgramChainTable.All.WithIndex())
+                    {
+                        if (title.NumberOfCells > 0)
+                        {
+                            for (int angle = 0; angle < title.NumberOfAngles; angle++)
+                            {
+                                if (!vts.DemuxTitle(outputFolder, index, angle))
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }
