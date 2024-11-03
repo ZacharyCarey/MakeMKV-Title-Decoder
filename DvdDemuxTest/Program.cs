@@ -8,28 +8,23 @@ string animusic = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2";
 string willywonka = "C:\\Users\\Zack\\Downloads\\WILLY_WONKA";
 
 string folder = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2\\VIDEO_TS";
-string file = "VTS_22_0.IFO";
+//string file = "VTS_21_0.IFO";
 string output = "C:\\Users\\Zack\\Downloads\\TestOutput";
 
 Dvd? dvd = Dvd.ParseFolder(animusic);
-var ifo = dvd.TitleSets[21];
+if (dvd == null) throw new Exception("Failed to parse!");
 
-IfoOptions options = new();
-options.PGC = 1; // 6
-options.Angle = 1;
-options.ExportVOB = true;
-options.DomainType = DemuxingDomain.Titles; // Menus
-var app = new PgcDemux(Path.Combine(folder, file), options, new IfoOld(dvd.Folder, ifo.FileName, ifo));
-if (app == null)
-{
-    Console.WriteLine("Failed to read IFO file.");
-    return;
-}
+var ifo = dvd.TitleSets[21];
+var pgc = 1; // 6
+var angle = 1;
+Console.WriteLine($"Selected options: TitleSet={ifo.TitleSet} PGC={pgc} Angle={angle}");
 
 //Print();
-app.Demux(output);
+if(!ifo.DemuxTitle(output, pgc, angle))
+{
+    Console.WriteLine("Demux failed");
+}
 
-if (dvd == null) throw new Exception("Failed to parse!");
 Print(dvd);
 
 static long BCD2Dec(long BCD)

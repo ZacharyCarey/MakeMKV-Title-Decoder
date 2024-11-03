@@ -49,9 +49,9 @@ namespace PgcDemuxLib.Data
                 numADTs = numEntries;
             }
 
-            ADTs = new ADT[numADTs];
+            ADTs = new ADT[numEntries];
             //Cells
-            for (int nADT = 0; nADT < numADTs; nADT++)
+            for (int nADT = 0; nADT < ADTs.Length; nADT++)
             {
                 ADTs[nADT] = new ADT(data.Slice(8 + 12 * nADT, 12), addr + 8 + 12 * nADT);
             }

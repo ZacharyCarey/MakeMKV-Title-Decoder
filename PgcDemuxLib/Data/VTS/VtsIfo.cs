@@ -67,11 +67,11 @@ namespace PgcDemuxLib.Data.VTS
         public readonly ReadOnlyArray<VTS_SubpictureAttributes> TitleSetSubpictureAttributes;
 
         // This data is used for demuxing later
-        private List<ADT_CELL> SortedTitleCells;
-        private List<ADT_CELL> SortedMenuCells;
-        private List<ADT_VID> CombinedTitleVobCells;
-        private List<ADT_VID> CombinedMenuVobCells;
-        private long[] VobSize = new long[10];
+        internal List<ADT_CELL> SortedTitleCells;
+        internal List<ADT_CELL> SortedMenuCells;
+        internal List<ADT_VID> CombinedTitleVobCells;
+        internal List<ADT_VID> CombinedMenuVobCells;
+        internal long[] VobSize = new long[10];
 
         internal VtsIfo(string folder, string fileName)
         {
@@ -172,7 +172,7 @@ namespace PgcDemuxLib.Data.VTS
 
             for (int k = 0; k < 10; k++)
             {
-                string vobName = $"VTS_{this.TitleSet}_{k:00}.VOB";
+                string vobName = $"VTS_{this.TitleSet:00}_{k:0}.VOB";
                 
                 try
                 {
@@ -186,12 +186,21 @@ namespace PgcDemuxLib.Data.VTS
         }
 
         // TODO put in relevent data structure???
-        public bool DemuxTitle(string outputFolder, int pgcIndex, int angleIndex, DemuxOptions options)
+        public bool DemuxTitle(string outputFolder, int pgcIndex, int angle = 1)
         {
-            string fileName = $"VTS-{this.TitleSet}_PGC-{pgcIndex}_Angle-{angleIndex}.vob";
-            return Demux(Path.Combine(outputFolder, fileName), this.TitleProgramChainTable[pgcIndex], this.SortedTitleCells, angleIndex, options);
+            //string fileName = $"VTS-{this.TitleSet}_PGC-{pgcIndex}_Angle-{angleIndex}.vob";
+            //return Demux(Path.Combine(outputFolder, fileName), this.TitleProgramChainTable[pgcIndex], this.SortedTitleCells, angleIndex, options);
+            IfoOptions options = new IfoOptions();
+            options.Angle = angle;
+            options.DomainType = DemuxingDomain.Titles;
+            options.ExportVOB = true;
+            options.Mode = DemuxingMode.PGC;
+            options.PGC = pgcIndex;
+            
+            PgcDemux demux = new PgcDemux(this, options);
+            return demux.Demux(outputFolder);
         }
-
+/*
         private bool Demux(string outputPath, PGC data, List<ADT_CELL> sortedCells, int selectedAngle, DemuxOptions options)
         {
             // TODO temp!
@@ -234,15 +243,15 @@ namespace PgcDemuxLib.Data.VTS
                 int numVob = 9;
                 for (int vob = 1; vob < 10; vob++)
                 {
-                    /*long numSectors = VobSize[vob] / PgcDemux.SECTOR_SIZE;
-                    if (sectors + numSectors <= startSector)
-                    {
-                        sectors += numSectors;
-                    } else
-                    {
-                        numVob = vob;
-                        break;
-                    }*/
+                    //long numSectors = VobSize[vob] / PgcDemux.SECTOR_SIZE;
+                    //if (sectors + numSectors <= startSector)
+                    //{
+                    //    sectors += numSectors;
+                    //} else
+                    //{
+                    //    numVob = vob;
+                    //    break;
+                    //}
 
                 }
 
@@ -286,39 +295,37 @@ namespace PgcDemuxLib.Data.VTS
             // TODO
             if (demuxOptions.GenerateCellTimes)
             {
-                /*
-                csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
-                for (nCell = 0, nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
-                {
-                    var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
-                    dwCellDuration = cellInfo.Duration;
+                //csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
+                //fout = File.Open(csAux, FileMode.Create);
+                //for (nCell = 0, nCurrAngle = 0; nCell < ifo.TitleProgramChainTable[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
+                //{
+                //    var cellInfo = ifo.TitleProgramChainTable[nPGC].CellInfo[nCell];
+                //    dwCellDuration = cellInfo.Duration;
 
-                    //			0101=First; 1001=Middle ;	1101=Last
-                    if (cellInfo.IsFirstAngle)
-                        nCurrAngle = 1;
-                    else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && nCurrAngle != 0)
-                        nCurrAngle++;
-                    if (cellInfo.IsNormal || (nAng + 1) == nCurrAngle)
-                    {
-                        nFrames += Util.DurationInFrames(dwCellDuration);
-                        if (nCell != (ifo.TitleProgramChainTable[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
-                        {
-                            var writer = new StreamWriter(fout);
-                            writer.Write($"{nFrames}\n");
-                            writer.Flush();
-                        }
-                    }
+                //    //			0101=First; 1001=Middle ;	1101=Last
+                //    if (cellInfo.IsFirstAngle)
+                //        nCurrAngle = 1;
+                //    else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && nCurrAngle != 0)
+                //        nCurrAngle++;
+                //    if (cellInfo.IsNormal || (nAng + 1) == nCurrAngle)
+                //    {
+                //        nFrames += Util.DurationInFrames(dwCellDuration);
+                //        if (nCell != (ifo.TitleProgramChainTable[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
+                //        {
+                //            var writer = new StreamWriter(fout);
+                //            writer.Write($"{nFrames}\n");
+                //            writer.Flush();
+                //        }
+                //    }
 
-                    if (cellInfo.IsLastAngle) nCurrAngle = 0;
-                }
-                fout.Close();
-                */
+                //    if (cellInfo.IsLastAngle) nCurrAngle = 0;
+                //}
+                //fout.Close();
             }
 
             return true;
         }
-
+*/
         /// <summary>
         /// The selected angle number is 1 indexed. That is, the first angle would be "angle=1", the second "angle=2" and so on.
         /// Some cells without angles will likely be listed as "angle=0".
