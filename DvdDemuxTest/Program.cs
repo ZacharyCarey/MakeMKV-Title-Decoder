@@ -12,7 +12,7 @@ string folder = "C:\\Users\\Zack\\Downloads\\ANIMUSIC_2\\VIDEO_TS";
 //string file = "VTS_21_0.IFO";
 string output = "C:\\Users\\Zack\\Downloads\\TestOutput";
 
-Dvd? dvd = Dvd.ParseFolder(willywonka);
+Dvd? dvd = Dvd.ParseFolder(animusic);
 if (dvd == null) throw new Exception("Failed to parse!");
 
 if (!dvd.DemuxAll(output))
@@ -23,12 +23,12 @@ if (!dvd.DemuxAll(output))
     return;
 }
 
-ffmpeg lib = new();
-lib.ExtractFrame(
-    Path.Combine(output, "VTS-03_Title-001_Angle-1.VOB"), 
-    TimeSpan.FromSeconds(0.25), 
-    Path.Combine(output, "out1.png")
-);
+//ffmpeg lib = new();
+//lib.ExtractFrame(
+//    Path.Combine(output, "VTS-03_Title-001_Angle-1.VOB"), 
+//    TimeSpan.FromSeconds(0.25), 
+//    Path.Combine(output, "out1.png")
+//);
 
 //var ifo = dvd.TitleSets[3];
 //var pgc = 0;

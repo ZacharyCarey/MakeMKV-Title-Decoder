@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace PgcDemuxLib
 {
@@ -346,9 +347,25 @@ namespace PgcDemuxLib
             {
                 // Check if PGC exists in done in PgcDemux
                 if (m_iDomain == DemuxingDomain.Titles)
-                    return Demux(output_folder, m_nSelPGC, m_nSelAng, null);
+                {
+                    if (m_nSelPGC >= (ifo.TitleProgramChainTable?.NumberOfProgramChains ?? -1))
+                    {
+                        Console.WriteLine("Error: PGC does not exist");
+                        m_bInProcess = false;
+                        return false;
+                    }
+                    return DemuxPGC(output_folder, ifo.TitleProgramChainTable[m_nSelPGC], m_nSelAng, false);
+                }
                 else
-                    return MDemux(output_folder, m_nSelPGC, null);
+                {
+                    if (m_nSelPGC >= MenuPGCs.Count)
+                    {
+                        Console.WriteLine("Error: PGC does not exist");
+                        m_bInProcess = false;
+                        return false;
+                    }
+                    return DemuxPGC(output_folder, MenuPGCs[m_nSelPGC], -1, true);
+                }
             } else if (m_iMode == DemuxingMode.VID)
             {
                 // Look for nSelVid
@@ -403,51 +420,35 @@ namespace PgcDemuxLib
             }
         }
 
-
-
-        bool Demux(string m_csOutputPath, int nPGC, int nAng, object? pDlg) {
-            int nSector;
-            int CID, VID;
-            Stream fout;
-            bool bMyCell;
-            bool iRet;
-            TimeSpan dwCellDuration;
-            int nFrames;
-
-            if (nPGC >= (ifo.TitleProgramChainTable?.NumberOfProgramChains ?? 0))
-            {
-                Console.WriteLine("Error: PGC does not exist");
-                m_bInProcess = false;
-                return false;
-            }
-
+        bool DemuxPGC(string m_csOutputPath, PGC pgc, int nAng, bool isMenu)
+        {
             IniDemuxGlobalVars();
+
             if (OpenVideoFile(m_csOutputPath) == false) return false;
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            int nTotalSectors = ifo.TitleProgramChainTable[nPGC].GetMatchingCells(ifo.SortedTitleCells, nAng).Sum(cell => cell.Size);
+            List<ADT_CELL> sortedCells = (isMenu ? ifo.SortedMenuCells : ifo.SortedTitleCells);
+            int nTotalSectors = pgc.GetMatchingCells(sortedCells, nAng).Sum(cell => cell.Size);
 
-            VobStream vobStream = new VobStream(ifo, false);
+            VobStream vob = new(ifo, isMenu);
 
-            nSector = 0;
-            iRet = true;
-            foreach(var cellInfo in ifo.TitleProgramChainTable[nPGC].CellInfo.FilterByAngle(nAng))
+            bool iRet = true;
+            int nSector = 0; // Mostly used for progress tracking
+            foreach (var cellInfo in pgc.CellInfo.FilterByAngle(nAng))
             {
-                VID = cellInfo.VobID;
-                CID = cellInfo.CellID;
-
+                int VID = cellInfo.VobID;
+                int CID = cellInfo.CellID;
                 long startSector = cellInfo.FirstVobuStartSector;
                 long endSector = cellInfo.LastVobuEndSector;
 
-                if (m_bInProcess) vobStream.Seek((startSector * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
+                if (m_bInProcess) vob.Seek((startSector * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
                 bool myCell = true;
-                for (long i64 = 0; i64 < (endSector - startSector + 1) && m_bInProcess == true; i64++)
-                {
+                for (long i64 = 0; i64 < (endSector - startSector + 1) && m_bInProcess; i64++) {
                     //readpack
-                    if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                    if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
+                    if ((i64 % MODUPDATE) == 0) UpdateProgress(null, (int)((100 * nSector) / nTotalSectors));
+                    if (Util.readbuffer(m_buffer, vob) != Dvd.SECTOR_SIZE)
                     {
                         Console.WriteLine("Input error: Reached end of VOB too early");
                         m_bInProcess = false;
@@ -477,30 +478,28 @@ namespace PgcDemuxLib
                             nSector++;
                             iRet = ProcessPack(m_csOutputPath, true);
                         }
-
                     }
-                } // For readpacks
+                } // for readpacks
 
                 if (!m_bInProcess)
                 {
                     break;
                 }
-            }
+            } // For Cells
 
-            if (vobStream != null) vobStream.Close();
-            vobStream = null;
+            vob.Close();
+            vob = null;
 
             CloseAndNull();
-            nFrames = 0;
 
-            if (m_bCheckCellt && m_bInProcess == true)
+            int nFrames = 0;
+            if (m_bCheckCellt && m_bInProcess)
             {
                 string path = Path.Combine(m_csOutputPath, "Celltimes.txt");
-                fout = File.Open(path, FileMode.Create);
-                foreach((var cellInfo, bool IsLast) in ifo.TitleProgramChainTable[nPGC].CellInfo.FilterByAngle(nAng).DetectLast())
+                Stream fout = File.Open(path, FileMode.Create);
+                foreach ((var cellInfo, bool IsLast) in pgc.CellInfo.FilterByAngle(nAng).DetectLast())
                 {
-                    dwCellDuration = cellInfo.Duration;
-                    nFrames += Util.DurationInFrames(dwCellDuration);
+                    nFrames += Util.DurationInFrames(cellInfo.Duration);
                     if (!IsLast || m_bCheckEndTime)
                     {
                         var writer = new StreamWriter(fout);
@@ -510,10 +509,9 @@ namespace PgcDemuxLib
                 }
                 fout.Close();
             }
-
             m_nTotalFrames = nFrames;
 
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, nPGC, nAng, DemuxingDomain.Titles);
+            if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, pgc.ID, nAng, isMenu ? DemuxingDomain.Menus : DemuxingDomain.Titles);
 
             return iRet;
         }
@@ -1155,128 +1153,6 @@ namespace PgcDemuxLib
 
         byte lo_nib(byte a) {
             return (byte)(a & 0x0F);
-        }
-
-        bool MDemux(string m_csOutputPath, int nPGC, object? pDlg) {
-            int nTotalSectors;
-            int nSector, nCell;
-            int CID, VID;
-            Stream fout;
-            Int64 i64;
-            bool bMyCell;
-            bool iRet;
-            TimeSpan dwCellDuration;
-            int nFrames;
-
-
-            if (nPGC >= MenuPGCs.Count)
-            {
-                Console.WriteLine("Error: PGC does not exist");
-                m_bInProcess = false;
-                return false;
-            }
-
-            IniDemuxGlobalVars();
-            if (OpenVideoFile(m_csOutputPath) == false) return false;
-            m_bInProcess = true;
-
-            // Calculate  the total number of sectors
-            nTotalSectors = MenuPGCs[nPGC].GetMatchingCells(ifo.SortedMenuCells, -1).Sum(cell => cell.Size);
-
-            nSector = 0;
-            iRet = true;
-
-            Stream vob;
-            if (m_bVMGM)
-            {
-                vob = File.OpenRead(Path.Combine(m_csOutputPath, "VIDEO_TS.VOB"));
-            } else
-            {
-                vob = new VobStream(ifo, true);
-            }
-
-            foreach (var cellInfo in MenuPGCs[nPGC].CellInfo)
-            {
-                VID = cellInfo.VobID;
-                CID = cellInfo.CellID;
-                long startSector = cellInfo.FirstVobuStartSector;
-                long endSector = cellInfo.LastVobuEndSector;
-
-                if (m_bInProcess) vob.Seek((startSector * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
-
-                for (i64 = 0, bMyCell = true; i64 < (endSector - startSector + 1) && m_bInProcess == true; i64++)
-                {
-                    //readpack
-                    if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                    if (Util.readbuffer(m_buffer, vob) != Dvd.SECTOR_SIZE)
-                    {
-                        if (vob != null) vob.Close();
-                        Console.WriteLine("Input error: Reached end of VOB too early");
-                        m_bInProcess = false;
-                        iRet = false;
-                    }
-
-                    if (m_bInProcess == true)
-                    {
-                        if (Util.IsSynch(m_buffer) != true)
-                        {
-                            Console.WriteLine("Error reading input VOB: Unsynchronized");
-                            m_bInProcess = false;
-                            iRet = false;
-                        }
-                        if (Util.IsNav(m_buffer))
-                        {
-                            if (m_buffer[0x420] == (byte)(VID % 256) &&
-                                m_buffer[0x41F] == (byte)(VID / 256) &&
-                                m_buffer[0x422] == (byte)CID)
-                                bMyCell = true;
-                            else
-                                bMyCell = false;
-                        }
-
-                        if (bMyCell)
-                        {
-                            nSector++;
-                            iRet = ProcessPack(m_csOutputPath, true);
-                        }
-                    }
-                } // For readpacks
-
-                if (!m_bInProcess)
-                {
-                    break;
-                }
-            }   // For Cells 
-            if (vob != null) vob.Close();
-            vob = null;
-
-            CloseAndNull();
-
-            nFrames = 0;
-
-            if (m_bCheckCellt && m_bInProcess == true)
-            {
-                string path = Path.Combine(m_csOutputPath, "Celltimes.txt");
-                fout = File.Open(path, FileMode.Create);
-                for (nCell = 0; nCell < MenuPGCs[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
-                {
-                    dwCellDuration = MenuPGCs[nPGC].CellInfo[nCell].Duration;
-                    nFrames += Util.DurationInFrames(dwCellDuration);
-                    if (nCell != (MenuPGCs[nPGC].NumberOfCells - 1) || m_bCheckEndTime)
-                    {
-                        var writer = new StreamWriter(fout);
-                        writer.Write($"{nFrames}\n");
-                        writer.Flush();
-                    }
-                }
-                fout.Close();
-            }
-
-            m_nTotalFrames = nFrames;
-
-            if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, nPGC, 1, DemuxingDomain.Menus);
-
-            return iRet;
         }
 
         bool VIDDemux(string output_folder, int nVid, object? pDlg) {
