@@ -326,72 +326,6 @@ namespace PgcDemuxLib.Data.VTS
             return true;
         }
 */
-        /// <summary>
-        /// The selected angle number is 1 indexed. That is, the first angle would be "angle=1", the second "angle=2" and so on.
-        /// Some cells without angles will likely be listed as "angle=0".
-        /// Giving an angle of 0 or less will return all cells
-        /// </summary>
-        /// <param name="pgc"></param>
-        /// <param name="sortedCells"></param>
-        /// <returns></returns>
-        private static IEnumerable<ADT_CELL> GetPgcCells(PGC pgc, List<ADT_CELL> sortedCells, int selectedAngle = 0)
-        {
-            bool sortByAngle = (selectedAngle > 0);
-            foreach(var cell in FilterByAngle(pgc.CellInfo, selectedAngle))
-            {
-                foreach(var adt in sortedCells)
-                {
-                    if (adt.VobID == cell.VobID && adt.CellID == cell.CellID)
-                    {
-                        yield return adt;
-                    }
-                }
-            }
-        }
-
-        private static IEnumerable<(CellInfo Cell, int Angle)> GetCellAngle(IEnumerable<CellInfo> cells)
-        {
-            int currentAngle = 0;
-            foreach (var cell in cells)
-            {
-                if (cell.IsFirstAngle)
-                {
-                    currentAngle = 1;
-                }
-                else if ((cell.IsMiddleAngle || cell.IsLastAngle) && currentAngle != 0)
-                {
-                    currentAngle++;
-                }
-
-                yield return (cell, currentAngle);
-
-                if (cell.IsLastAngle)
-                {
-                    currentAngle = 0;
-                }
-            }
-        }
-
-        /// <summary>
-        /// The selected angle number is 1 indexed. That is, the first angle would be "angle=1", the second "angle=2" and so on.
-        /// Some cells without angles will likely be listed as "angle=0".
-        /// Giving an angle of 0 or less will return all cells
-        /// </summary>
-        /// <param name="cells"></param>
-        /// <param name="selectedAngle"></param>
-        /// <returns></returns>
-        private static IEnumerable<CellInfo> FilterByAngle(IEnumerable<CellInfo> cells, int selectedAngle)
-        {
-            if (selectedAngle <= 0)
-            {
-                return cells;
-            } else
-            {
-                return GetCellAngle(cells)
-                    .Where(x => x.Cell.IsNormal || (x.Angle == selectedAngle))
-                    .Select(x => x.Cell);
-            }
-        }
 
         /// <summary>
         /// Given the raw cells from the DVD, returns a list of "combined" cells
@@ -429,7 +363,6 @@ namespace PgcDemuxLib.Data.VTS
                     newCell.Size = 0;
                     newCell.StartSector = 0x7fffffff;
                     newCell.EndSector = 0;
-                    //InsertTitleCell(newCell);
                     cells.Add(newCell);
                 }
 

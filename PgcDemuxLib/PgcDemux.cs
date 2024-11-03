@@ -28,7 +28,86 @@ namespace PgcDemuxLib
         CID = 2
     }
 
+    internal static class DemuxUtils
+    {
+        /// <summary>
+        /// Returns the identified angle with each cell.
+        /// An angle of "-1"=none/undetermined
+        /// Angle angle of "0" is the first angle, and so forth
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <returns></returns>
+        public static IEnumerable<(CellInfo Cell, int Angle)> GetCellAngle(this IEnumerable<CellInfo> cells)
+        {
+            int currentAngle = -1;
+            foreach (var cell in cells)
+            {
+                if (cell.IsFirstAngle)
+                {
+                    currentAngle = 0;
+                }
+                else if ((cell.IsMiddleAngle || cell.IsLastAngle) && currentAngle != -1)
+                {
+                    currentAngle++;
+                }
+
+                yield return (cell, currentAngle);
+
+                if (cell.IsLastAngle)
+                {
+                    currentAngle = -1;
+                }
+            }
+        }
+
+        /// <summary>
+        /// The selected angle number is 0 indexed. That is, the first angle would be "angle=0", the second "angle=1" and so on.
+        /// Some cells without angles will likely be listed as "angle=0".
+        /// Giving an angle of -1 or less will return all cells
+        /// </summary>
+        /// <param name="cells"></param>
+        /// <param name="selectedAngle"></param>
+        /// <returns></returns>
+        public static IEnumerable<CellInfo> FilterByAngle(this IEnumerable<CellInfo> cells, int selectedAngle)
+        {
+            if (selectedAngle < 0)
+            {
+                return cells;
+            }
+            else
+            {
+                return cells.GetCellAngle()
+                    .Where(x => x.Cell.IsNormal || (x.Angle == selectedAngle))
+                    .Select(x => x.Cell);
+            }
+        }
+
+        /// <summary>
+        /// The selected angle number is 0 indexed. That is, the first angle would be "angle=0", the second "angle=1" and so on.
+        /// Some cells without angles will likely be listed as "angle=-1".
+        /// Giving an angle of -1 or less will return all cells
+        /// </summary>
+        /// <param name="pgc"></param>
+        /// <param name="sortedCells"></param>
+        /// <returns></returns>
+        public static IEnumerable<ADT_CELL> GetMatchingCells(this PGC pgc, List<ADT_CELL> sortedCells, int selectedAngle = -1)
+        {
+            bool sortByAngle = (selectedAngle > 0);
+            foreach (var cell in pgc.CellInfo.FilterByAngle(selectedAngle))
+            {
+                foreach (var adt in sortedCells)
+                {
+                    if (adt.VobID == cell.VobID && adt.CellID == cell.CellID)
+                    {
+                        yield return adt;
+                    }
+                }
+            }
+        }
+    }
+
     internal class PgcDemux {
+
         const string PGCDEMUX_VERSION = "1.2.0.5";
         const int MODUPDATE = 100;
         const int MAXLOOKFORAUDIO = 10000; // Max number of explored packs in audio delay check
@@ -321,7 +400,7 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = calculateTotalSectors(ifo.TitleProgramChainTable[nPGC], ifo.SortedTitleCells, nAng);
+            nTotalSectors = ifo.TitleProgramChainTable[nPGC].GetMatchingCells(ifo.SortedTitleCells, nAng).Sum(cell => cell.Size);
 
             nSector = 0;
             iRet = true;
@@ -461,42 +540,6 @@ namespace PgcDemuxLib
             if (m_bCheckLog && m_bInProcess == true) OutputLog(m_csOutputPath, nPGC, nAng, DemuxingDomain.Titles);
 
             return iRet;
-        }
-
-        static int calculateTotalSectors(PGC pgc, List<ADT_CELL> adt, int selectedAngle = -1, bool forceAllCells = false)
-        {
-            int nTotalSectors = 0;
-            int currentAngle = 0;
-            for (int nCell = 0; nCell < pgc.NumberOfCells; nCell++)
-            {
-                var cellInfo = pgc.CellInfo[nCell];
-
-                var cellType = cellInfo.CellType;
-                var blockType = cellInfo.BlockType;
-                //		0101=First; 1001=Middle ;	1101=Last
-                if (cellInfo.IsFirstAngle)
-                    currentAngle = 1;
-                else if ((cellInfo.IsMiddleAngle || cellInfo.IsLastAngle) && currentAngle != 0)
-                {
-                    currentAngle++;
-                }
-
-                bool isSelectedAngle = (selectedAngle < 0 ? false : (selectedAngle + 1) == currentAngle);
-                if (forceAllCells || cellInfo.IsNormal || isSelectedAngle)
-                {
-                    for (int k = 0; k < adt.Count; k++)
-                    {
-                        if (cellInfo.CellID == adt[k].CellID &&
-                            cellInfo.VobID == adt[k].VobID)
-                        {
-                            nTotalSectors += adt[k].Size;
-                        }
-                    }
-                }
-                if (cellInfo.IsLastAngle) currentAngle = 0;
-            }
-
-            return nTotalSectors;
         }
 
         void IniDemuxGlobalVars() {
@@ -1171,7 +1214,7 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = calculateTotalSectors(MenuPGCs[nPGC], ifo.SortedMenuCells, -1, true);
+            nTotalSectors = MenuPGCs[nPGC].GetMatchingCells(ifo.SortedMenuCells, -1).Sum(cell => cell.Size);
 
             nSector = 0;
             iRet = true;
