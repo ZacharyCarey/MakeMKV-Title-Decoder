@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Util {
+namespace Utils {
     public abstract class CommandLineInterface
     {
 
@@ -13,6 +14,7 @@ namespace MakeMKV_Title_Decoder.Util {
         public abstract string ProgramName { get; }
 
         protected CommandLineInterface(string exePath) {
+            if (exePath == null) throw new ArgumentException("Invalid exe path.");
             this.ExePath = exePath;
         }
 
@@ -65,6 +67,26 @@ namespace MakeMKV_Title_Decoder.Util {
                 }
 
                 yield return folder;
+            }
+        }
+
+        protected static string? SearchLocalExeFiles(string relativeExePath)
+        {
+            try
+            {
+                string cd = Assembly.GetEntryAssembly().Location;
+                string parentFolder = Path.GetDirectoryName(cd);
+                string path = Path.Combine(parentFolder, relativeExePath);
+                if (File.Exists(path))
+                {
+                    return path;
+                } else
+                {
+                    return null;
+                }
+            }catch(Exception)
+            {
+                return null;
             }
         }
 
