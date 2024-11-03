@@ -23,6 +23,9 @@ namespace PgcDemuxLib.Data.VTS
         [JsonInclude]
         PGC[] PGCs;
 
+        [JsonIgnore]
+        public IEnumerable<PGC> All => PGCs;
+
         public PGC this[int index]
         {
             get => PGCs[index];

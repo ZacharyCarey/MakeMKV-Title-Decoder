@@ -23,6 +23,9 @@ namespace PgcDemuxLib.Data
         [JsonInclude]
         private VTSM_LU[] LanguageUnits;
 
+        [JsonIgnore]
+        public IEnumerable<VTSM_LU> All => LanguageUnits;
+
         public VTSM_LU this[int index]
         {
             get => LanguageUnits[index];

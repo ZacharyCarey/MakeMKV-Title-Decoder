@@ -1288,7 +1288,7 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = ifo.m_AADT_Vid_list[nVid].iSize;
+            nTotalSectors = ifo.m_AADT_Vid_list[nVid].Size;
             nSector = 0;
             iRet = true;
             nDemuxedVID = ifo.m_AADT_Vid_list[nVid].VobID;
@@ -1455,7 +1455,7 @@ namespace PgcDemuxLib
             m_bInProcess = true;
 
             // Calculate  the total number of sectors
-            nTotalSectors = ifo.m_MADT_Vid_list[nVid].iSize;
+            nTotalSectors = ifo.m_MADT_Vid_list[nVid].Size;
             nSector = 0;
             iRet = true;
             nDemuxedVID = ifo.m_MADT_Vid_list[nVid].VobID;

@@ -20,6 +20,9 @@ namespace PgcDemuxLib.Data
         [JsonInclude]
         PGC[] PGCs;
 
+        [JsonIgnore]
+        public IEnumerable<PGC> All => PGCs;
+
         [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
         public readonly MenuExistenceFlag MenuFlags;
 

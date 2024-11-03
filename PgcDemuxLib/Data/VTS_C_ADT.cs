@@ -22,6 +22,9 @@ namespace PgcDemuxLib.Data
 
         [JsonInclude]
         private ADT[] ADTs;
+
+        [JsonIgnore]
+        public IEnumerable<ADT> All => ADTs;
         
         public ADT this[int index]
         {
