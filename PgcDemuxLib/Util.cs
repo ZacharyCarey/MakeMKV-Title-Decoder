@@ -60,7 +60,7 @@ namespace PgcDemuxLib {
             int j;
 
             if (in_ == null) return -1;
-            j = in_.Read(caracter.Slice(0, 2048));
+            j = in_.Read(caracter.Slice(0, Dvd.SECTOR_SIZE));
 
             return j;
         }
@@ -311,7 +311,6 @@ namespace PgcDemuxLib {
                 int frames = BCD2Dec((duration % 256) & 0x3f);
                 int fps;
 
-                //TODO handle in pgc/VideoAttributes
                 switch ((duration % 256) & 0xC0)
                 {
                     case 0xC0: fps = 30; break;

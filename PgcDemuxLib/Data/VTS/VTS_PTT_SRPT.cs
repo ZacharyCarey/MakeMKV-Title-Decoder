@@ -42,7 +42,6 @@ namespace PgcDemuxLib.Data.VTS
                 lastByte = NumberOfTitles * 4 + 7;
             }
 
-            // TODO use this technique everywhere to add checks for going outside the bounds of data structures
             ReadOnlySpan<byte> data = file.AsSpan(addr + 8, lastByte - 7);
 
             if (NumberOfTitles == 0)

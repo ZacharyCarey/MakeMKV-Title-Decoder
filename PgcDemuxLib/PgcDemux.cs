@@ -128,7 +128,6 @@ namespace PgcDemuxLib
         const string PGCDEMUX_VERSION = "1.2.0.5";
         const int MODUPDATE = 100;
         const int MAXLOOKFORAUDIO = 10000; // Max number of explored packs in audio delay check
-        internal const int SECTOR_SIZE = 2048;
 
         private static readonly byte[] pcmheader = [
             0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45, 0x66, 0x6D, 0x74, 0x20,
@@ -404,10 +403,11 @@ namespace PgcDemuxLib
             }
         }
 
+
+
         bool Demux(string m_csOutputPath, int nPGC, int nAng, object? pDlg) {
             int nSector;
             int CID, VID;
-            string csAux;
             Stream fout;
             bool bMyCell;
             bool iRet;
@@ -437,18 +437,17 @@ namespace PgcDemuxLib
                 VID = cellInfo.VobID;
                 CID = cellInfo.CellID;
 
-                // TODO is this section still needed?
                 long startSector = cellInfo.FirstVobuStartSector;
                 long endSector = cellInfo.LastVobuEndSector;
 
-                if (m_bInProcess) vobStream.Seek((startSector * SECTOR_SIZE), SeekOrigin.Begin);
+                if (m_bInProcess) vobStream.Seek((startSector * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
                 bool myCell = true;
                 for (long i64 = 0; i64 < (endSector - startSector + 1) && m_bInProcess == true; i64++)
                 {
                     //readpack
                     if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                    if (Util.readbuffer(m_buffer, vobStream) != 2048)
+                    if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                     {
                         Console.WriteLine("Input error: Reached end of VOB too early");
                         m_bInProcess = false;
@@ -496,8 +495,8 @@ namespace PgcDemuxLib
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
+                string path = Path.Combine(m_csOutputPath, "Celltimes.txt");
+                fout = File.Open(path, FileMode.Create);
                 foreach((var cellInfo, bool IsLast) in ifo.TitleProgramChainTable[nPGC].CellInfo.FilterByAngle(nAng).DetectLast())
                 {
                     dwCellDuration = cellInfo.Duration;
@@ -549,14 +548,12 @@ namespace PgcDemuxLib
         }
 
         bool OpenVideoFile(string m_csOutputPath) {
-            string csAux;
-
             if (m_bCheckVid)
             {
-                csAux = Path.Combine(m_csOutputPath, "VideoFile.m2v");
+                string path = Path.Combine(m_csOutputPath, "VideoFile.m2v");
                 try
                 {
-                    fvid = File.Open(csAux, FileMode.Create);
+                    fvid = File.Open(path, FileMode.Create);
                 } catch (Exception)
                 {
                     fvid = null;
@@ -700,8 +697,6 @@ namespace PgcDemuxLib
         }
 
         void WritePack(string m_csOutputPath, ReadOnlySpan<byte> buffer) {
-            string csAux;
-
             if (m_bInProcess == true)
             {
                 /*if (m_bCheckVob2)
@@ -734,7 +729,7 @@ namespace PgcDemuxLib
                     }
                 }*/
 
-                if (fvob != null) Util.writebuffer(buffer, fvob, 2048);
+                if (fvob != null) Util.writebuffer(buffer, fvob, Dvd.SECTOR_SIZE);
                 m_i64OutputLBA++;
             }
 
@@ -999,7 +994,6 @@ namespace PgcDemuxLib
         }
 
         bool check_aud_open(string m_csOutputPath, byte i) {
-            string csAux;
             byte ii;
             /*
             0x80-0x87: ac3  --> ac3
@@ -1035,49 +1029,50 @@ namespace PgcDemuxLib
 
             if (faud[i] == null)
             {
+                string path;
                 if (ii >= 0x80 && ii <= 0x87)
                 {
-                    csAux = $"AudioFile_{(i + 0x80):X2}X.ac3";
+                    path = $"AudioFile_{(i + 0x80):X2}X.ac3";
                     m_audfmt[i] = AudioType.AC3;
                 } else if (ii >= 0x88 && ii <= 0x8f)
                 {
-                    csAux = $"AudioFile_{(i + 0x88):X2}.dts";
+                    path = $"AudioFile_{(i + 0x88):X2}.dts";
                     m_audfmt[i] = AudioType.DTS;
                 } else if (ii >= 0x90 && ii <= 0x97)
                 {
-                    csAux = $"AudioFile_{(i + 0x90):X2}.dds";
+                    path = $"AudioFile_{(i + 0x90):X2}.dds";
                     m_audfmt[i] = AudioType.DDS;
                 } else if (ii >= 0xa0 && ii <= 0xa7)
                 {
-                    csAux = $"AudioFile_{(i + 0xa0):X2}.wav";
+                    path = $"AudioFile_{(i + 0xa0):X2}.wav";
                     m_audfmt[i] = AudioType.WAV;
                 } else if (ii >= 0xc0 && ii <= 0xc7)
                 {
-                    csAux = $"AudioFile_{(i + 0xc0):X2}.mpa";
+                    path = $"AudioFile_{(i + 0xc0):X2}.mpa";
                     m_audfmt[i] = AudioType.MP1;
                 } else if (ii >= 0xd0 && ii <= 0xd7)
                 {
-                    csAux = $"AudioFile_{(i + 0xd0):X2}.mpa";
+                    path = $"AudioFile_{(i + 0xd0):X2}.mpa";
                     m_audfmt[i] = AudioType.MP2;
                 } else
                 {
-                    csAux = $"AudioFile_{(ii):X2}.unk";
+                    path = $"AudioFile_{(ii):X2}.unk";
                     m_audfmt[i] = AudioType.UNK;
                 }
 
-                csAux = Path.Combine(m_csOutputPath, csAux);
-                m_csAudname[i] = csAux;
+                path = Path.Combine(m_csOutputPath, path);
+                m_csAudname[i] = path;
 
                 try
                 {
-                    faud[i] = File.Open(csAux, FileMode.Create);
+                    faud[i] = File.Open(path, FileMode.Create);
                 } catch (Exception)
                 {
                     faud[i] = null;
                 }
                 if (faud[i] == null)
                 {
-                    Console.WriteLine("Error opening output audio file: " + csAux);
+                    Console.WriteLine("Error opening output audio file: " + path);
                     m_bInProcess = false;
                     return false;
                 }
@@ -1128,27 +1123,25 @@ namespace PgcDemuxLib
         }
 
         bool check_sub_open(string m_csOutputPath, byte i) {
-            string csAux;
-
             i -= 0x20;
 
             if (i > 31) return false;
 
             if (fsub[i] == null)
             {
-                csAux = $"Subpictures_{(i + 0x20):X2}.sup";
-                csAux = Path.Combine(m_csOutputPath, csAux);
+                string path = $"Subpictures_{(i + 0x20):X2}.sup";
+                path = Path.Combine(m_csOutputPath, path);
 
                 try
                 {
-                    fsub[i] = File.Open(csAux, FileMode.Create);
+                    fsub[i] = File.Open(path, FileMode.Create);
                 } catch (Exception)
                 {
                     fsub[i] = null;
                 }
                 if (fsub[i] == null)
                 {
-                    Console.WriteLine("Error opening output subs file:" + csAux);
+                    Console.WriteLine("Error opening output subs file:" + path);
                     m_bInProcess = false;
                     return false;
                 } else return true;
@@ -1168,7 +1161,6 @@ namespace PgcDemuxLib
             int nTotalSectors;
             int nSector, nCell;
             int CID, VID;
-            string csAux, csAux2;
             Stream fout;
             Int64 i64;
             bool bMyCell;
@@ -1210,13 +1202,13 @@ namespace PgcDemuxLib
                 long startSector = cellInfo.FirstVobuStartSector;
                 long endSector = cellInfo.LastVobuEndSector;
 
-                if (m_bInProcess) vob.Seek((startSector * SECTOR_SIZE), SeekOrigin.Begin);
+                if (m_bInProcess) vob.Seek((startSector * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
                 for (i64 = 0, bMyCell = true; i64 < (endSector - startSector + 1) && m_bInProcess == true; i64++)
                 {
                     //readpack
                     if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                    if (Util.readbuffer(m_buffer, vob) != 2048)
+                    if (Util.readbuffer(m_buffer, vob) != Dvd.SECTOR_SIZE)
                     {
                         if (vob != null) vob.Close();
                         Console.WriteLine("Input error: Reached end of VOB too early");
@@ -1264,8 +1256,8 @@ namespace PgcDemuxLib
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = Path.Combine(m_csOutputPath, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
+                string path = Path.Combine(m_csOutputPath, "Celltimes.txt");
+                fout = File.Open(path, FileMode.Create);
                 for (nCell = 0; nCell < MenuPGCs[nPGC].NumberOfCells && m_bInProcess == true; nCell++)
                 {
                     dwCellDuration = MenuPGCs[nPGC].CellInfo[nCell].Duration;
@@ -1293,10 +1285,8 @@ namespace PgcDemuxLib
             int k, iArraysize;
             int CID, VID, nDemuxedVID;
             Int64 i64IniSec, i64EndSec;
-            Int64 i64sectors;
             int nVobin = -1;
-            string csAux, csAux2;
-            Stream in_, fout;
+            Stream fout;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -1320,6 +1310,8 @@ namespace PgcDemuxLib
             iRet = true;
             nDemuxedVID = ifo.CombinedTitleVobCells[nVid].VobID;
 
+            VobStream vobStream = new(this.ifo, false);
+
             iArraysize = ifo.SortedTitleCells.Count;
             for (nCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
             {
@@ -1330,57 +1322,18 @@ namespace PgcDemuxLib
                 {
                     i64IniSec = ifo.SortedTitleCells[nCell].StartSector;
                     i64EndSec = ifo.SortedTitleCells[nCell].EndSector;
-                    for (k = 1, i64sectors = 0; k < 10; k++)
-                    {
-                        i64sectors += (ifo.VobSize[k] / 2048);
-                        if (i64IniSec < i64sectors)
-                        {
-                            i64sectors -= (ifo.VobSize[k] / 2048);
-                            nVobin = k;
-                            k = 20;
-                        }
-                    }
-                    //csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
-                    csAux = $"{nVobin}.VOB";
-                    csAux = $"VTS_{ifo.TitleSet:00}_" + csAux;
-                    try
-                    {
-                        in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-                    } catch (Exception) {
-                        in_ = null;
-                    }
-                    if (in_ == null)
-                    {
-                        Console.WriteLine("Error opening input VOB: " + csAux);
-                        m_bInProcess = false;
-                        iRet = false;
-                    }
-                    if (m_bInProcess) in_.Seek((long)((i64IniSec - i64sectors) * 2048), SeekOrigin.Begin);
+
+                    if (m_bInProcess) vobStream.Seek((i64IniSec * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
                     for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
                     {
                         //readpack
                         if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                        if (Util.readbuffer(m_buffer, in_) != 2048)
+                        if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                         {
-                            if (in_ != null) in_.Close();
-                            nVobin++;
-                            //csAux2 = ifo.FileName.Substring(0, ifo.FileName.Length - 5);
-                            csAux = $"{nVobin}.VOB"; // TODO replace all of these with VobStream
-                            csAux = $"VTS_{ifo.TitleSet:00}_" + csAux;
-                            try
-                            {
-                                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-                            } catch (Exception)
-                            {
-                                in_ = null;
-                            }
-                            if (Util.readbuffer(m_buffer, in_) != 2048)
-                            {
-                                Console.WriteLine("Input error: Reached end of VOB too early");
-                                m_bInProcess = false;
-                                iRet = false;
-                            }
+                            Console.WriteLine("Input error: Reached end of VOB too early");
+                            m_bInProcess = false;
+                            iRet = false;
                         }
 
                         if (m_bInProcess == true)
@@ -1408,18 +1361,19 @@ namespace PgcDemuxLib
                             }
                         }
                     } // For readpacks
-                    if (in_ != null) in_.Close();
-                    in_ = null;
                 }  // if (VID== DemuxedVID)
             }   // For Cells 
+
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             CloseAndNull();
             nFrames = 0;
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = Path.Combine(output_folder, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
+                string path = Path.Combine(output_folder, "Celltimes.txt");
+                fout = File.Open(path, FileMode.Create);
 
                 nDemuxedVID = ifo.CombinedTitleVobCells[nVid].VobID;
 
@@ -1462,8 +1416,7 @@ namespace PgcDemuxLib
             int iArraysize;
             int CID, VID, nDemuxedVID;
             Int64 i64IniSec, i64EndSec;
-            string csAux, csAux2;
-            Stream in_, fout;
+            Stream fout;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -1487,6 +1440,8 @@ namespace PgcDemuxLib
             iRet = true;
             nDemuxedVID = ifo.CombinedMenuVobCells[nVid].VobID;
 
+            VobStream vobStream = new(ifo, true);
+
             iArraysize = ifo.SortedMenuCells.Count;
             for (nCell = 0; nCell < iArraysize && m_bInProcess == true; nCell++)
             {
@@ -1497,38 +1452,15 @@ namespace PgcDemuxLib
                 {
                     i64IniSec = ifo.SortedMenuCells[nCell].StartSector;
                     i64EndSec = ifo.SortedMenuCells[nCell].EndSector;
-                    if (m_bVMGM)
-                    {
-                        csAux2 = $"VTS_{ifo.TitleSet:00}_0.";
-                        csAux = csAux2 + "VOB";
-                    }
-                    else
-                    {
-                        csAux2 = $"VTS_{ifo.TitleSet:00}_";
-                        csAux = csAux2 + "0.VOB";
-                    }
-                    try
-                    {
-                        in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-                    } catch (Exception)
-                    {
-                        in_ = null;
-                    }
-                    if (in_ == null)
-                    {
-                        Console.WriteLine("Error opening input VOB: " + csAux);
-                        m_bInProcess = false;
-                        iRet = false;
-                    }
-                    if (m_bInProcess) in_.Seek((long)((i64IniSec) * 2048), SeekOrigin.Begin);
+
+                    if (m_bInProcess) vobStream.Seek((long)((i64IniSec) * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
                     for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
                     {
                         //readpack
                         if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                        if (Util.readbuffer(m_buffer, in_) != 2048)
+                        if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                         {
-                            if (in_ != null) in_.Close();
                             Console.WriteLine("Input error: Reached end of VOB too early");
                             m_bInProcess = false;
                             iRet = false;
@@ -1559,10 +1491,11 @@ namespace PgcDemuxLib
                             }
                         }
                     } // For readpacks
-                    if (in_ != null) in_.Close();
-                    in_ = null;
                 } // If (VID==DemuxedVID)
             }   // For Cells 
+
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             CloseAndNull();
 
@@ -1570,8 +1503,8 @@ namespace PgcDemuxLib
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = Path.Combine(output_folder, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
+                string path = Path.Combine(output_folder, "Celltimes.txt");
+                fout = File.Open(path, FileMode.Create);
 
                 nDemuxedVID = ifo.CombinedMenuVobCells[nVid].VobID;
 
@@ -1617,8 +1550,7 @@ namespace PgcDemuxLib
             Int64 i64IniSec, i64EndSec;
             Int64 i64sectors;
             int nVobin = -1;
-            string csAux, csAux2;
-            Stream in_, fout;
+            Stream fout;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -1647,50 +1579,27 @@ namespace PgcDemuxLib
             i64EndSec = ifo.SortedTitleCells[nCell].EndSector;
             for (k = 1, i64sectors = 0; k < 10; k++)
             {
-                i64sectors += (ifo.VobSize[k] / 2048);
+                i64sectors += (ifo.VobSize[k] / Dvd.SECTOR_SIZE);
                 if (i64IniSec < i64sectors)
                 {
-                    i64sectors -= (ifo.VobSize[k] / 2048);
+                    i64sectors -= (ifo.VobSize[k] / Dvd.SECTOR_SIZE);
                     nVobin = k;
                     k = 20;
                 }
             }
-            csAux2 = $"VTS_{ifo.TitleSet:00}_";
-            csAux = $"{nVobin}.VOB";
-            csAux = csAux2 + csAux;
-            try
-            {
-                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-            } catch (Exception)
-            {
-                in_ = null;
-            }
-            if (in_ == null)
-            {
-                Console.WriteLine("Error opening input VOB: " + csAux);
-                m_bInProcess = false;
-                iRet = false;
-            }
-            if (m_bInProcess) in_.Seek((long)((i64IniSec - i64sectors) * 2048), SeekOrigin.Begin);
+
+            VobStream vobStream = new(ifo, false);
+            if (m_bInProcess) vobStream.Seek((long)(i64IniSec * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
             for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
             {
                 //readpack
                 if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                if (Util.readbuffer(m_buffer, in_) != 2048)
+                if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                 {
-                    if (in_ != null) in_.Close();
-                    nVobin++;
-                    csAux2 = $"VTS_{ifo.TitleSet:00}_";
-                    csAux = $"{nVobin}.VOB";
-                    csAux = csAux2 + csAux;
-                    in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-                    if (Util.readbuffer(m_buffer, in_) != 2048)
-                    {
-                        Console.WriteLine("Input error: Reached end of VOB too early");
-                        m_bInProcess = false;
-                        iRet = false;
-                    }
+                    Console.WriteLine("Input error: Reached end of VOB too early");
+                    m_bInProcess = false;
+                    iRet = false;
                 }
 
                 if (m_bInProcess == true)
@@ -1718,8 +1627,8 @@ namespace PgcDemuxLib
                     }
                 }
             } // For readpacks
-            if (in_ != null) in_.Close();
-            in_ = null;
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             CloseAndNull();
 
@@ -1727,8 +1636,8 @@ namespace PgcDemuxLib
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = Path.Combine(output_folder, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
+                string path = Path.Combine(output_folder, "Celltimes.txt");
+                fout = File.Open(path, FileMode.Create);
                 nFrames = Util.DurationInFrames(ifo.SortedTitleCells[nCell].dwDuration);
                 if (m_bCheckEndTime)
                 {
@@ -1751,8 +1660,7 @@ namespace PgcDemuxLib
             int nSector;
             int CID, VID;
             Int64 i64IniSec, i64EndSec;
-            string csAux, csAux2;
-            Stream in_, fout;
+            Stream fout;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -1779,37 +1687,16 @@ namespace PgcDemuxLib
 
             i64IniSec = ifo.SortedMenuCells[nCell].StartSector;
             i64EndSec = ifo.SortedMenuCells[nCell].EndSector;
-            if (m_bVMGM)
-            {
-                csAux2 = $"VTS_{ifo.TitleSet:00}_0.";
-                csAux = csAux2 + "VOB";
-            }
-            else
-            {
-                csAux2 = $"VTS_{ifo.TitleSet:00}_";
-                csAux = csAux2 + "0.VOB";
-            }
-            try
-            {
-                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-            } catch (Exception) {
-                in_ = null;
-            }
-            if (in_ == null)
-            {
-                Console.WriteLine("Error opening input VOB: " + csAux);
-                m_bInProcess = false;
-                iRet = false;
-            }
-            if (m_bInProcess) in_.Seek((long)((i64IniSec) * 2048), SeekOrigin.Begin);
+
+            VobStream vobStream = new(ifo, true);
+            if (m_bInProcess) vobStream.Seek((long)((i64IniSec) * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
             for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
             {
                 //readpack
                 if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
-                if (Util.readbuffer(m_buffer, in_) != 2048)
+                if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                 {
-                    if (in_ != null) in_.Close();
                     Console.WriteLine("Input error: Reached end of VOB too early");
                     m_bInProcess = false;
                     iRet = false;
@@ -1839,8 +1726,8 @@ namespace PgcDemuxLib
                     }
                 }
             } // For readpacks
-            if (in_ != null) in_.Close();
-            in_ = null;
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             CloseAndNull();
 
@@ -1848,8 +1735,8 @@ namespace PgcDemuxLib
 
             if (m_bCheckCellt && m_bInProcess == true)
             {
-                csAux = Path.Combine(output_folder, "Celltimes.txt");
-                fout = File.Open(csAux, FileMode.Create);
+                string path = Path.Combine(output_folder, "Celltimes.txt");
+                fout = File.Open(path, FileMode.Create);
                 nFrames = Util.DurationInFrames(ifo.SortedMenuCells[nCell].dwDuration);
                 if (m_bCheckEndTime)
                 {
@@ -1873,8 +1760,6 @@ namespace PgcDemuxLib
             Int64 i64IniSec, i64EndSec;
             Int64 i64sectors;
             int nVobin = -1;
-            string csAux, csAux2;
-            Stream in_;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -1941,41 +1826,25 @@ namespace PgcDemuxLib
             iRet = true;
             for (k = 1, i64sectors = 0; k < 10; k++)
             {
-                i64sectors += (ifo.VobSize[k] / 2048);
+                i64sectors += (ifo.VobSize[k] / Dvd.SECTOR_SIZE);
                 if (i64IniSec < i64sectors)
                 {
-                    i64sectors -= (ifo.VobSize[k] / 2048);
+                    i64sectors -= (ifo.VobSize[k] / Dvd.SECTOR_SIZE);
                     nVobin = k;
                     k = 20;
                 }
             }
-            csAux2 = $"VTS_{ifo.TitleSet:00}_";
-            csAux = $"{nVobin}.VOB";
-            csAux = csAux2 + csAux;
-            in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-            if (in_ == null)
-            {
-                Console.WriteLine("Error opening input VOB: " + csAux);
-                iRet = false;
-            }
-            if (iRet == true) in_.Seek((long)((i64IniSec - i64sectors) * 2048), SeekOrigin.Begin);
+
+            VobStream vobStream = new VobStream(ifo, false);
+            if (iRet == true) vobStream.Seek((long)((i64IniSec) * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
             for (i64 = 0, bMyCell = true; iRet == true && i64 < (i64EndSec - i64IniSec + 1) && i64 < MAXLOOKFORAUDIO; i64++)
             {
                 //readpack
-                if (Util.readbuffer(m_buffer, in_) != 2048)
+                if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                 {
-                    if (in_ != null) in_.Close();
-                    nVobin++;
-                    csAux2 = $"VTS_{ifo.TitleSet:00}_";
-                    csAux = $"{nVobin}.VOB";
-                    csAux = csAux2 + csAux;
-                    in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-                    if (Util.readbuffer(m_buffer, in_) != 2048)
-                    {
-                        Console.WriteLine("Input error: Reached end of VOB too early");
-                        iRet = false;
-                    }
+                    Console.WriteLine("Input error: Reached end of VOB too early");
+                    iRet = false;
                 }
 
                 if (iRet == true)
@@ -2001,8 +1870,8 @@ namespace PgcDemuxLib
                     }
                 }
             } // For readpacks
-            if (in_ != null) in_.Close();
-            in_ = null;
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             return iRet;
         }
@@ -2011,8 +1880,6 @@ namespace PgcDemuxLib
             int VID = -1, CID = -1;
             int k, nCell;
             Int64 i64IniSec, i64EndSec;
-            string csAux, csAux2;
-            Stream in_;
             Int64 i64;
             bool bMyCell;
             bool iRet;
@@ -2078,34 +1945,13 @@ namespace PgcDemuxLib
 
             iRet = true;
 
-            if (m_bVMGM)
-            {
-                csAux2 = $"VTS_{ifo.TitleSet:00}_0.";
-                csAux = csAux2 + "VOB";
-            }
-            else
-            {
-                csAux2 = $"VTS_{ifo.TitleSet:00}_";
-                csAux = csAux2 + "0.VOB";
-            }
-            try
-            {
-                in_ = File.OpenRead(Path.Combine(output_folder, csAux));
-            } catch (Exception)
-            {
-                in_ = null;
-            }
-            if (in_ == null)
-            {
-                Console.WriteLine("Error opening input VOB: " + csAux);
-                iRet = false;
-            }
-            if (iRet == true) in_.Seek((long)((i64IniSec) * 2048), SeekOrigin.Begin);
+            VobStream vobStream = new(ifo, true);
+            if (iRet == true) vobStream.Seek((long)((i64IniSec) * Dvd.SECTOR_SIZE), SeekOrigin.Begin);
 
             for (i64 = 0, bMyCell = true; iRet == true && i64 < (i64EndSec - i64IniSec + 1) && i64 < MAXLOOKFORAUDIO; i64++)
             {
                 //readpack
-                if (Util.readbuffer(m_buffer, in_) != 2048)
+                if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                 {
                     Console.WriteLine("Input error: Reached end of VOB too early");
                     iRet = false;
@@ -2134,8 +1980,8 @@ namespace PgcDemuxLib
                     }
                 }
             } // For readpacks
-            if (in_ != null) in_.Close();
-            in_ = null;
+            if (vobStream != null) vobStream.Close();
+            vobStream = null;
 
             return iRet;
         }
@@ -2161,9 +2007,9 @@ namespace PgcDemuxLib
         }
 
         void OutputLog(int nItem, int nAng, DemuxingDomain iDomain, TextWriter stream) {
-            string csAux;
             int k;
             int AudDelay;
+            string csAux;
 
             stream.WriteLine("[General]");
             stream.WriteLine($"Total Number of PGCs   in Titles={(ifo.TitleProgramChainTable?.NumberOfProgramChains ?? 0)}");

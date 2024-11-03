@@ -85,31 +85,31 @@ namespace PgcDemuxLib.Data.VTS
 
             Version = new VersionNumber(file, 0x20);
 
-            int addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xC8, 4);
+            int addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xC8, 4);
             Util.AssertValidAddress(addr, "VTS_PTT_SRPT");
             TitleAndChapterInfoTable = new VTS_PTT_SRPT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xCC, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xCC, 4);
             Util.AssertValidAddress(addr, "VTS_PGCI");
             TitleProgramChainTable = new VTS_PGCI(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD0, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xD0, 4);
             MenuProgramChainTable = (addr == 0) ? null : new VTSM_PGCI_UT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD4, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xD4, 4);
             Util.AssertValidAddress(addr, "VTS_TMAPTI");
             TimeMap = new VTS_TMAPTI(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
             MenuCellAddressTable = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
             MenuVobuAddressMap = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xE0, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xE0, 4);
             TitleSetCellAddressTable = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xE4, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xE4, 4);
             Util.AssertValidAddress(addr, "VTS_VOBU_ADMAP");
             TitleSetVobuAddressMap = new VTS_C_ADT(file, addr);
 

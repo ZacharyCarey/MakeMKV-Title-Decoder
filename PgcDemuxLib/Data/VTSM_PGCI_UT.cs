@@ -49,7 +49,7 @@ namespace PgcDemuxLib.Data
 
                 int offsetPtr = entry.GetNbytes(4, 4);
                 int pgcID = 0;
-                LanguageUnits[nLU] = new VTSM_LU(data.Slice(offsetPtr), addr + offsetPtr, nLU, ref pgcID, languageCode, menuFlags);
+                LanguageUnits[nLU] = new VTSM_LU(data.Slice(offsetPtr), addr + offsetPtr, ref pgcID, languageCode, menuFlags);
             }
         }
     }

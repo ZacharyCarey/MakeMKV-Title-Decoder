@@ -106,23 +106,23 @@ namespace PgcDemuxLib.Data.VMG
 
             int addr = file.GetNbytes(0x84, 4);
             Util.AssertValidAddress(addr, "FP_PGC");
-            FirstPlayPGC = new PGC(file.AsSpan(addr), addr, -1, 0, 0, -1); // TODO Probably a reference ptr, we probably shoudlnt decode
+            FirstPlayPGC = new PGC(file.AsSpan(addr), addr, -1, 0, 0, -1);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xC4, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xC4, 4);
             Util.AssertValidAddress(addr, "TT_SRPT");
             TitleInfoTable = new TT_SRPT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xC8, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xC8, 4);
             Util.AssertValidAddress(addr, "VMGM_PGCI_UT");
             MenuProgramChainTable = new VTSM_PGCI_UT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xCC, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xCC, 4);
             ParentalManagementMasks = (addr == 0) ? null : new VMG_PTL_MAIT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
             MenuCellAddressTable = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
-            addr = PgcDemux.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
+            addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xDC, 4);
             MenuVobuAddressMap = (addr == 0) ? null : new VTS_C_ADT(file, addr);
 
             this.MenuVideoAttributes = new VTS_VideoAttributes(file, 0x100);

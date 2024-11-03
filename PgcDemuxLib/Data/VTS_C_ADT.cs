@@ -39,7 +39,6 @@ namespace PgcDemuxLib.Data
             int lastByte = file.GetNbytes(addr + 4, 4);
             ReadOnlySpan<byte> data = file.AsSpan(addr, lastByte + 1);
 
-            // TODO verify if this is needed or not
             int numEntries = (data.Length - 8) / 12;
             if (numADTs > numEntries)
             {

@@ -12,6 +12,8 @@ namespace PgcDemuxLib
 {
     public class Dvd
     {
+        internal const int SECTOR_SIZE = 2048;
+
         [JsonInclude]
         public readonly string Folder;
 

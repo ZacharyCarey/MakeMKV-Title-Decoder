@@ -15,7 +15,7 @@ namespace PgcDemuxLib.Data
         [JsonInclude]
         internal readonly int Address;
 
-        public int NumberOfProgramChains => PGCs.Length; // TODO remove
+        public int NumberOfProgramChains => PGCs.Length;
 
         [JsonInclude]
         PGC[] PGCs;
@@ -37,8 +37,7 @@ namespace PgcDemuxLib.Data
             get => PGCs[index];
         }
 
-        // TODO get rid of nLU at some point
-        internal VTSM_LU(ReadOnlySpan<byte> data, int globalAddr,int nLU, ref int pgcID, string languageCode, int menuFlags)
+        internal VTSM_LU(ReadOnlySpan<byte> data, int globalAddr, ref int pgcID, string languageCode, int menuFlags)
         {
             Address = globalAddr;
 

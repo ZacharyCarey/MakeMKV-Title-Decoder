@@ -49,38 +49,7 @@ lib.ExtractFrame(
 
 Print(dvd);
 
-static long BCD2Dec(long BCD)
-{
-    return (BCD / 0x10) * 10 + (BCD % 0x10);
-}
 
-static string FormatDuration(long duration)
-{
-    string csAux;
-
-    if (duration < 0)
-        csAux = "Unknown";
-    else
-    {
-        long h = BCD2Dec(duration / (256 * 256 * 256));
-        long m = BCD2Dec((duration / (256 * 256)) % 256);
-        long s = BCD2Dec((duration / 256) % 256);
-        long frames = BCD2Dec((duration % 256) & 0x3f);
-        long fps;
-
-        //TODO handle in pgc/VideoAttributes
-        switch((duration % 256) & 0xC0)
-        {
-            case 0xC0: fps = 30; break;
-            default: fps = 25; break;
-        }
-
-        long ms = (frames * 1000) / fps;
-
-        csAux = $"{h:00}:{m:00}:{s:00}.{ms:000}";
-    }
-    return csAux;
-}
 /*
 JsonNode PrintTitles()
 {
