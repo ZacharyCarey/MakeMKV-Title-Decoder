@@ -32,10 +32,10 @@ namespace PgcDemuxLib
 
             this.VMG = new VmgIfo(folder, "VIDEO_TS.IFO");
 
-            this.TitleSets = new ReadOnlyArray<VtsIfo>(VMG.NumberOfTitleSets + 1);
+            this.TitleSets = new ReadOnlyArray<VtsIfo>(VMG.NumberOfTitleSets);
             for (int i = 0; i < this.VMG.NumberOfTitleSets; i++)
             {
-                this.TitleSets[i + 1] = new VtsIfo(folder, $"VTS_{(i + 1):00}_0.IFO");
+                this.TitleSets[i] = new VtsIfo(folder, $"VTS_{(i + 1):00}_0.IFO");
             }
         }
 

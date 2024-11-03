@@ -1,4 +1,5 @@
-﻿using PgcDemuxLib;
+﻿using FfmpegInterface;
+using PgcDemuxLib;
 using PgcDemuxLib.Data;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -21,6 +22,13 @@ if (!dvd.DemuxAll(output))
     Console.ResetColor();
     return;
 }
+
+ffmpeg lib = new();
+lib.ExtractFrame(
+    Path.Combine(output, "VTS-03_Title-001_Angle-1.VOB"), 
+    TimeSpan.FromSeconds(0.25), 
+    Path.Combine(output, "out1.png")
+);
 
 //var ifo = dvd.TitleSets[3];
 //var pgc = 0;
