@@ -1,11 +1,12 @@
 ﻿using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MakeMKV_Title_Decoder.Controls
@@ -150,37 +151,37 @@ namespace MakeMKV_Title_Decoder.Controls
             {
                 if (item.Track == track)
                 {
-                    var data = track.Rename;
+                    var data = track.RenameData;
 
                     List<string> trackProperties = new();
-                    switch (track.Data.Type)
+                    switch (track.Identity.Type)
                     {
                         case MkvTrackType.Video:
-                            var size = track.Data.Properties?.PixelDimensions;
+                            var size = track.Identity.PixelDimensions;
                             if (size != null) trackProperties.Add($"{size} pixels");
                             break;
                         case MkvTrackType.Audio:
-                            var freq = track.Data.Properties?.AudioSamplingFrequency;
+                            var freq = track.Identity.AudioSamplingFrequency;
                             if (freq != null) trackProperties.Add($"{freq} Hz");
 
-                            var channels = track.Data.Properties?.AudioChannels;
+                            var channels = track.Identity.AudioChannels;
                             if (channels != null) trackProperties.Add($"{channels} channels");
                             break;
                     }
 
-                    item.Text = track.Data.Codec;
+                    item.Text = track.Identity.Codec;
 
-                    item.SubItems[0].Text = track.Data.Type.ToString();
-                    item.SubItems[0].IconKey = GetTypeIcon(track.Data.Type);
+                    item.SubItems[0].Text = track.Identity.Type?.ToString() ?? "";
+                    item.SubItems[0].IconKey = GetTypeIcon(track.Identity.Type);
 
                     item.SubItems[1].Text = data?.Name ?? ""; // name
                     item.SubItems[1].IconColor = null;
                     item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
-                    item.SubItems[3].Text = track.Data.Properties?.Language ?? ""; // lang
-                    item.SubItems[4].IconKey = GetBoolIcon(track.Data.Properties?.EnabledTrack ?? true); // enabled
-                    item.SubItems[5].IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Data.Properties?.DefaultTrack ?? true); // default
-                    item.SubItems[6].IconKey = GetBoolIcon(track.Data.Properties?.ForcedTrack ?? false); // forced
-                    item.SubItems[7].IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Data.Properties?.FlagCommentary ?? false); // commentary
+                    item.SubItems[3].Text = track.Identity.Language ?? ""; // lang
+                    item.SubItems[4].IconKey = GetBoolIcon(track.Identity.Enabled ?? true); // enabled
+                    item.SubItems[5].IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Identity.Default ?? false); // default
+                    item.SubItems[6].IconKey = GetBoolIcon(track.Identity.Forced ?? false); // forced
+                    item.SubItems[7].IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Identity.FlagCommentary ?? false); // commentary
 
                     return;
                 }
@@ -206,7 +207,7 @@ namespace MakeMKV_Title_Decoder.Controls
                     if (delay.ClipDelay != null)
                     {
                         item.SubItems[0].Text = "Clip Sync";
-                        item.SubItems[1].Text = delay.ClipDelay.Source.Rename.Name ?? "null";
+                        item.SubItems[1].Text = delay.ClipDelay.Source.RenameData.Name ?? "null";
                         item.SubItems[1].IconColor = delay.ClipDelay.Color;
                     } else
                     {
@@ -275,7 +276,7 @@ namespace MakeMKV_Title_Decoder.Controls
             return val.Value ? KeepIconKey : DeleteIconKey;
         }
 
-        private string? GetTypeIcon(MkvTrackType type)
+        private string? GetTypeIcon(MkvTrackType? type)
         {
             switch (type)
             {

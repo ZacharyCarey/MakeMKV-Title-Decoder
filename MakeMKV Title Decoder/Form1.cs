@@ -1,17 +1,20 @@
-using JsonSerializable;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.BluRay;
+using MakeMKV_Title_Decoder.Data.DVD;
 using MakeMKV_Title_Decoder.Forms.DiscBackup;
 using MakeMKV_Title_Decoder.Forms.FileRenamer;
-using MakeMKV_Title_Decoder.libs.MkvToolNix;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
+using PgcDemuxLib;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using static System.Windows.Forms.Design.AxImporter;
 
 namespace MakeMKV_Title_Decoder
 {
 	public partial class Form1 : Form
 	{
 
-		MkvToolNixDisc? Disc = null;
-		RenameData Renames = new();
+		LoadedDisc? Disc = null;
 
 		public Form1()
 		{
@@ -27,138 +30,47 @@ namespace MakeMKV_Title_Decoder
 
 		private void testToolStripMenuItem_Click(object sender, EventArgs e)
 		{
+			Dvd? dvd = null;
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            {
+                openFileDialog.InitialDirectory = "C:\\Users\\Zack\\Downloads\\WILLY_WONKA";
 
-			//using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
-			//{
-			//	openFileDialog.InitialDirectory = "F:\\Video\\backup";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+					dvd = Dvd.ParseFolder(openFileDialog.SelectedPath);
+                }
+            }
 
-			//	if (openFileDialog.ShowDialog() == DialogResult.OK)
-			//	{
-			//		var playlist = new Playlist
-			//		{
-			//			Title = "RWBY Test",
-			//			Files = new() {
-			//				new PlaylistFile() {
-			//					Source = "BDMV\\STREAM\\00004.m2ts",
-			//					Tracks = new() {
-			//						new PlaylistTrack() {
-			//							ID = 0,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Name = "Wassup",
-			//							Commentary = false
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 1,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Name = "IM IMMUNE",
-			//							Commentary = false
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 2,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Commentary = false
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 3,
-			//							Copy = false,
-			//							Sync = new(){ },
-			//							Commentary = false
-			//						}
-			//					}
-			//				},
-			//				new PlaylistFile() {
-			//					Source = "BDMV\\STREAM\\00015.m2ts",
-			//					Tracks = new() {
-			//						new PlaylistTrack() {
-			//							ID = 0,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Commentary = false,
-			//							AppendedTo = new() {
-			//								StreamIndex = 0,
-			//								TrackIndex = 0
-			//							}
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 1,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Commentary = false,
-			//							AppendedTo = new() {
-			//								StreamIndex = 0,
-			//								TrackIndex = 1
-			//							}
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 2,
-			//							Copy = false,
-			//							Sync = new(){ },
-			//							Commentary = false
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 3,
-			//							Copy = false,
-			//							Sync = new(){ },
-			//							Commentary = false
-			//						}
-			//					},
-			//				},
-			//				new PlaylistFile() {
-			//					Source = "BDMV\\STREAM\\00004.m2ts",
-			//					Tracks = new() {
-			//						new PlaylistTrack() {
-			//							ID = 0,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Commentary = false,
-			//							AppendedTo = new() {
-			//								StreamIndex = 1,
-			//								TrackIndex = 0
-			//							}
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 1,
-			//							Copy = true,
-			//							Sync = new(){ },
-			//							Commentary = false,
-			//							AppendedTo = new() {
-			//								StreamIndex = 1,
-			//								TrackIndex = 1
-			//							}
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 2,
-			//							Copy = true,
-			//							Sync = new(){
-			//								new TrackID() {
-			//									StreamIndex = 1,
-			//									TrackIndex = 2
-			//								}
-			//							},
-			//							Commentary = false,
-			//							AppendedTo = new() {
-			//								StreamIndex = 0,
-			//								TrackIndex = 2
-			//							}
-			//						},
-			//						new PlaylistTrack() {
-			//							ID = 3,
-			//							Copy = false,
-			//							Sync = new(){ },
-			//							Commentary = false
-			//						}
-			//					}
-			//				}
-			//			}
-			//		};
+            if (dvd == null)
+            {
+                MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
-			//		MkvToolNixInterface.MergeAsync(this.disc, playlist, Path.Combine(openFileDialog.SelectedPath, "Test.mkv"));
-			//	}
-			//}
-		}
+            /*using (SaveFileDialog dialog = new())
+            {
+                dialog.Filter = "JSON files (*.json)|*.json";
+                dialog.RestoreDirectory = true;
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    var path = dialog.FileName;
+                    if (!dvd.SaveToFile(path))
+                    {
+                        MessageBox.Show("Failed to save JSON.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }*/
+            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            {
+                openFileDialog.InitialDirectory = "C:\\Users\\Zack\\Downloads\\TestOutput";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+					dvd.TitleSets[0].DemuxTitleCell(openFileDialog.SelectedPath, 1, 1);
+                }
+            }
+        }
 
 		private void viewInfoToolStripMenuItem_Click(object sender, EventArgs e)
 		{
@@ -168,10 +80,10 @@ namespace MakeMKV_Title_Decoder
 
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{
-					MkvToolNixDisc? disc = null;
+					LoadedDisc? disc = null;
 					try
 					{
-						disc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+						disc = LoadedDisc.TryLoadDisc(openFileDialog.SelectedPath);
 					} catch (Exception ex)
 					{
 						MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -197,10 +109,11 @@ namespace MakeMKV_Title_Decoder
 
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{
-					MkvToolNixDisc? parsedDisc;
+					LoadedDisc? parsedDisc = null;
 					try
 					{
-						parsedDisc = MkvToolNixDisc.OpenAsync(openFileDialog.SelectedPath);
+						// TODO Async loading using progress bar dialog
+						parsedDisc = LoadedDisc.TryLoadDisc(openFileDialog.SelectedPath);
 					} catch (Exception ex)
 					{
 						MessageBox.Show($"There was an error reading the disc.: {ex.Message}", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -213,22 +126,11 @@ namespace MakeMKV_Title_Decoder
 						return;
 					}
 
-					// TODO add CLPI parsing to loading bar
-					LoadedDisc? loadedDisc = LoadedDisc.TryLoadDisc(parsedDisc);
-					if (loadedDisc == null)
-					{
-						// TODO is this two message boxes for same error?
-						MessageBox.Show("Failed to read clpi data.");
-						return;
-					}
-
 					this.Disc = parsedDisc;
-					this.Renames = new();
-					this.Renames.Disc = loadedDisc;
 				}
 			}
 
-			LoadedDiscLabel.Text = this.Disc?.RootPath ?? "";
+			LoadedDiscLabel.Text = this.Disc?.Root ?? "";
 		}
 
 		private void RenameClipsBtn_Click(object sender, EventArgs e)
@@ -238,27 +140,33 @@ namespace MakeMKV_Title_Decoder
 				MessageBox.Show("Please load a disc first.");
 				return;
 			}
-			new ClipRenamerForm(Renames.Disc).ShowDialog();
+			new ClipRenamerForm(this.Disc).ShowDialog();
 		}
 
 		private void PlaylistsBtn_Click(object sender, EventArgs e)
 		{
 			if (this.Disc != null)
 			{
-				new PlaylistCreatorForm(Renames.Disc, this.Renames).ShowDialog();
+				new PlaylistCreatorForm(this.Disc).ShowDialog();
 			}
 		}
 
 		private void FileRenamerBtn_Click(object sender, EventArgs e)
 		{
-			if (this.Disc != null && this.Renames.Disc != null)
+			if (this.Disc != null)
 			{
-				new FileRenamerForm(this.Renames).ShowDialog();
+				new FileRenamerForm(this.Disc).ShowDialog();
 			}
 		}
 
 		private void saveToolStripMenuItem1_Click(object sender, EventArgs e)
 		{
+			if (this.Disc == null)
+			{
+				MessageBox.Show("Please load a disc first.", "Please load disc.");
+				return;
+			}
+
 			using (SaveFileDialog dialog = new())
 			{
 				dialog.Filter = "JSON files (*.json)|*.json";
@@ -269,13 +177,11 @@ namespace MakeMKV_Title_Decoder
 					var path = dialog.FileName;
 					try
 					{
-						File.Delete(path);
-					} catch (Exception) { }
-
-					try
-					{
-						Json.Write(this.Renames, path);
-						Console.WriteLine("Saved JSON file.");
+                        var options = new JsonSerializerOptions { WriteIndented = true, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+                        using var stream = File.Create(path);
+                        JsonSerializer.Serialize(stream, this.Disc.RenameData, options);
+                        stream.Flush();
+						stream.Close();
 					} catch (Exception ex)
 					{
 						MessageBox.Show("Failed to save JSON: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -301,11 +207,11 @@ namespace MakeMKV_Title_Decoder
 				{
 					using (var stream = dialog.OpenFile())
 					{
-						RenameData rename = new();
+						RenameData? rename;
 
 						try
 						{
-							Json.Read(stream, rename);
+							rename = JsonSerializer.Deserialize<RenameData>(stream);
 							Console.WriteLine("Loaded JSON file.");
 						} catch (Exception ex)
 						{
@@ -313,24 +219,17 @@ namespace MakeMKV_Title_Decoder
 							return;
 						}
 
-						// TODO add CLPI parsing to loading bar
-						/*LoadedDisc? loadedDisc = LoadedDisc.TryLoadDisc(this.Disc);
-						if (loadedDisc == null)
+						if (rename == null)
 						{
-							// TODO is this two message boxes for same error?
-							// TODO this means we are parsing the CLPI twice
-							MessageBox.Show("Failed to read clpi data.");
+                            MessageBox.Show("Failed to read rename file.", "Failed to read file.", MessageBoxButtons.OK, MessageBoxIcon.Error);
 							return;
-						}
-						rename.Disc = loadedDisc;*/
+                        }
 
-						if (!rename.Disc.TryLoadRenameData(this.Disc))
+						if (!this.Disc.TryLoadRenameData(rename))
 						{
 							MessageBox.Show("Failed to match rename data to the disc");
 							return;
 						}
-
-						this.Renames = rename;
 					}
 				}
 			}

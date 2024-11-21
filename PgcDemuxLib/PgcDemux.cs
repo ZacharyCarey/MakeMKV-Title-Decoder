@@ -187,7 +187,9 @@ namespace PgcDemuxLib
         int[] fsample = new int[8];
 
         public IfoBase ifo { get; private set; }
-        private byte[] m_buffer = new byte[2050];
+        private byte[] m_buffer = new byte[Dvd.SECTOR_SIZE];
+
+        public readonly bool combined;
 
         private MenuPgc MenuPGCs;
 
@@ -309,10 +311,14 @@ namespace PgcDemuxLib
                 throw new Exception("Could not decode IFO file.");
             }
 
+            this.combined = false;
             if (m_bCheckVob)
             {
-                if (options.VobName == null) throw new Exception();
-                fvob = File.Create(Path.Combine(output_folder, options.VobName));
+                if (options.CombinedVobName != null)
+                {
+                    this.fvob = File.Create(Path.Combine(output_folder, options.CombinedVobName));
+                    this.combined = true;
+                }
             }
 
             /*if (ifo.IsVideoManager)
@@ -398,12 +404,18 @@ namespace PgcDemuxLib
                 {
                     for (int k = 0; k < ifo.SortedTitleCells.Count && nSelCid == -1; k++)
                         if (ifo.SortedTitleCells[k].VobID == m_nVid && ifo.SortedTitleCells[k].CellID == m_nCid)
+                        {
                             nSelCid = k;
+                            break;
+                        }
                 } else
                 {
                     for (int k = 0; k < ifo.SortedTitleCells.Count && nSelCid == -1; k++)
-                        if (ifo.SortedTitleCells[k].VobID == m_nVid && ifo.SortedTitleCells[k].CellID == m_nCid)
+                        if (ifo.SortedMenuCells[k].VobID == m_nVid && ifo.SortedMenuCells[k].CellID == m_nCid)
+                        {
                             nSelCid = k;
+                            break;
+                        }
                 }
                 if (nSelCid == -1)
                 {
@@ -695,11 +707,12 @@ namespace PgcDemuxLib
         }
 
         void WritePack(string m_csOutputPath, ReadOnlySpan<byte> buffer) {
+            string csAux;
             if (m_bInProcess == true)
             {
-                /*if (m_bCheckVob2)
+                if (m_bCheckVob2)
                 {
-                    if (fvob == null || m_nVidout != m_nCurrVid)
+                    if (!combined && (fvob == null || m_nVidout != m_nCurrVid))
                     {
                         m_nCurrVid = m_nVidout;
                         if (fvob != null) fvob.Close();
@@ -712,7 +725,7 @@ namespace PgcDemuxLib
                     }
                 } else
                 {
-                    if (fvob == null || ((m_i64OutputLBA) % (512 * 1024 - 1)) == 0)
+                    if (!combined && (fvob == null || ((m_i64OutputLBA) % (512 * 1024 - 1)) == 0))
                     {
                         if (fvob != null) fvob.Close();
                         if (m_iDomain == DemuxingDomain.Titles)
@@ -725,7 +738,7 @@ namespace PgcDemuxLib
                         csAux = Path.Combine(m_csOutputPath, csAux);
                         fvob = File.Open(csAux, FileMode.Create);
                     }
-                }*/
+                }
 
                 if (fvob != null) Util.writebuffer(buffer, fvob, Dvd.SECTOR_SIZE);
                 m_i64OutputLBA++;

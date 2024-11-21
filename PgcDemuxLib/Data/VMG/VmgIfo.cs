@@ -162,7 +162,7 @@ namespace PgcDemuxLib.Data.VMG
             options.ExportVOB = true;
             options.Mode = DemuxingMode.PGC;
             options.PGC = pgcIndex + 1;
-            options.VobName = $"VMG_Menu-{options.PGC:000}.VOB";
+            options.CombinedVobName = $"VMG_Menu-{options.PGC:000}.VOB";
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
             bool result = demux.Demux(outputFolder); ;

@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="JsonSerializable" Version="1.2.5" />
+    <PackageReference Include="FFMpegCore" Version="5.1.0" />
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
@@ -44,35 +44,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FfmpegInterface\FfmpegInterface.csproj" />
+    <ProjectReference Include="..\libbluray\libbluray.csproj" />
+    <ProjectReference Include="..\MakeMkvInterface\MakeMkvInterface.csproj" />
+    <ProjectReference Include="..\MkvToolNix\MkvToolNix.csproj" />
+    <ProjectReference Include="..\PgcDemuxLib\PgcDemuxLib.csproj" />
     <ProjectReference Include="..\Utils\Utils.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="libs\MkvToolNix\lib\mkvextract.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\mkvinfo.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\mkvmerge.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\mkvpropedit.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\tools\bluray_dump.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\tools\ebml_validator.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\tools\hevcc_dump.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libs\MkvToolNix\lib\tools\xyzvc_dump.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="lib\mkvtoolnix\data\portable-app">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

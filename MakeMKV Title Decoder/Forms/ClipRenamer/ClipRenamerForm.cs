@@ -1,7 +1,7 @@
 ﻿using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utils;
 
 namespace MakeMKV_Title_Decoder
 {
@@ -43,7 +44,7 @@ namespace MakeMKV_Title_Decoder
                 keepIconItem.Tag = clip;
                 this.ClipsList.Items.Add(keepIconItem);
 
-                ListViewItem.ListViewSubItem sourceItem = new(keepIconItem, clip.Data.FileName);
+                ListViewItem.ListViewSubItem sourceItem = new(keepIconItem, clip.Identity.SourceFile);
                 keepIconItem.SubItems.Add(sourceItem);
 
                 ListViewItem.ListViewSubItem renameItem = new(keepIconItem, "");
@@ -59,7 +60,7 @@ namespace MakeMKV_Title_Decoder
 
         private void SelectClip(LoadedStream? clip) {
             this.SelectedClip = clip;
-            this.NameTextBox.Text = (clip == null) ? "" : (clip.Rename.Name ?? "");
+            this.NameTextBox.Text = (clip == null) ? "" : (clip.RenameData.Name ?? "");
 
             this.PropertiesPanel.Enabled = (clip != null);
             if (clip == null)
@@ -67,7 +68,8 @@ namespace MakeMKV_Title_Decoder
                 this.VideoPreview.LoadVideo(null);
             } else
             {
-                this.VideoPreview.LoadVideo(clip.Data.GetFullPath(this.Disc.Data));
+                string path = Path.Combine(this.Disc.Root, clip.Identity.SourceFile);
+                this.VideoPreview.LoadVideo(path);
             }
 
             this.VideoTrackList.Clear();
@@ -79,10 +81,10 @@ namespace MakeMKV_Title_Decoder
             {
                 foreach (var track in clip.Tracks)
                 {
-                    if (track.Data.Type == MkvTrackType.Video)
+                    if (track.Identity.Type == MkvTrackType.Video)
                     {
                         this.VideoTrackList.Add(track);
-                    } else if (track.Data.Type == MkvTrackType.Audio)
+                    } else if (track.Identity.Type == MkvTrackType.Audio)
                     {
                         this.AudioTrackList.Add(track);
                     } else
@@ -94,7 +96,7 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void RefreshClipListItem(ListViewItem row, LoadedStream data) {
-            string name = (data.Rename.Name ?? "");
+            string name = (data.RenameData.Name ?? "");
 
             row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
             row.SubItems[2].Text = name;
@@ -127,7 +129,7 @@ namespace MakeMKV_Title_Decoder
                     name = null;
                 }
 
-                selection.Rename.Name = name;
+                selection.RenameData.Name = name;
                 RefreshClipListItem(ClipsList.SelectedItems[0], selection);
             }
         }
@@ -139,20 +141,33 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void SelectTrack(LoadedTrack? track, MkvTrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox? commentaryCheckBox, CheckBox defaultCheckBox) {
-            TrackRename? rename = track?.Rename;
+            TrackRename? rename = track?.RenameData;
 
             nameTextBox.Text = (rename?.Name ?? "");
             if (commentaryCheckBox != null) commentaryCheckBox.Checked = (rename?.CommentaryFlag ?? false);
-            defaultCheckBox.Checked = (rename?.DefaultFlag ?? true);
+            defaultCheckBox.Checked = (rename?.DefaultFlag ?? false);
             propertiesPanel.Enabled = (track != null);
+
+            long selectedIndex = (track?.Identity?.Number ?? -1);
+            var selectedClip = this.SelectedClip;
+            if (this.Disc.ForceVlcTrackIndex && track != null && selectedClip != null)
+            {
+                try
+                {
+                    selectedIndex = selectedClip.Tracks.Where(x => x.Identity.Type == track.Identity.Type).WithIndex().First(x => x.Value == track).Index;
+                }
+                catch (Exception) {
+                    selectedIndex = -1;
+                }
+            }
 
             switch (type)
             {
                 case MkvTrackType.Video:
-                    this.VideoPreview.VideoTrack = track?.Data?.Properties?.Number ?? -1;
+                    this.VideoPreview.VideoTrack = selectedIndex;
                     break;
                 case MkvTrackType.Audio:
-                    this.VideoPreview.AudioTrack = track?.Data?.Properties?.Number ?? -1;
+                    this.VideoPreview.AudioTrack = selectedIndex;
                     break;
             }
         }
@@ -189,7 +204,7 @@ namespace MakeMKV_Title_Decoder
                     name = null;
                 }
 
-                var renames = track.Rename;
+                var renames = track.RenameData;
                 renames.Name = name;
                 renames.CommentaryFlag = commentaryFlag;
                 renames.DefaultFlag = defaultFlag;

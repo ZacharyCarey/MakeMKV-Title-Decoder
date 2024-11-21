@@ -1,5 +1,5 @@
 ﻿using MakeMKV_Title_Decoder.Data;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,15 +33,15 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
             if (!Enabled || !source.Enabled) return true;
             if (this.Delay != null) return true;
 
-            if (this.Track.Data.Type != source.Track.Data.Type) return false;
+            if (this.Track.Identity.Type != source.Track.Identity.Type) return false;
 
-            if (this.Track.Data.Type == MkvTrackType.Video)
+            if (this.Track.Identity.Type == MkvTrackType.Video)
             {
                 return true;
-            } else if (this.Track.Data.Type == MkvTrackType.Audio)
+            } else if (this.Track.Identity.Type == MkvTrackType.Audio)
             {
-                return this.Track.Data.Properties?.AudioChannels == source.Track.Data.Properties?.AudioChannels;
-            } else if (this.Track.Data.Type == MkvTrackType.Subtitles)
+                return this.Track.Identity.AudioChannels == source.Track.Identity.AudioChannels;
+            } else if (this.Track.Identity.Type == MkvTrackType.Subtitles)
             {
                 return true;
             } else

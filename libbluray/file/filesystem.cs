@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace libbluray.file {
 
-    public interface BD_DIR_H {
+    internal interface BD_DIR_H {
 
         /// <summary>
         /// Close directory stream

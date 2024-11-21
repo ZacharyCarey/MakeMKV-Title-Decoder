@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace PgcDemuxLib
@@ -57,7 +59,7 @@ namespace PgcDemuxLib
             }
         }
 
-        public bool DemuxAll(string outputFolder)
+        public bool DemuxAllPgc(string outputFolder)
         {
             foreach(var vts in this.TitleSets)
             {
@@ -66,7 +68,7 @@ namespace PgcDemuxLib
                     {
                         if (menu.NumberOfCells > 0)
                         {
-                            if(!vts.DemuxMenu(outputFolder, index))
+                            if(!vts.DemuxMenuPgc(outputFolder, index))
                             {
                                 return false;
                             }
@@ -82,7 +84,7 @@ namespace PgcDemuxLib
                         {
                             for (int angle = 0; angle < title.NumberOfAngles; angle++)
                             {
-                                if (!vts.DemuxTitle(outputFolder, index, angle))
+                                if (!vts.DemuxTitlePgc(outputFolder, index, angle))
                                 {
                                     return false;
                                 }
@@ -93,6 +95,64 @@ namespace PgcDemuxLib
             }
 
             return true;
+        }
+
+        public bool DemuxAllCells(string outputFolder)
+        {
+            if (this.VMG.MenuCellAddressTable != null)
+            {
+                foreach (var cell in this.VMG.MenuCellAddressTable.All)
+                {
+                    if (!this.VMG.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            foreach (var vts in this.TitleSets)
+            {
+                if (vts.MenuCellAddressTable != null)
+                {
+                    foreach (var cell in vts.MenuCellAddressTable.All)
+                    {
+                        if (!vts.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                if (vts.TitleSetCellAddressTable != null)
+                {
+                    foreach (var cell in vts.TitleSetCellAddressTable.All)
+                    {
+                        if (!vts.DemuxTitleCell(outputFolder, cell.VobID, cell.CellID))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        public bool SaveToFile(string filePath)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+                using var stream = File.Create(filePath);
+                JsonSerializer.Serialize(stream, this, options);
+                stream.Flush();
+                stream.Close();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
     }
 }

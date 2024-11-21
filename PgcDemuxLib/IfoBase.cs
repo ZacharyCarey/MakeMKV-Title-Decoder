@@ -41,18 +41,15 @@ namespace PgcDemuxLib
 
         protected void OrganizeCells()
         {
-            if (TitleProgramChainTable != null && TitleSetCellAddressTable != null)
-            { 
-                SortedTitleCells = GetCells(this.TitleSetCellAddressTable.All, TitleProgramChainTable.All);
-                CombinedTitleVobCells = GetVidCells(SortedTitleCells);
-            }
+            IEnumerable<ADT> titleCells = (this.TitleSetCellAddressTable != null) ? this.TitleSetCellAddressTable.All : Enumerable.Empty<ADT>();
+            IEnumerable<PGC> titlePGC = (this.TitleProgramChainTable != null) ? this.TitleProgramChainTable.All : Enumerable.Empty<PGC>();
+            SortedTitleCells = GetCells(titleCells, titlePGC);
+            CombinedTitleVobCells = GetVidCells(SortedTitleCells);
 
-            if (MenuProgramChainTable != null && MenuCellAddressTable != null)
-            {
-                IEnumerable<PGC> menuPGCs = MenuProgramChainTable.All.SelectMany(languageUnit => languageUnit.All);
-                SortedMenuCells = GetCells(this.MenuCellAddressTable.All, menuPGCs);
-                CombinedMenuVobCells = GetVidCells(SortedMenuCells);
-            }
+            IEnumerable<ADT> menuCells = (this.MenuCellAddressTable != null) ? this.MenuCellAddressTable.All : Enumerable.Empty<ADT>();
+            IEnumerable<PGC> menuPGC = (this.MenuProgramChainTable != null) ? this.MenuProgramChainTable.All.SelectMany(languageUnit => languageUnit.All) : Enumerable.Empty<PGC>();
+            SortedMenuCells = GetCells(menuCells, menuPGC);
+            CombinedMenuVobCells = GetVidCells(SortedMenuCells);
 
             for (int k = 0; k < 10; k++)
             {
@@ -165,7 +162,7 @@ namespace PgcDemuxLib
         /// </summary>
         /// <param name="sortedCells"></param>
         /// <returns></returns>
-        internal static List<ADT_VID> GetVidCells(List<ADT_CELL> sortedCells)
+        internal static List<ADT_VID> GetVidCells(List<ADT_CELL>? sortedCells)
         {
             List<ADT_VID> vidCells = new();
             foreach (var cell in sortedCells)
@@ -198,5 +195,46 @@ namespace PgcDemuxLib
             return vidCells;
         }
 
+        public bool DemuxMenuCell(string outputFolder, int vobID, int cellID)
+        {
+            IfoOptions options = new IfoOptions();
+            options.Angle = 1;
+            options.DomainType = DemuxingDomain.Menus;
+            options.ExportVOB = true;
+            options.Mode = DemuxingMode.CID;
+            options.VID = vobID;
+            options.CID = cellID;
+            options.CombinedVobName = $"VTS-{this.TitleSet:00}_Menu_VID-{vobID:X4}_CID-{cellID:X2}.VOB";
+
+            PgcDemux demux = new PgcDemux(this, options, outputFolder);
+            bool result = demux.Demux(outputFolder); ;
+            demux.Close();
+            return result;
+        }
+
+        public bool DemuxTitleCell(string outputFolder, int vobID, int cellID)
+        {
+            IfoOptions options = new IfoOptions();
+            options.Angle = 1;
+            options.DomainType = DemuxingDomain.Titles;
+            options.ExportVOB = true;
+            options.Mode = DemuxingMode.CID;
+            options.VID = vobID;
+            options.CID = cellID;
+            options.CombinedVobName = $"VTS-{this.TitleSet:00}_VID-{vobID:X4}_CID-{cellID:X2}.VOB";
+            options.CustomVOB = new();
+            options.CustomVOB.PatchLbaNumber = true;
+            options.CustomVOB.OnlyFirstIFrame = false;
+            options.CustomVOB.SplitVOB = false;
+            options.CustomVOB.WriteAudioPacks = true;
+            options.CustomVOB.WriteSubPacks = true;
+            options.CustomVOB.WriteNavPacks = true;
+            options.CustomVOB.WriteVideoPacks = true;
+
+            PgcDemux demux = new PgcDemux(this, options, outputFolder);
+            bool result = demux.Demux(outputFolder);
+            demux.Close();
+            return result;
+        }
     }
 }

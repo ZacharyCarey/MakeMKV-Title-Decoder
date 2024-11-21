@@ -1,69 +1,65 @@
-﻿using JsonSerializable;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+﻿using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Data.Renames
 {
-	public class StreamIdentity : IJsonSerializable
+	public class StreamIdentity
 	{
+		/// <summary>
+		/// Relative to the root folder of the disc
+		/// </summary>
+		[JsonInclude]
+        public readonly string SourceFile;
 
-		public string? FileName = null;
+		/// <summary>
+		/// The loaded length of the stream, usually loaded from metadata located on the disc.
+		/// </summary>
+		[JsonInclude]
+        public readonly TimeSpan Duration;
 
-		public TimeSpan? Duration = null;
+		/// <summary>
+		/// The size of the file in bytes
+		/// </summary>
+		[JsonInclude]
+        public readonly DataSize FileSize;
 
-		public DataSize? FileSize = null;
+		[JsonInclude]
+        public readonly ContainerType? ContainerType;
 
-		//public SerializableList<TrackIdentity> Tracks = new();
-
-		public void LoadFromMkvToolNix(LoadedStream loadedClip)
+		internal StreamIdentity(string relativePath, TimeSpan duration, DataSize fileSize, MkvMergeID info)
 		{
-			var clip = loadedClip.Data;
+            this.SourceFile = relativePath;
+            this.Duration = duration;
+            this.FileSize = fileSize;
+            this.ContainerType = info.Container?.Properties?.ContainerType;
+        }
 
-			this.FileName = clip.GetRelativePath();
-			this.Duration = loadedClip.Duration;
-			this.FileSize = clip.FileSize;
+        [JsonConstructor]
+        private StreamIdentity(string sourceFile, TimeSpan duration, DataSize fileSize, ContainerType? containerType) { 
+            this.SourceFile = sourceFile;
+            this.Duration = duration;
+            this.FileSize = fileSize;
+            this.ContainerType= containerType;
+        }
 
-			/*this.Tracks.Clear();
-			foreach(var loadedTrack in loadedClip.Tracks)
-			{
-				var track = new TrackIdentity();
-				track.LoadFromMkvToolNix(loadedTrack.Data);
-				this.Tracks.Add(track);
-			}*/
-		}
-
-		public void LoadFromJson(JsonData Data)
-		{
-			Data.LoadJson("File Name", out FileName);
-			Data.LoadJson("Duration", out Duration);
-
-			// TODO simplify
-			JsonData data = ((JsonObject)Data)["File Size"];
-			if (data != null && data is JsonString str && str.Value != null)
-			{
-				this.FileSize = DataSize.Parse(str.Value);
-			} else
-			{
-				this.FileSize = null;
-			}
-
-			//Tracks.LoadFromJson(((JsonObject)Data)["Tracks"]);
-		}
-
-		public JsonData SaveToJson()
-		{
-			JsonObject obj = new();
-
-			obj["File Name"] = Utils.SaveJson(FileName);
-			obj["Duration"] = Utils.SaveJson(Duration);
-			obj["File Size"] = Utils.SaveJson(FileSize);
-			//obj["Tracks"] = Tracks.SaveToJson();
-
-			return obj;
-		}
-	}
+        /// <summary>
+        /// Returns the reason it didnt match, or null is matched successfully
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public string? Match(StreamIdentity other)
+        {
+            if (this.SourceFile != other.SourceFile) return "File path does not match.";
+            if (this.Duration != other.Duration) return "Length of clips do not match."; 
+            if (this.FileSize != other.FileSize) return "File sizes do not match.";
+            if (this.ContainerType != other.ContainerType) return "Media container types do not match.";
+            return null;
+        }
+    }
 }

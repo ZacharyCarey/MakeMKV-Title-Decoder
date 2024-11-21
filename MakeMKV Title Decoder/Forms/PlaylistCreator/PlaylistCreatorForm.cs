@@ -3,7 +3,6 @@ using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Forms.FileRenamer;
 using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,6 +14,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utils;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MakeMKV_Title_Decoder
@@ -44,18 +44,16 @@ namespace MakeMKV_Title_Decoder
         }
 
         LoadedDisc Disc;
-        RenameData Renames;
 
-        public PlaylistCreatorForm(LoadedDisc disc, RenameData renames) {
+        public PlaylistCreatorForm(LoadedDisc disc) {
             this.Disc = disc;
-            this.Renames = renames;
 
             InitializeComponent();
 
             SourceList.Items.Clear();
             foreach (var source in disc.Streams)
             {
-                string? name = source.Rename.Name;
+                string? name = source.RenameData.Name;
                 if (name != null)
                 {
                     this.SourceList.Items.Add(new SourceListItem(source, name));
@@ -63,7 +61,7 @@ namespace MakeMKV_Title_Decoder
             }
             SourceList_SelectedIndexChanged(null, null);
 
-            foreach (var playlist in renames.Playlists)
+            foreach (var playlist in disc.RenameData.Playlists)
             {
                 var loadedPlaylist = LoadedPlaylist.LoadFromRenames(disc, playlist);
                 if (loadedPlaylist != null)
@@ -241,24 +239,24 @@ namespace MakeMKV_Title_Decoder
         private void CreateClipEntry(AppendedFile clip, bool isRoot) {
             // Clip name
             PropertyData item = new();
-            item.Text = clip.Source.Rename.Name ?? "";
+            item.Text = clip.Source.RenameData.Name ?? "";
             item.IconColor = clip.Color;
             item.IsSubItem = !isRoot;
             item.Tag = clip;
 
             // Container
             PropertyData sub1 = new();
-            sub1.Text = clip.Source.Data.Container?.Type ?? "";
+            sub1.Text = clip.Source.Identity.ContainerType?.ToString() ?? ""; 
             item.SubItems.Add(sub1);
 
             // File size
             PropertyData sub2 = new();
-            sub2.Text = clip.Source.Data.FileSize.ToString();
+            sub2.Text = clip.Source.Identity.FileSize.ToString();
             item.SubItems.Add(sub2);
 
             // Directory
             PropertyData sub3 = new();
-            sub3.Text = clip.Source.Data.GetFullPath(this.Disc.Data);
+            sub3.Text = Path.Combine(this.Disc.Root, clip.Source.Identity.SourceFile);
             item.SubItems.Add(sub3);
 
             this.PlaylistFilesList.Add(item, sub1, sub2, sub3);
@@ -271,48 +269,27 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void ImportPlaylists_Click(object sender, EventArgs e) {
-            foreach (var playlist in this.Disc.Data.Playlists)
+            foreach (var discPlaylist in this.Disc.GetPlaylists())
             {
-                Playlist renamePlaylist = new();
-                LoadedPlaylist loadedPlaylist = new(renamePlaylist, playlist.FileName);
-
-                AppendedFile? rootFile = null;
-                foreach (var sourceFile in playlist.Container?.Properties?.PlaylistFiles ?? new List<string>())
+                Playlist? playlist = Playlist.Import(this.Disc, discPlaylist);
+                if (playlist == null)
                 {
-                    // Try to find file
-                    LoadedStream? file = null;
-                    foreach (var source in this.Disc.Streams)
-                    {
-                        if (source.Data.GetRelativePath() == sourceFile)
-                        {
-                            file = source;
-                            break;
-                        }
-                    }
-                    if (file == null)
-                    {
-                        // TODO error
-                        continue;
-                    }
+                    // TODO error
+                    continue;
+                }
 
-                    // Only add files the user has renames i.e. dont add ignored files
-                    if (file.Rename.Name != null)
-                    {
-                        if (rootFile == null)
-                        {
-                            rootFile = loadedPlaylist.ImportSourceFile(file);
-                        } else
-                        {
-                            loadedPlaylist.ImportAppendedFile(rootFile, file);
-                        }
-                    }
+                LoadedPlaylist? loadedPlaylist = LoadedPlaylist.LoadFromRenames(this.Disc, playlist);
+                if (loadedPlaylist == null)
+                {
+                    // TODO error
+                    continue;
                 }
 
                 // If no valid source files (including ignored files) were found,
                 // dont even bother to import the playlist
                 if (loadedPlaylist.SourceFiles.Count != 0)
                 {
-                    this.Renames.Playlists.Add(renamePlaylist);
+                    this.Disc.RenameData.Playlists.Add(playlist);
                     this.PlaylistsListBox.Add(loadedPlaylist);
 
                     // If only one file was found, just give it the same name as the source
@@ -332,7 +309,7 @@ namespace MakeMKV_Title_Decoder
 
         private void NewPlaylistButton_Click(object sender, EventArgs e) {
             var playlist = new Playlist();
-            this.Renames.Playlists.Add(playlist);
+            this.Disc.RenameData.Playlists.Add(playlist);
             this.PlaylistsListBox.Add(new LoadedPlaylist(playlist, "Empty Playlist"));
         }
 
@@ -499,7 +476,7 @@ namespace MakeMKV_Title_Decoder
                 if (MessageBox.Show("Can not be undone. Are you sure?", "Delete?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
                     this.PlaylistsListBox.Remove(selectedItem);
-                    this.Renames.Playlists.Remove(selectedItem.Playlist.RenameData);
+                    this.Disc.RenameData.Playlists.Remove(selectedItem.Playlist.RenameData);
                 }
             }
         }

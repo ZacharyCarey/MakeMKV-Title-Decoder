@@ -155,7 +155,7 @@ namespace PgcDemuxLib
                 return;
             }
 
-            for (int i = currentVBO; i <= 10; i++)
+            for (int i = currentVBO + 1; i <= 10; i++)
             {
                 // NOTE: when i=10 we are only calling OpenVOB to set the internal state. VOB=10 will never exist
                 OpenVOB(i);
@@ -164,6 +164,8 @@ namespace PgcDemuxLib
                     return;
                 }
             }
+
+            OpenVOB(10); // Open a non-existent VOB to set the internal state. VOB=10 will never exist
         }
 
         private void OpenVOB(int id)

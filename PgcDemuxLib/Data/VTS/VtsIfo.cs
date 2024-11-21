@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -158,7 +159,7 @@ namespace PgcDemuxLib.Data.VTS
             OrganizeCells();
         }
 
-        public bool DemuxMenu(string outputFolder, int pgcIndex)
+        public bool DemuxMenuPgc(string outputFolder, int pgcIndex)
         {
             //string fileName = $"VTS-{this.TitleSet}_PGC-{pgcIndex}_Angle-{angleIndex}.vob";
             //return Demux(Path.Combine(outputFolder, fileName), this.TitleProgramChainTable[pgcIndex], this.SortedTitleCells, angleIndex, options);
@@ -168,7 +169,7 @@ namespace PgcDemuxLib.Data.VTS
             options.ExportVOB = true;
             options.Mode = DemuxingMode.PGC;
             options.PGC = pgcIndex + 1;
-            options.VobName = $"VTS-{this.TitleSet:00}_Menu-{pgcIndex:000}.VOB";
+            options.CombinedVobName = $"VTS-{this.TitleSet:00}_Menu-{pgcIndex:000}.VOB";
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
             bool result = demux.Demux(outputFolder); ;
@@ -176,7 +177,7 @@ namespace PgcDemuxLib.Data.VTS
             return result;
         }
 
-        public bool DemuxTitle(string outputFolder, int pgcIndex, int angle = 0)
+        public bool DemuxTitlePgc(string outputFolder, int pgcIndex, int angle = 0)
         {
             //string fileName = $"VTS-{this.TitleSet}_PGC-{pgcIndex}_Angle-{angleIndex}.vob";
             //return Demux(Path.Combine(outputFolder, fileName), this.TitleProgramChainTable[pgcIndex], this.SortedTitleCells, angleIndex, options);
@@ -186,7 +187,7 @@ namespace PgcDemuxLib.Data.VTS
             options.ExportVOB = true;
             options.Mode = DemuxingMode.PGC;
             options.PGC = pgcIndex + 1;
-            options.VobName = $"VTS-{this.TitleSet:00}_Title-{options.PGC:000}_Angle-{options.Angle}.VOB";
+            options.CombinedVobName = $"VTS-{this.TitleSet:00}_Title-{options.PGC:000}_Angle-{options.Angle}.VOB";
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
             bool result = demux.Demux(outputFolder);

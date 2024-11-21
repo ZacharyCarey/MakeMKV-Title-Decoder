@@ -194,13 +194,13 @@ namespace PgcDemuxLib {
         }
 
         public static int readpts(ReadOnlySpan<byte> buf) {
-            int a1, a2, a3;
+            uint a1, a2, a3;
             int pts;
 
-            a1 = (buf[0] & 0xe) >> 1;
-            a2 = ((buf[1] << 8) | buf[2]) >> 1;
-            a3 = ((buf[3] << 8) | buf[4]) >> 1;
-            pts = (int)((((Int64)a1) << 30) | (a2 << 15) | a3);
+            a1 = ((uint)buf[0] & 0xe) >> 1;
+            a2 = (((uint)buf[1] << 8) | (uint)buf[2]) >> 1;
+            a3 = (((uint)buf[3] << 8) | (uint)buf[4]) >> 1;
+            pts = (int)((((UInt64)a1) << 30) | ((UInt64)a2 << 15) | a3);
             return pts;
         }
 

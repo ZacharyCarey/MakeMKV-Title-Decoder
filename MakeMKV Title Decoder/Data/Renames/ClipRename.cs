@@ -1,45 +1,49 @@
-﻿using JsonSerializable;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+﻿using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.Data.Renames
 {
-	public class ClipRename : IJsonSerializable
+	public class ClipRename
 	{
+		[JsonInclude]
+		public string? Name { get; set; }
 
-		public string? Name { get; set; } = null;
+		[JsonInclude]
+		public StreamIdentity Identity { get; set; }
 
-		public ClipRename() { }
+		[JsonInclude]
+		public List<TrackRename> Tracks { get; }
 
-		/*public ClipRename(ClipRename deepCopy)
-		{
-			this.ID = deepCopy.ID;
-			this.Name = deepCopy.Name;
+		/// <summary>
+		/// Used to identify the clip within the disc (i.e. index)
+		/// </summary>
+		[JsonInclude]
+		public int UID = -1;
 
-			foreach(var track in deepCopy.TrackRenames)
-			{
-				this.TrackRenames.Add(new TrackRename(track));
-			}
-		}*/
-
-		public void LoadFromJson(JsonData Data)
-		{
-			JsonObject obj = (JsonObject)Data;
-
-			this.Name = obj.Load<JsonString>("Name")?.Value ?? null;
+		public ClipRename(StreamIdentity identification) { 
+			//try
+			//{
+			//	this.Name = Path.GetFileNameWithoutExtension(identification.SourceFile);
+			//} catch(Exception)
+			//{
+			//	this.Name = "null";
+			//}
+			this.Identity = identification;
+			this.Tracks = new();
 		}
 
-		public JsonData SaveToJson()
-		{
-			JsonObject obj = new();
-
-			if (this.Name != null) obj["Name"] = new JsonString(this.Name);
-
-			return obj;
+		[JsonConstructor]
+		private ClipRename(string? name, StreamIdentity identity, List<TrackRename> tracks, int uid) { 
+			this.Name = name;
+			this.Identity = identity;
+			this.Tracks = tracks;
+			this.UID = uid;
 		}
+
 	}
 }

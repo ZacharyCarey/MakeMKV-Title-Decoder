@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace libbluray.file {
-    public class dir_win32 : BD_DIR_H {
+    internal class dir_win32 : BD_DIR_H {
 
         string path;
         string[] entries;

@@ -147,7 +147,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             public AppendedFile File;
 
             public Color Color => File.Color;
-            public string Name => File.Source.Rename.Name ?? "null";
+            public string Name => File.Source.RenameData.Name ?? "null";
 
             public DropDownItem(AppendedFile file) {
                 this.File = file;

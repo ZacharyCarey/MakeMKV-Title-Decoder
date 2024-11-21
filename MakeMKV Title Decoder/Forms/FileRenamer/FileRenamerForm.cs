@@ -1,17 +1,19 @@
-﻿using JsonSerializable;
-using MakeMKV_Title_Decoder.Data;
+﻿using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
-using MakeMKV_Title_Decoder.libs.MkvToolNix;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json.Serialization.Metadata;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
@@ -22,7 +24,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         const string TmdbPrefix = "tmdbid=";
 
-        private RenameData Renames;
+        private LoadedDisc Disc;
 
         private bool FirstTmdb = true;
         private string? lastDir = null;
@@ -32,8 +34,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         private Dictionary<object, FeatureType> RadioButtonLookup;
         private Dictionary<FeatureType, RadioButton> RadioButtonReverseLookup;
 
-        public FileRenamerForm(RenameData renames) {
-            this.Renames = renames;
+        public FileRenamerForm(LoadedDisc disc) {
+            this.Disc = disc;
 
             InitializeComponent();
 
@@ -64,7 +66,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             };
 
             this.PlaylistListBox1.Clear();
-            foreach (var playlist in renames.Playlists)
+            foreach (var playlist in disc.RenameData.Playlists)
             {
                 var item = new PlaylistListItem(playlist);
                 item.Icon = IconError;
@@ -82,9 +84,9 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             TypeComboBox_SelectedIndexChanged(null, null);
             PlaylistListBox1_SelectedIndexChanged(null, null);
         }
-
+        
         private void FileRenamerForm_Load(object sender, EventArgs e) {
-            this.ShowNameTextBox.Text = Utils.GetFileSafeName(this.Renames.Disc.Identity.Title ?? "");
+            this.ShowNameTextBox.Text = Utils.GetFileSafeName(this.Disc.Identity.Title ?? "");
         }
 
         private void PlaylistListBox1_SelectedIndexChanged(object sender, EventArgs e) {
@@ -360,25 +362,26 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     try
                     {
                         string optional = "";
-                        if (Renames.Disc.Data.NumberOfSets != null || Renames.Disc.Data.SetNumber != null)
+                        if (this.Disc.Identity.NumberOfSets != null || this.Disc.Identity.SetNumber != null)
                         {
-                            optional = $" {Renames.Disc.Data.SetNumber?.ToString() ?? "_"} of {Renames.Disc.Data.NumberOfSets?.ToString() ?? "_"}";
+                            optional = $" {this.Disc.Identity.SetNumber?.ToString() ?? "_"} of {this.Disc.Identity.NumberOfSets?.ToString() ?? "_"}";
                         }
 
-                        string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Utils.GetFileSafeName($"{Renames.Disc.Identity.Title}{optional}")}.json");
+                        string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Utils.GetFileSafeName($"{this.Disc.Identity.Title}{optional}")}.json");
                         Directory.CreateDirectory(Path.Combine(rootFolder, outputFolder, ".metadata"));
-                        if (File.Exists(file))
-                        {
-                            File.Delete(file);
-                        }
-                        Json.Write(this.Renames, file);
+
+                        var options = new JsonSerializerOptions { WriteIndented = false, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+                        using var stream = File.Create(file);
+                        JsonSerializer.Serialize(stream, this.Disc.RenameData, options);
+                        stream.Flush();
+                        stream.Close();
                     } catch (Exception)
                     {
                         MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
                     }
                 }
 
-                MkvToolNixInterface.MergeAsync(Renames.Disc, playlist, Path.Combine(fullPath, outputFile), new SimpleProgress((uint)i, (uint)exports.Count));
+                MkvToolNix.MkvToolNixInterface.Merge(playlist.GetMergeData(this.Disc), Path.Combine(fullPath, outputFile), null, new SimpleProgress((uint)i, (uint)exports.Count));
             }
         }
 

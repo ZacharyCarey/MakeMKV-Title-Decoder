@@ -1,5 +1,4 @@
 ﻿using MakeMKV_Title_Decoder.Data;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -51,7 +50,7 @@ namespace MakeMKV_Title_Decoder
                 keepIconItem.Tag = clip;
                 list.Items.Add(keepIconItem);
 
-                ListViewItem.ListViewSubItem sourceItem = new(keepIconItem, clip.Data.FileName);
+                ListViewItem.ListViewSubItem sourceItem = new(keepIconItem, clip.Identity.SourceFile);
                 keepIconItem.SubItems.Add(sourceItem);
 
                 ListViewItem.ListViewSubItem renameItem = new(keepIconItem, "");
@@ -62,14 +61,19 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void RefreshClipListItem(ListViewItem row, LoadedStream data) {
-            string name = (data.Rename.Name ?? "");
+            string name = (data.RenameData.Name ?? "");
 
             row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
             row.SubItems[2].Text = name;
         }
 
         private void SelectClip(VideoPlayer player, LoadedStream? clip) {
-            player.LoadVideo(clip?.Data?.GetFullPath(this.Disc.Data));
+            if (clip == null) {
+                player.LoadVideo(null);
+            } else {
+                string path = Path.Combine(this.Disc.Root, clip.Identity.SourceFile);
+                player.LoadVideo(path);
+            }
         }
 
         private void RefreshSelectedItem(ListView list, VideoPlayer player) {

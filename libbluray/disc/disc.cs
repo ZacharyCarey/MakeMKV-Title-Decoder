@@ -7,16 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
 
 namespace libbluray.disc {
-
-    public interface TaskProgress {
-        public UInt32 Current { get; }
-        public UInt32 CurrentMax { get; }
-
-        public UInt32 Total { get; }
-        public UInt32 TotalMax { get; }
-    }
 
     public class BD_DISC {
 
@@ -84,7 +77,7 @@ namespace libbluray.disc {
         /// <summary>
         /// Open VFS file (relative to disc root)
         /// </summary>
-        public BD_FILE_H? open_file(string dir, string file) {
+        internal BD_FILE_H? open_file(string dir, string file) {
             string path = Path.Combine(dir, file);
             BD_FILE_H? fp = open_path(path);
             return fp;
@@ -93,7 +86,7 @@ namespace libbluray.disc {
         /// <summary>
         /// Open VFS file (relative to disc root)
         /// </summary>
-        public BD_FILE_H? open_path(string path) {
+        internal BD_FILE_H? open_path(string path) {
             BD_FILE_H? fp = null;
 
             return file_win32.OpenFile(Path.Combine(this.DiscPath, path), FileMode.Open);
@@ -102,7 +95,7 @@ namespace libbluray.disc {
         /// <summary>
         /// Open VFS directory (relative to disc root)
         /// </summary>
-        public BD_DIR_H? open_dir(string dir) {
+        internal BD_DIR_H? open_dir(string dir) {
             BD_DIR_H? dp_rom = this._bdrom_open_dir(dir);
             BD_DIR_H? dp_ovl = null;// _overlay_open_dir(dir);
 
@@ -125,7 +118,7 @@ namespace libbluray.disc {
         /// <summary>
         /// Read VFS file
         /// </summary>
-        public UInt64 read_file(string dir, string file, out byte[] data) {
+        internal UInt64 read_file(string dir, string file, out byte[] data) {
             BD_FILE_H? fp = null;
             Int64 size;
 

@@ -87,7 +87,11 @@ namespace PgcDemuxLib {
         /// </summary>
         public DemuxingDomain DomainType = DemuxingDomain.Titles;
 
-        public string? VobName = null;
+        /// <summary>
+        /// If this string is not null, then a single combined file will be
+        /// generated instead of individual ones.
+        /// </summary>
+        public string? CombinedVobName = null;
 
         public IfoOptions() {
 

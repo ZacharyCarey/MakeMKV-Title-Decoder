@@ -1,42 +1,33 @@
-﻿using JsonSerializable;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.Data
 {
-	public class PlaylistSource : IJsonSerializable
+
+	public class PlaylistSourceFile : PlaylistFile
+	{
+		[JsonInclude]
+		public List<PlaylistFile> AppendedFiles = new();
+	}
+
+	public class PlaylistFile
 	{
 
-		public long StreamIndex = -1;
+		/// <summary>
+		/// The UID of the file on the disc
+		/// </summary>
+        [JsonInclude]
+        public long SourceUID = -1;
 
-		// Can only be a nested depth of 1.
-		public SerializableList<PlaylistSource> AppendedFiles = new();
-
-		public LoadedStream? GetStream(LoadedDisc disc)
-		{
-			return disc.GetStream(StreamIndex);
-		}
-
-		public void LoadFromJson(JsonData Data)
-		{
-			JsonObject obj = (JsonObject)Data;
-
-			this.StreamIndex = ((JsonInteger)obj["Stream Index"]).Value;
-			this.AppendedFiles.LoadFromJson(obj["Appended Files"]);
-		}
-
-		public JsonData SaveToJson()
-		{
-			JsonObject obj = new();
-
-			obj["Stream Index"] = new JsonInteger(this.StreamIndex);
-			obj["Appended Files"] = this.AppendedFiles.SaveToJson();
-
-			return obj;
-		}
-
-	}
+		/// <summary>
+		/// The UID of this particular source file in the playlist. This is because
+		/// the same disc source file can be used multiple times in the same playlist.
+		/// </summary>
+		[JsonInclude]
+		public long PlaylistUID = -1;
+    }
 }

@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace libbluray.file {
-    public class file_win32 : BD_FILE_H {
+    internal class file_win32 : BD_FILE_H {
 
         const string module = "DBG_FILE";
         private FileStream file;

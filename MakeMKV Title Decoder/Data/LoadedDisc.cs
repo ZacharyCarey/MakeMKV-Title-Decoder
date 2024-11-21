@@ -1,196 +1,203 @@
-﻿using JsonSerializable;
+﻿using MakeMKV_Title_Decoder.Data.BluRay;
 using MakeMKV_Title_Decoder.Data.Renames;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+using MkvToolNix.Data;
+using MkvToolNix;
+using PgcDemuxLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
+using MakeMKV_Title_Decoder.Data.DVD;
 
 namespace MakeMKV_Title_Decoder.Data
 {
 
 	// TODO probably needs a better name
-	public class LoadedDisc : IJsonSerializable
+	public abstract class LoadedDisc
 	{
-		public DiscIdentity Identity { get; private set; } = new();
-		public MkvToolNixDisc Data { get; private set; }
-		public List<LoadedStream> Streams { get; private set; } = new List<LoadedStream>();
+		public DiscIdentity Identity { get => RenameData.DiscID; }
+		public List<LoadedStream> Streams { get; }
 
-		public LoadedDisc()
+        public string Root { get; }
+        public string? Title { get => Identity.Title; }
+        public long? NumberOfSets { get => Identity.NumberOfSets; }
+        public long? SetNumber { get => Identity.SetNumber; }
+		public abstract bool ForceVlcTrackIndex { get; }
+
+		public RenameData RenameData { get; private set; }
+
+        protected LoadedDisc(string root, string? title, long? numSets, long? setNum, List<LoadedStream> streams)
 		{
-
-		}
-
-		private LoadedDisc(MkvToolNixDisc disc)
-		{
-			this.Data = disc;
-			this.Identity = new();
-		}
-
-		public LoadedStream? GetStream(long index)
-		{
-			if (index < 0 || index >= Streams.Count) return null;
-			return Streams[(int)index];
-		}
-
-		public LoadedTrack? GetTrack(TrackID id)
-		{
-			if (id.StreamIndex == null || id.TrackIndex == null) return null;
-
-			LoadedStream? stream = GetStream((long)id.StreamIndex);
-			if (stream == null) return null;
-
-			return stream.GetTrack((long)id.TrackIndex);
-		}
-
-		/*public void Save(RenameData renameData)
-		{
-			Dictionary<LoadedStream, long> streamLookup = new();
-			Dictionary<LoadedTrack, TrackID> trackLookup = new();
-
-			// Save ID info
-			renameData.DiscIdentity = new();
-			renameData.DiscIdentity.LoadFromMkvToolNix(this);
-			foreach (var stream in Streams)
+			this.Root = root;
+			DiscIdentity discID = new(title, numSets, setNum);
+            this.RenameData = new(discID);
+			this.Streams = streams;
+			int streamUID = 0;
+			foreach (var stream in streams)
 			{
-				var streamID = new StreamIdentity();
-				streamID.LoadFromMkvToolNix(stream);
-
-				int streamIndex = renameData.DiscIdentity.Streams.Count;
-				streamLookup[stream] = streamIndex;
-				renameData.DiscIdentity.Streams.Add(streamID);
-
-				foreach(var track in stream.Tracks)
-				{
-					var trackID = new TrackIdentity();
-					trackID.LoadFromMkvToolNix(track);
-
-					int trackIndex = stream.Tracks.Count;
-					var ID = new TrackID();
-					ID.StreamIndex = streamIndex;
-					ID.TrackIndex = trackIndex;
-
-					trackLookup[track] = ID;
-					streamID.Tracks.Add(trackID);
-				}
+				stream.RenameData.UID = streamUID++;
+				this.RenameData.Clips.Add(stream.RenameData);
 			}
+        }
 
-			// Save rename info
-			renameData.ClipRenames.Clear();
-			foreach(var stream in Streams)
-			{
-				renameData.ClipRenames.Add(stream.Rename);
-				stream.Rename.ID = streamLookup[stream];
-
-				stream.Rename.TrackRenames.Clear();
-				foreach(var track in stream.Tracks)
-				{
-					stream.Rename.TrackRenames.Add(track.Rename);
-					track.Rename.ID = (long)trackLookup[track].TrackIndex;
-				}
-			}
-		}*/
-
-		public static LoadedDisc? TryLoadDisc(MkvToolNixDisc disc)
+		public static LoadedDisc? TryLoadDisc(string rootFolder, IProgress<TaskProgress>? progress = null)
 		{
-			List<LoadedStream> streams = new();
-			foreach (var stream in disc.Streams)
-			{
-				LoadedStream? loadedStream = LoadedStream.TryLoadStream(disc, stream);
-				if (loadedStream == null)
-				{
-					return null;
-				}
-				streams.Add(loadedStream);
-			}
-
-			LoadedDisc result = new(disc);
-			result.Identity.LoadFromMkvToolNix(result); // TODO should this just be in constructor?
-			result.Streams = streams;
-			return result;
-		}
-
-		public bool TryLoadRenameData(MkvToolNixDisc disc)
-		{
-			if (this.Streams.Count != disc.Streams.Length) return false;
-
-			// TODO shares code with TryLoadDisc....
-			for (int i = 0; i < this.Streams.Count; i++)
-			{
-				LoadedStream loadedStream = this.Streams[i];
-				bool result = loadedStream.TryLoadRenameData(disc, disc.Streams[i]);
-
-				if (result == false)
-				{
-					return false;
-				}
-			}
-			this.Data = disc;
-
-			// Attempt to match data to disc
-			if (!this.MatchData(disc))
-			{
-				return false;
-			} else
-			{
-				return true;
-			}
-		}
-
-		internal bool MatchData(MkvToolNixDisc disc)
-		{
-			this.Data = disc;
-			if (disc.Streams.Length != this.Streams.Count) return false;
-
 			try
 			{
-				for (int i = 0; i < disc.Streams.Length; i++)
+				if (!Directory.Exists(rootFolder)) throw new Exception("Folder does not exist.");
+				
+				if (Directory.Exists(Path.Combine(rootFolder, "VIDEO_TS")))
 				{
-					bool result = this.Streams[i].MatchData(disc.Streams[i]);
-					if (result == false)
-					{
-						return false;
-					}
+					return DvdDisc.Open(rootFolder);
+				} else if (Directory.Exists(Path.Combine(rootFolder, "BDMV")))
+				{
+					return BlurayDisc.Open(rootFolder);
+				} else
+				{
+					throw new Exception("Unknown disc type.");
 				}
 			}catch(Exception ex)
 			{
+				Console.ForegroundColor = ConsoleColor.Red;
+				Console.WriteLine($"Failed to load disc: {ex.Message}");
+				Console.ResetColor();
+				return null;
+			}
+		}
+
+		public bool TryLoadRenameData(RenameData renameData)
+		{
+			try
+			{
+				string? error = this.Identity.Match(renameData.DiscID);
+				if (error != null) throw new Exception(error);
+
+				// TODO better matching algorithm
+				/*
+                 * If there are more streams on the disc than in the rename data, but all
+                 * the streams in the rename data do match, ask user if they want to continue
+                 * and add the new stream in the data. In my experience, some disc drives have
+                 * issues reading certain streams so it would be nice to be able to fix
+                 * the issue later when the stream is able to be read.
+                 */
+				// For now, just do strict matching, in order. Not very flexible.
+				Dictionary<LoadedStream, ClipRename> streamMatches = new();
+                if (this.Streams.Count != renameData.Clips.Count) throw new Exception("Number of streams does not match.");
+                for (int i = 0; i < this.Streams.Count; i++)
+				{
+					var stream = this.Streams[i];
+					var clipRename = renameData.Clips[i];
+					error = stream.TryMatchRenameData(clipRename);
+					if (error != null) throw new Exception(error);
+					streamMatches[stream] = clipRename;
+				}
+
+				// Was able to match everything, now actually load the rename data
+				renameData.DiscID = this.Identity; // So if there are any changes in the discID they will be saved
+				this.RenameData = renameData;
+				foreach(var stream in this.Streams)
+				{
+					stream.LoadRenameData(streamMatches[stream]);
+				}
+
+				return true;
+            }
+            catch (Exception e)
+			{
+				Console.WriteLine($"Failed to match rename data: {e.Message}");
+				MessageBox.Show("Failed to match rename data: " + e.Message, "Failed to load", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return false;
 			}
-
-			return true;
 		}
 
-		public void LoadFromJson(JsonData data)
+		public abstract List<DiscPlaylist> GetPlaylists();
+
+        protected static MkvMergeID? ParseIdentify(string root, string directory, string fileName)
+        {
+            MkvMergeID? identification = MkvToolNixInterface.Identify(root, directory, fileName);
+            if (identification == null)
+            {
+                // TODO move to logger??
+                // TODO how to handle error?
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Failed to identify stream file: {fileName}");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine($"Identified stream file: {fileName}");
+            }
+            return identification;
+        }
+
+		public LoadedStream this[long UID]
 		{
-			var obj = (JsonObject)data;
-
-			this.Identity.LoadFromJson(obj["Identity"]);
-
-			this.Streams.Clear();
-			foreach(var Data in (JsonArray)obj["Streams"])
+			get
 			{
-				LoadedStream stream = LoadedStream.LoadJson(Data);
-				this.Streams.Add(stream);
+				foreach(var stream in this.Streams)
+				{
+					if (stream.RenameData.UID == UID)
+					{
+						return stream;
+					}
+				}
+				throw new IndexOutOfRangeException();
 			}
 		}
 
-		public JsonData SaveToJson()
+		public LoadedTrack this[long StreamUID, long TrackUID]
 		{
-			var obj = new JsonObject();
-
-			obj["Identity"] = this.Identity.SaveToJson();
-
-			JsonArray streams = new();
-			foreach(var stream in this.Streams)
+			get
 			{
-				streams.Add(stream.SaveToJson());
+				LoadedStream stream = this[StreamUID];
+				foreach (var track in stream.Tracks)
+				{
+					if (track.RenameData.UID == TrackUID)
+					{
+						return track;
+					}
+				}
+				throw new IndexOutOfRangeException();
 			}
-			obj["Streams"] = streams;
-
-			return obj;
 		}
+
+		public LoadedTrack this[TrackID ID]
+		{
+			get => this[ID.StreamUID, ID.TrackUID];
+		}
+
+		public LoadedStream? TryGetStreamFromPath(string path)
+		{
+			foreach (var stream in this.Streams)
+			{
+				if (stream.Identity.SourceFile == path)
+				{
+					return stream;
+				}
+			}
+			return null;
+		}
+    }
+
+	public struct DiscPlaylist
+	{
+		public string Name;
+		public List<string> SourceFiles = new();
+
+		public DiscPlaylist(string name)
+		{
+			this.Name = name;
+		}
+
+		public DiscPlaylist DeepCopy()
+		{
+			DiscPlaylist result = new();
+			result.Name = this.Name;
+			result.SourceFiles = new List<string>(this.SourceFiles);
+			return result;
+        }
 	}
-
 }

@@ -1,8 +1,8 @@
-﻿using JsonSerializable;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace MakeMKV_Title_Decoder.Forms.TmdbBrowser {
@@ -11,10 +11,17 @@ namespace MakeMKV_Title_Decoder.Forms.TmdbBrowser {
         TV
     }
 
-    public class TmdbID : IJsonSerializable {
+    public class TmdbID {
+        [JsonInclude]
         public ShowType Type;
+
+        [JsonInclude]
         public long ID;
+
+        [JsonInclude]
         public long? Season;
+
+        [JsonInclude]
         public long? Episode;
 
         public TmdbID(ShowType type, long ID, long? season = null, long? episode = null) {
@@ -74,37 +81,6 @@ namespace MakeMKV_Title_Decoder.Forms.TmdbBrowser {
             }
 
             return $"[{string.Join(", ", strings)}]";
-        }
-
-        public void LoadFromJson(JsonData Data) {
-            var obj = (JsonObject)Data;
-
-            JsonString? str = (JsonString?)obj["Type"] ?? null;
-            if (str != null)
-            {
-                if (!Enum.TryParse(str.Value, out this.Type))
-                {
-                    this.Type = ShowType.Movie;
-                }
-            } else
-            {
-                this.Type = ShowType.Movie;
-            }
-
-            this.ID = obj.Load<JsonInteger>("ID")?.Value ?? 0;
-            this.Season = obj.Load<JsonInteger>("Season")?.Value ?? null;
-            this.Episode = obj.Load<JsonInteger>("Episode")?.Value ?? null;
-        }
-
-        public JsonData SaveToJson() {
-            JsonObject obj = new();
-
-            obj["Type"] = new JsonString(this.Type.ToString());
-            obj["ID"] = new JsonInteger(this.ID);
-            if (this.Season != null) obj["Season"] = new JsonInteger(this.Season.Value);
-            if (this.Episode != null) obj["Episode"] = new JsonInteger(this.Episode.Value);
-
-            return obj;
         }
     }
 }

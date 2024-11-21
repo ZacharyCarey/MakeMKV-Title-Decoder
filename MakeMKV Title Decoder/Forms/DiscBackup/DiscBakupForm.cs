@@ -1,5 +1,4 @@
-﻿using JsonSerializable;
-using MakeMKV_Title_Decoder.libs.MakeMKV;
+﻿using MakeMKV_Title_Decoder.libs.MakeMKV;
 using MakeMKV_Title_Decoder.Util;
 using System;
 using System.Collections.Generic;

@@ -2,7 +2,8 @@
 using libbluray.bdnav.Clpi;
 using libbluray.disc;
 using libbluray.file;
-using MakeMKV_Title_Decoder.libs.MkvToolNix.Data;
+using MakeMKV_Title_Decoder.Data;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,19 +14,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utils;
 
 namespace MakeMKV_Title_Decoder
 {
     public partial class ViewInfoForm : Form {
 
-        MkvToolNixDisc disc;
+        LoadedDisc disc;
 
-        public ViewInfoForm(MkvToolNixDisc disc) {
+        public ViewInfoForm(LoadedDisc disc) {
             this.disc = disc;
             InitializeComponent();
 
-            this.TitleList.Items.AddRange(disc.Streams);
-            this.TitleList.Items.AddRange(disc.Playlists);
+            this.TitleList.Items.AddRange(disc.Streams.ToArray());
+            this.TitleList.Items.AddRange(disc.GetPlaylists().Cast<object>().ToArray());
             this.DiscNameLabel.Text = disc.Title ?? "";
             this.DiscSetLabel.Text = $"{disc.SetNumber?.ToString() ?? "?"}/{disc.NumberOfSets?.ToString() ?? "?"}";
         }

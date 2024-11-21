@@ -12,7 +12,7 @@ namespace libbluray {
         Critical
     }
 
-    public static class Utils {
+    internal static class Utils {
 
         public static void BD_DEBUG(string module, string msg) {
             BD_DEBUG(LogLevel.Info, module, msg);
