@@ -178,10 +178,10 @@ namespace MakeMKV_Title_Decoder.Controls
                     item.SubItems[1].IconColor = null;
                     item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
                     item.SubItems[3].Text = track.Identity.Language ?? ""; // lang
-                    item.SubItems[4].IconKey = GetBoolIcon(track.Identity.Enabled ?? true); // enabled
-                    item.SubItems[5].IconKey = GetBoolIcon((data?.DefaultFlag) ?? track.Identity.Default ?? false); // default
-                    item.SubItems[6].IconKey = GetBoolIcon(track.Identity.Forced ?? false); // forced
-                    item.SubItems[7].IconKey = GetBoolIcon((data?.CommentaryFlag) ?? track.Identity.FlagCommentary ?? false); // commentary
+                    item.SubItems[4].IconKey = GetBoolIcon(track.Identity.Enabled); // enabled
+                    item.SubItems[5].IconKey = GetBoolIcon(data?.DefaultFlag); // default
+                    item.SubItems[6].IconKey = GetBoolIcon(track.Identity.Forced); // forced
+                    item.SubItems[7].IconKey = GetBoolIcon(data?.CommentaryFlag ?? track.Identity.FlagCommentary); // commentary
 
                     return;
                 }
