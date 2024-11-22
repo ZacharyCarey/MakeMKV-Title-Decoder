@@ -80,6 +80,11 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
             long? setNum;
             ParseDiscInfo(root, out title, out numSets, out setNum);
 
+            if (title == null)
+            {
+                title = new DirectoryInfo(root).Name;
+            }
+
             return new BlurayDisc(root, streams, title, numSets, setNum, playlists);
         }
 

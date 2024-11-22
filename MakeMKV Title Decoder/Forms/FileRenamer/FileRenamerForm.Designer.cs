@@ -23,7 +23,8 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent() {
+        private void InitializeComponent()
+        {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FileRenamerForm));
             splitContainer1 = new SplitContainer();
@@ -33,6 +34,9 @@
             ExportSelectedBtn = new Button();
             ExportAllBtn = new Button();
             panel2 = new Panel();
+            SelectShowBtn = new Button();
+            SelectedShowLabel = new Label();
+            CopyToOthersBtn = new Button();
             ApplyChangesBtn = new Button();
             OptionsPanel = new Panel();
             ExtraName = new Label();
@@ -49,21 +53,12 @@
             ExtrasRadioButton = new RadioButton();
             MultiVersionTextBox = new TextBox();
             MultiVersionCheckBox = new CheckBox();
-            ShowNameTextBox = new TextBox();
-            label5 = new Label();
-            OutputFolderLabel = new Label();
             panel3 = new Panel();
-            TmdbIdLabel = new Label();
-            EpisodeTextBox = new TextBox();
             TmdbBtn = new Button();
+            EpisodeTextBox = new TextBox();
             SeasonTextBox = new TextBox();
-            label1 = new Label();
             label4 = new Label();
-            IdTextBox = new TextBox();
             label3 = new Label();
-            label2 = new Label();
-            TypeComboBox = new ComboBox();
-            button1 = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -146,18 +141,46 @@
             // 
             // panel2
             // 
-            panel2.Controls.Add(button1);
+            panel2.Controls.Add(SelectShowBtn);
+            panel2.Controls.Add(SelectedShowLabel);
+            panel2.Controls.Add(CopyToOthersBtn);
             panel2.Controls.Add(ApplyChangesBtn);
             panel2.Controls.Add(OptionsPanel);
-            panel2.Controls.Add(ShowNameTextBox);
-            panel2.Controls.Add(label5);
-            panel2.Controls.Add(OutputFolderLabel);
             panel2.Controls.Add(panel3);
             panel2.Dock = DockStyle.Fill;
             panel2.Location = new Point(0, 0);
             panel2.Name = "panel2";
             panel2.Size = new Size(910, 818);
             panel2.TabIndex = 2;
+            // 
+            // SelectShowBtn
+            // 
+            SelectShowBtn.Location = new Point(9, 27);
+            SelectShowBtn.Name = "SelectShowBtn";
+            SelectShowBtn.Size = new Size(97, 23);
+            SelectShowBtn.TabIndex = 20;
+            SelectShowBtn.Text = "Select";
+            SelectShowBtn.UseVisualStyleBackColor = true;
+            SelectShowBtn.Click += SelectShowBtn_Click;
+            // 
+            // SelectedShowLabel
+            // 
+            SelectedShowLabel.AutoSize = true;
+            SelectedShowLabel.Location = new Point(9, 9);
+            SelectedShowLabel.Name = "SelectedShowLabel";
+            SelectedShowLabel.Size = new Size(39, 15);
+            SelectedShowLabel.TabIndex = 19;
+            SelectedShowLabel.Text = "Show:";
+            // 
+            // CopyToOthersBtn
+            // 
+            CopyToOthersBtn.Location = new Point(9, 56);
+            CopyToOthersBtn.Name = "CopyToOthersBtn";
+            CopyToOthersBtn.Size = new Size(97, 23);
+            CopyToOthersBtn.TabIndex = 18;
+            CopyToOthersBtn.Text = "Copy to Others";
+            CopyToOthersBtn.UseVisualStyleBackColor = true;
+            CopyToOthersBtn.Click += CopyToOthersBtn_Click;
             // 
             // ApplyChangesBtn
             // 
@@ -203,11 +226,13 @@
             // ExtraNameTextBox
             // 
             ExtraNameTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            ExtraNameTextBox.BackColor = SystemColors.Window;
             ExtraNameTextBox.Enabled = false;
             ExtraNameTextBox.Location = new Point(51, 341);
             ExtraNameTextBox.Name = "ExtraNameTextBox";
             ExtraNameTextBox.Size = new Size(838, 23);
             ExtraNameTextBox.TabIndex = 12;
+            ExtraNameTextBox.TextChanged += ExtraNameTextBox_TextChanged;
             // 
             // MainFeatureRadioButton
             // 
@@ -328,6 +353,7 @@
             MultiVersionTextBox.Name = "MultiVersionTextBox";
             MultiVersionTextBox.Size = new Size(272, 23);
             MultiVersionTextBox.TabIndex = 1;
+            MultiVersionTextBox.TextChanged += MultiVersionTextBox_TextChanged;
             // 
             // MultiVersionCheckBox
             // 
@@ -340,149 +366,61 @@
             MultiVersionCheckBox.UseVisualStyleBackColor = true;
             MultiVersionCheckBox.CheckedChanged += MultiVersionCheckBox_CheckedChanged;
             // 
-            // ShowNameTextBox
-            // 
-            ShowNameTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            ShowNameTextBox.Location = new Point(86, 196);
-            ShowNameTextBox.Name = "ShowNameTextBox";
-            ShowNameTextBox.Size = new Size(812, 23);
-            ShowNameTextBox.TabIndex = 15;
-            ShowNameTextBox.TextChanged += ShowNameTextBox_TextChanged_1;
-            // 
-            // label5
-            // 
-            label5.AutoSize = true;
-            label5.Location = new Point(6, 199);
-            label5.Name = "label5";
-            label5.Size = new Size(74, 15);
-            label5.TabIndex = 14;
-            label5.Text = "Show Name:";
-            // 
-            // OutputFolderLabel
-            // 
-            OutputFolderLabel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            OutputFolderLabel.AutoSize = true;
-            OutputFolderLabel.Location = new Point(6, 224);
-            OutputFolderLabel.Name = "OutputFolderLabel";
-            OutputFolderLabel.Size = new Size(84, 15);
-            OutputFolderLabel.TabIndex = 12;
-            OutputFolderLabel.Text = "Output Folder:";
-            // 
             // panel3
             // 
-            panel3.Controls.Add(TmdbIdLabel);
-            panel3.Controls.Add(EpisodeTextBox);
             panel3.Controls.Add(TmdbBtn);
+            panel3.Controls.Add(EpisodeTextBox);
             panel3.Controls.Add(SeasonTextBox);
-            panel3.Controls.Add(label1);
             panel3.Controls.Add(label4);
-            panel3.Controls.Add(IdTextBox);
             panel3.Controls.Add(label3);
-            panel3.Controls.Add(label2);
-            panel3.Controls.Add(TypeComboBox);
-            panel3.Location = new Point(3, 12);
+            panel3.Location = new Point(9, 146);
             panel3.Name = "panel3";
-            panel3.Size = new Size(264, 158);
+            panel3.Size = new Size(236, 84);
             panel3.TabIndex = 10;
             // 
-            // TmdbIdLabel
+            // TmdbBtn
             // 
-            TmdbIdLabel.AutoSize = true;
-            TmdbIdLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            TmdbIdLabel.Location = new Point(3, 9);
-            TmdbIdLabel.Name = "TmdbIdLabel";
-            TmdbIdLabel.Size = new Size(45, 15);
-            TmdbIdLabel.TabIndex = 0;
-            TmdbIdLabel.Text = "TMDB:";
+            TmdbBtn.Location = new Point(9, 61);
+            TmdbBtn.Name = "TmdbBtn";
+            TmdbBtn.Size = new Size(136, 23);
+            TmdbBtn.TabIndex = 19;
+            TmdbBtn.Text = "Select with TMDB";
+            TmdbBtn.UseVisualStyleBackColor = true;
+            TmdbBtn.Click += TmdbBtn_Click;
             // 
             // EpisodeTextBox
             // 
-            EpisodeTextBox.Location = new Point(90, 123);
+            EpisodeTextBox.Location = new Point(66, 32);
             EpisodeTextBox.Name = "EpisodeTextBox";
             EpisodeTextBox.Size = new Size(153, 23);
             EpisodeTextBox.TabIndex = 9;
             EpisodeTextBox.TextChanged += EpisodeTextBox_TextChanged;
             // 
-            // TmdbBtn
-            // 
-            TmdbBtn.Location = new Point(54, 5);
-            TmdbBtn.Name = "TmdbBtn";
-            TmdbBtn.Size = new Size(75, 23);
-            TmdbBtn.TabIndex = 1;
-            TmdbBtn.Text = "Select";
-            TmdbBtn.UseVisualStyleBackColor = true;
-            TmdbBtn.Click += TmdbBtn_Click;
-            // 
             // SeasonTextBox
             // 
-            SeasonTextBox.Location = new Point(90, 94);
+            SeasonTextBox.Location = new Point(66, 3);
             SeasonTextBox.Name = "SeasonTextBox";
             SeasonTextBox.Size = new Size(153, 23);
             SeasonTextBox.TabIndex = 8;
             SeasonTextBox.TextChanged += SeasonTextBox_TextChanged;
             // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(33, 66);
-            label1.Name = "label1";
-            label1.Size = new Size(21, 15);
-            label1.TabIndex = 2;
-            label1.Text = "ID:";
-            // 
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(33, 126);
+            label4.Location = new Point(9, 35);
             label4.Name = "label4";
             label4.Size = new Size(51, 15);
             label4.TabIndex = 7;
             label4.Text = "Episode:";
             // 
-            // IdTextBox
-            // 
-            IdTextBox.Location = new Point(90, 63);
-            IdTextBox.Name = "IdTextBox";
-            IdTextBox.Size = new Size(153, 23);
-            IdTextBox.TabIndex = 3;
-            IdTextBox.TextChanged += IdTextBox_TextChanged_1;
-            // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(33, 97);
+            label3.Location = new Point(9, 6);
             label3.Name = "label3";
             label3.Size = new Size(47, 15);
             label3.TabIndex = 6;
             label3.Text = "Season:";
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(33, 37);
-            label2.Name = "label2";
-            label2.Size = new Size(34, 15);
-            label2.TabIndex = 4;
-            label2.Text = "Type:";
-            // 
-            // TypeComboBox
-            // 
-            TypeComboBox.FormattingEnabled = true;
-            TypeComboBox.Location = new Point(90, 34);
-            TypeComboBox.Name = "TypeComboBox";
-            TypeComboBox.Size = new Size(153, 23);
-            TypeComboBox.TabIndex = 5;
-            TypeComboBox.SelectedIndexChanged += TypeComboBox_SelectedIndexChanged;
-            // 
-            // button1
-            // 
-            button1.Location = new Point(6, 242);
-            button1.Name = "button1";
-            button1.Size = new Size(97, 23);
-            button1.TabIndex = 18;
-            button1.Text = "Copy to Others";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
             // 
             // FileRenamerForm
             // 
@@ -513,22 +451,13 @@
         private PlaylistListBox PlaylistListBox1;
         private ImageList imageList1;
         private Panel panel1;
-        private Label TmdbIdLabel;
         private Panel panel2;
         private TextBox EpisodeTextBox;
         private TextBox SeasonTextBox;
         private Label label4;
         private Label label3;
-        private ComboBox TypeComboBox;
-        private Label label2;
-        private TextBox IdTextBox;
-        private Label label1;
-        private Button TmdbBtn;
         private Button ExportAllBtn;
         private Panel panel3;
-        private Label OutputFolderLabel;
-        private TextBox ShowNameTextBox;
-        private Label label5;
         private Panel OptionsPanel;
         private TextBox MultiVersionTextBox;
         private CheckBox MultiVersionCheckBox;
@@ -542,10 +471,13 @@
         private RadioButton ExtrasRadioButton;
         private RadioButton TrailersRadioButton;
         private RadioButton MainFeatureRadioButton;
-        private Button ApplyChangesBtn;
         private Label ExtraName;
         private TextBox ExtraNameTextBox;
         private Button ExportSelectedBtn;
-        private Button button1;
+        private Button CopyToOthersBtn;
+        private Button SelectShowBtn;
+        private Label SelectedShowLabel;
+        private Button ApplyChangesBtn;
+        private Button TmdbBtn;
     }
 }

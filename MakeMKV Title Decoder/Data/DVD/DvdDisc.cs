@@ -142,7 +142,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
                 }
             }
 
-            return new DvdDisc(root, streams, $"DVD-{Path.GetDirectoryName(root)}", dvd.VMG.NumberOfVolumes, dvd.VMG.VolumeNumber, playlists);
+            return new DvdDisc(root, streams, $"DVD-{new DirectoryInfo(root).Name}", dvd.VMG.NumberOfVolumes, dvd.VMG.VolumeNumber, playlists);
         }
 
         private static IEnumerable<DiscPlaylist> GetPlaylistsFromPGC(PGC pgc, string baseName, bool isMenu, int vts, string demuxDir)

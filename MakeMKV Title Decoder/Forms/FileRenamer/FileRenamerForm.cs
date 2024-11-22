@@ -14,10 +14,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utils;
+using MakeMKV_Title_Decoder.Data.Renames;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
-    public partial class FileRenamerForm : Form {
+    public partial class FileRenamerForm : Form
+    {
         const string IconError = "dialog-error.png";
         const string IconGood = "dialog-ok-apply.png";
         const string IconWarn = "dialog-warning.png";
@@ -34,7 +36,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         private Dictionary<object, FeatureType> RadioButtonLookup;
         private Dictionary<FeatureType, RadioButton> RadioButtonReverseLookup;
 
-        public FileRenamerForm(LoadedDisc disc) {
+        public FileRenamerForm(LoadedDisc disc)
+        {
             this.Disc = disc;
 
             InitializeComponent();
@@ -74,22 +77,15 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 CheckForErrors(item);
             }
 
-            TypeComboBox.Items.Clear();
-            foreach (var type in Enum.GetValues<ShowType>())
-            {
-                TypeComboBox.Items.Add(type);
-            }
-
-
-            TypeComboBox_SelectedIndexChanged(null, null);
             PlaylistListBox1_SelectedIndexChanged(null, null);
         }
-        
-        private void FileRenamerForm_Load(object sender, EventArgs e) {
-            this.ShowNameTextBox.Text = Utils.GetFileSafeName(this.Disc.Identity.Title ?? "");
+
+        private void FileRenamerForm_Load(object sender, EventArgs e)
+        {
         }
 
-        private void PlaylistListBox1_SelectedIndexChanged(object sender, EventArgs e) {
+        private void PlaylistListBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
             var selected = this.PlaylistListBox1.SelectedItem;
             var output = selected?.Playlist?.OutputFile;
 
@@ -97,12 +93,23 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.MultiVersionCheckBox.Checked = (output?.MultiVersion != null);
             this.MultiVersionTextBox.Text = (output?.MultiVersion ?? "");
 
-            TypeComboBox.SelectedItem = output?.ShowID?.Type;
-            IdTextBox.Text = output?.ShowID?.ID.ToString() ?? "";
-            SeasonTextBox.Text = output?.ShowID?.Season?.ToString() ?? "";
-            EpisodeTextBox.Text = output?.ShowID?.Episode?.ToString() ?? "";
-            ShowNameTextBox.Text = output?.ShowName ?? "";
+            ShowOutputName? showName = null;
+            if (output != null && output.ShowIndex >= 0) showName = this.Disc.RenameData.ShowOutputNames[(int)output.ShowIndex];
+            this.SelectedShowLabel.Text = "Show: " + (showName?.Name ?? "");
 
+            SeasonTextBox.Visible = (showName?.Type == ShowType.TV);
+            long temp = output?.Season ?? -1;
+            if (temp < 0) SeasonTextBox.Text = "";
+            else SeasonTextBox.Text = temp.ToString();
+
+            EpisodeTextBox.Visible = (showName?.Type == ShowType.TV);
+            temp = output?.Episode ?? -1;
+            if (temp < 0) EpisodeTextBox.Text = "";
+            else EpisodeTextBox.Text = temp.ToString();
+
+            this.TmdbBtn.Visible = (showName?.Type == ShowType.TV);
+
+            // TV shows can have the same folders as movies now???
             bool isMovie = true; //((ShowType?)this.TypeComboBox.SelectedItem == ShowType.Movie);
             this.ExtrasRadioButton.Enabled = isMovie;
             this.SpecialsRadioButton.Enabled = isMovie;
@@ -116,90 +123,80 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             RadioButtonReverseLookup[output?.Type ?? FeatureType.MainFeature].PerformClick();
             this.ExtraNameTextBox.Text = (output?.ExtraName ?? "");
 
-            UpdateOutputLabel();
+            ExtraNameTextBox_TextChanged(null, null);
+            MultiVersionTextBox_TextChanged(null, null);
         }
 
-        private void TmdbBtn_Click(object sender, EventArgs e) {
-            var form = new TmdbBrowserForm(/*!FirstTmdb*/false, false, false, ParseID());
-            FirstTmdb = false;
-            if (form.ShowDialog() == DialogResult.OK)
-            {
-                var ID = form.ID;
-                if (ID != null)
-                {
-                    this.TypeComboBox.SelectedItem = ID.Type;
-                    this.IdTextBox.Text = ID.ID.ToString();
-                    this.SeasonTextBox.Text = ID.Season?.ToString() ?? "";
-                    this.EpisodeTextBox.Text = ID.Episode?.ToString() ?? "";
-
-                    UpdateOutputLabel();
-                }
-            }
-        }
-
-        private void TypeComboBox_SelectedIndexChanged(object sender, EventArgs e) {
-            var type = (ShowType?)TypeComboBox.SelectedItem;
-            this.IdTextBox.Enabled = (type != null);
-            this.SeasonTextBox.Enabled = (type == ShowType.TV);
-            this.EpisodeTextBox.Enabled = (type == ShowType.TV);
-
-            UpdateOutputLabel();
-        }
-
-        private void ShowNameTextBox_TextChanged_1(object sender, EventArgs e) {
-            UpdateOutputLabel();
-        }
-
-        private void MultiVersionCheckBox_CheckedChanged(object sender, EventArgs e) {
+        private void MultiVersionCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
             this.MultiVersionTextBox.Enabled = MultiVersionCheckBox.Checked;
+
+            MultiVersionTextBox_TextChanged(null, null);
         }
 
-        private void FeatureTypeRadioButton_CheckedChanged(object sender, EventArgs e) {
+        private void FeatureTypeRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
             FeatureType type;
             if (sender == null)
             {
                 type = FeatureType.MainFeature;
-            } else
+            }
+            else
             {
                 type = RadioButtonLookup[sender];
             }
             this.SelectedType = type;
 
             this.ExtraNameTextBox.Enabled = (type != FeatureType.MainFeature);
+
+            ExtraNameTextBox_TextChanged(null, null);
         }
 
-        private void UpdateOutputLabel() {
-            var ID = ParseID();
-            this.OutputFolderLabel.Text = $"{this.ShowNameTextBox.Text} [{TmdbPrefix}{ID?.ID.ToString() ?? ""}]";
-        }
-
-        private TmdbID? ParseID() {
-            TmdbID? id = null;
-            ShowType? type = (ShowType?)this.TypeComboBox.SelectedItem;
-
-            long idNum;
-            if (long.TryParse(this.IdTextBox.Text, out idNum) && type != null)
+        private TmdbID? ParseID()
+        {
+            PlaylistListItem playlist;
+            if (this.PlaylistListBox1.SelectedItem == null) return null;
+            if (this.PlaylistListBox1.SelectedItem is PlaylistListItem item)
             {
-                id = new TmdbID(type.Value, idNum);
+                playlist = item;
+            }
+            else
+            {
+                return null;
+            }
 
+            ShowOutputName? showName = null;
+            if (playlist.Playlist.OutputFile.ShowIndex >= 0)
+            {
+                showName = this.Disc.RenameData.ShowOutputNames[(int)playlist.Playlist.OutputFile.ShowIndex];
+            }
+
+            TmdbID? id = null;
+            if (showName != null)
+            {
+                id = new TmdbID(showName.Type, showName.TmdbID);
+
+                long temp;
                 if (!string.IsNullOrWhiteSpace(this.SeasonTextBox.Text))
                 {
-                    if (!long.TryParse(this.SeasonTextBox.Text, out idNum))
+                    if (!long.TryParse(this.SeasonTextBox.Text, out temp))
                     {
                         id = null;
-                    } else
+                    }
+                    else
                     {
-                        id.Season = idNum;
+                        id.Season = temp;
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(this.EpisodeTextBox.Text))
                 {
-                    if (!long.TryParse(this.EpisodeTextBox.Text, out idNum))
+                    if (!long.TryParse(this.EpisodeTextBox.Text, out temp))
                     {
                         id = null;
-                    } else
+                    }
+                    else
                     {
-                        id.Episode = idNum;
+                        id.Episode = temp;
                     }
                 }
             }
@@ -207,8 +204,9 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             return id;
         }
 
-        private bool IsError(Playlist playlist) {
-            TmdbID? id = playlist.OutputFile.ShowID;
+        private bool IsError(Playlist playlist)
+        {
+            TmdbID? id = playlist.OutputFile.GetTmdbID(this.Disc.RenameData);
             if (id == null) return true;
             if (id.Type == ShowType.TV)
             {
@@ -216,24 +214,27 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             if (playlist.OutputFile.Type == null) return true;
-            if (string.IsNullOrWhiteSpace(playlist.OutputFile.ShowName)) return true;
+            if (string.IsNullOrWhiteSpace(playlist.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
             if (playlist.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(playlist.OutputFile.MultiVersion)) return true;
             if (playlist.OutputFile.Type != null && playlist.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(playlist.OutputFile.ExtraName)) return true;
 
             return false;
         }
 
-        private void CheckForErrors(PlaylistListItem item) {
+        private void CheckForErrors(PlaylistListItem item)
+        {
             var playlist = item.Playlist;
-            if (playlist.OutputFile.ShowID == null)
+            if (playlist.OutputFile.GetShowName(this.Disc.RenameData) == null)
             {
                 item.Icon = IconError;
-            } else
+            }
+            else
             {
                 if (IsError(playlist))
                 {
                     item.Icon = IconWarn;
-                } else
+                }
+                else
                 {
                     item.Icon = IconGood;
                 }
@@ -242,23 +243,79 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             PlaylistListBox1.Invalidate();
         }
 
-        private void ApplyChangesBtn_Click(object sender, EventArgs e) {
+        private void ApplyChangesBtn_Click(object sender, EventArgs e)
+        {
             var selectedItem = this.PlaylistListBox1.SelectedItem;
             if (selectedItem != null)
             {
                 Playlist playlist = selectedItem.Playlist;
 
-                playlist.OutputFile.ShowName = this.ShowNameTextBox.Text;
+                // Verify names before saving
+                if (this.MultiVersionCheckBox.Checked)
+                {
+                    string? error;
+                    if (string.IsNullOrEmpty(this.MultiVersionTextBox.Text))
+                    {
+                        error = "Name can't be empty.";
+                    } else
+                    {
+                        error = Utils.IsValidFileName(this.MultiVersionTextBox.Text);
+                    }
+                    
+                    if (error != null)
+                    {
+                        MessageBox.Show("Multiversion name invalid: " + error, "Invalid name");
+                        return;
+                    }
+                }
+
+                if (this.SelectedType != FeatureType.MainFeature)
+                {
+                    string? error;
+                    if (string.IsNullOrEmpty(this.ExtraNameTextBox.Text))
+                    {
+                        error = "Name can't be empty.";
+                    }
+                    else
+                    {
+                        error = Utils.IsValidFileName(this.ExtraNameTextBox.Text);
+                    }
+
+                    if (error != null)
+                    {
+                        MessageBox.Show("Feature name invalid: " + error, "Invalid name");
+                        return;
+                    }
+                }
+
+
                 playlist.OutputFile.MultiVersion = (this.MultiVersionCheckBox.Checked ? this.MultiVersionTextBox.Text : null);
-                playlist.OutputFile.ShowID = ParseID();
                 playlist.OutputFile.Type = SelectedType;
                 playlist.OutputFile.ExtraName = (this.SelectedType == FeatureType.MainFeature) ? null : this.ExtraNameTextBox.Text;
 
+                long temp;
+                if (long.TryParse(this.SeasonTextBox.Text, out temp))
+                {
+                    playlist.OutputFile.Season = temp;
+                }
+                else
+                {
+                    playlist.OutputFile.Season = -1;
+                }
+                if (long.TryParse(this.EpisodeTextBox.Text, out temp))
+                {
+                    playlist.OutputFile.Episode = temp;
+                }
+                else
+                {
+                    playlist.OutputFile.Episode = -1;
+                }
                 CheckForErrors(selectedItem);
             }
         }
 
-        private string? GetFolderName(FeatureType type) {
+        private string? GetFolderName(FeatureType type)
+        {
             switch (type)
             {
                 case FeatureType.Extras: return "extras";
@@ -275,7 +332,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void Export(params Playlist[] playlists) {
+        private void Export(params Playlist[] playlists)
+        {
             string rootFolder;
             using (FolderBrowserDialog browser = new())
             {
@@ -287,7 +345,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 if (browser.ShowDialog() == DialogResult.OK)
                 {
                     rootFolder = browser.SelectedPath;
-                } else
+                }
+                else
                 {
                     return;
                 }
@@ -300,16 +359,19 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 OutputName output = playlist.OutputFile;
                 try
                 {
-                    string outputFolder = output.GetFolderPath();
-                    string? bonusFolder = output.GetBonusFolder();
-                    string outputFile = output.GetFileName();
+                    ShowOutputName showName = this.Disc.RenameData.ShowOutputNames[(int)output.ShowIndex];
+                    string outputFolder = showName.GetFolderPath(output.Season);
+                    string? bonusFolder = output.GetBonusFolder(showName.Type);
+                    string outputFile = output.GetFileName(showName);
                     exports.Add(new(outputFolder, bonusFolder, outputFile, playlist));
-                } catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     if (MessageBox.Show($"Failed to determine output file for playlist '{playlist.Name}'. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         return;
-                    } else
+                    }
+                    else
                     {
                         continue;
                     }
@@ -337,7 +399,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 if (bonusFolder == null)
                 {
                     fullPath = Path.Combine(rootFolder, outputFolder);
-                } else
+                }
+                else
                 {
                     fullPath = Path.Combine(rootFolder, outputFolder, bonusFolder);
                 }
@@ -348,7 +411,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     try
                     {
                         Directory.CreateDirectory(fullPath);
-                    } catch (Exception)
+                    }
+                    catch (Exception)
                     {
                         MessageBox.Show("Failed to create output folder.");
                         continue;
@@ -375,7 +439,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         JsonSerializer.Serialize(stream, this.Disc.RenameData, options);
                         stream.Flush();
                         stream.Close();
-                    } catch (Exception)
+                    }
+                    catch (Exception)
                     {
                         MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
                     }
@@ -385,7 +450,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void ExportAllBtn_Click(object sender, EventArgs e) {
+        private void ExportAllBtn_Click(object sender, EventArgs e)
+        {
             List<Playlist> exports = new();
             foreach (var selected in this.PlaylistListBox1.AllItems)
             {
@@ -396,7 +462,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         if (MessageBox.Show($"Playlist '{selected.Playlist.Name}' has an error and can't be exported. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                         {
                             return;
-                        } else
+                        }
+                        else
                         {
                             continue;
                         }
@@ -409,23 +476,18 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             Export(exports.ToArray());
         }
 
-        private void IdTextBox_TextChanged(object sender, EventArgs e) {
-            UpdateOutputLabel();
+        private void SeasonTextBox_TextChanged(object sender, EventArgs e)
+        {
+
         }
 
-        private void SeasonTextBox_TextChanged(object sender, EventArgs e) {
-            UpdateOutputLabel();
+        private void EpisodeTextBox_TextChanged(object sender, EventArgs e)
+        {
+
         }
 
-        private void EpisodeTextBox_TextChanged(object sender, EventArgs e) {
-            UpdateOutputLabel();
-        }
-
-        private void IdTextBox_TextChanged_1(object sender, EventArgs e) {
-            UpdateOutputLabel();
-        }
-
-        private void ExportSelectedBtn_Click(object sender, EventArgs e) {
+        private void ExportSelectedBtn_Click(object sender, EventArgs e)
+        {
             var selected = PlaylistListBox1.SelectedItem;
             if (selected != null)
             {
@@ -438,25 +500,80 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void button1_Click(object sender, EventArgs e) {
-            var selected = PlaylistListBox1.SelectedItem;
-            if (selected != null)
+        private void CopyToOthersBtn_Click(object sender, EventArgs e)
+        {
+            if (this.PlaylistListBox1.SelectedItem != null && this.PlaylistListBox1.SelectedItem is PlaylistListItem playlist)
             {
-                foreach (var item in PlaylistListBox1.AllItems)
+                long showIndex = playlist.Playlist.OutputFile.ShowIndex;
+
+                foreach (var item in PlaylistListBox1.AllItems.Where(x => x != playlist))
                 {
-                    if (item == selected) continue;
-
-                    var ID = selected.Playlist.OutputFile.ShowID;
-                    if (ID != null) ID = new TmdbID(ID);
-                    item.Playlist.OutputFile.ShowID = ID;
-
-                    var name = selected.Playlist.OutputFile.ShowName;
-                    item.Playlist.OutputFile.ShowName = name;
-
+                    item.Playlist.OutputFile.ShowIndex = showIndex;
                     CheckForErrors(item);
                 }
 
                 PlaylistListBox1.Invalidate();
+            }
+        }
+
+        private void SelectShowBtn_Click(object sender, EventArgs e)
+        {
+            if (this.PlaylistListBox1.SelectedItem != null && this.PlaylistListBox1.SelectedItem is PlaylistListItem playlist)
+            {
+                var form = new ShowSelector(this.Disc.RenameData);
+                var result = form.ShowDialog();
+                if (result == DialogResult.OK && form.Result != null)
+                {
+                    playlist.Playlist.OutputFile.ShowIndex = this.Disc.RenameData.ShowOutputNames.IndexOf(form.Result);
+                    this.SelectedShowLabel.Text = form.Result.Name;
+
+                    CheckForErrors(playlist);
+                    PlaylistListBox1.Invalidate();
+                }
+            }
+        }
+
+        private void TmdbBtn_Click(object sender, EventArgs e)
+        {
+            if (this.PlaylistListBox1.SelectedItem != null && this.PlaylistListBox1.SelectedItem is PlaylistListItem playlist)
+            {
+                TmdbID? defaultID = playlist.Playlist.OutputFile.GetTmdbID(this.Disc.RenameData);
+
+                var form = new TmdbBrowserForm(/*!FirstTmdb*/false, false, false, defaultID);
+                //FirstTmdb = false;
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    var ID = form.ID;
+                    if (ID != null)
+                    {
+                        this.SeasonTextBox.Text = ID.Season?.ToString() ?? "";
+                        this.EpisodeTextBox.Text = ID.Episode?.ToString() ?? "";
+                    }
+                }
+            }
+        }
+
+        private void ExtraNameTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (ExtraNameTextBox.Enabled && (Utils.IsValidFileName(this.ExtraNameTextBox.Text) != null))
+            {
+                this.ExtraNameTextBox.BackColor = Color.LightCoral;
+            }
+            else
+            {
+                this.ExtraNameTextBox.BackColor = SystemColors.Window;
+            }
+        }
+
+        private void MultiVersionTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (MultiVersionTextBox.Enabled && (Utils.IsValidFileName(this.MultiVersionTextBox.Text) != null))
+            {
+                this.MultiVersionTextBox.BackColor = Color.LightCoral;
+            }
+            else
+            {
+                this.MultiVersionTextBox.BackColor = SystemColors.Window;
             }
         }
     }

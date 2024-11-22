@@ -346,11 +346,13 @@ namespace MkvToolNix
                 yield return $"{this.ID}:{(this.CommentaryFlag == true ? "1" : "0")}";
             }
 
+            bool isDefault = false;
             if (this.DefaultTrackFlag != null)
             {
-                yield return "--default-track-flag";
-                yield return $"{this.ID}:{(this.DefaultTrackFlag == true ? "1" : "0")}";
+                isDefault = this.DefaultTrackFlag.Value;
             }
+            yield return "--default-track-flag";
+            yield return $"{this.ID}:{(isDefault ? "1" : "0")}";
 
             foreach(string cmd in GetDelayCommand())
             {

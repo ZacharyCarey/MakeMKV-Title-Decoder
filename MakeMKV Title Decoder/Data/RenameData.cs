@@ -26,6 +26,9 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public List<Playlist> Playlists = new();
 
+        [JsonInclude]
+        public List<ShowOutputName> ShowOutputNames = new();
+
         public RenameData(DiscIdentity discID) {
             this.DiscID = discID;
         }
@@ -65,15 +68,28 @@ namespace MakeMKV_Title_Decoder.Data
     }
 
     public class OutputName {
-        const string TmdbPrefix = "tmdbid=";
-
+        /// <summary>
+        /// The index of the <see cref="ShowOutputName"/> in the "ShowOutputNames" list
+        /// in the rename data.
+        /// </summary>
         [JsonInclude]
-        public TmdbID? ShowID;
+        public long ShowIndex = -1;
 
+        /// <summary>
+        /// Only applicable for TV shows
+        /// </summary>
         [JsonInclude]
-        public string? ShowName;
+        public long Season = -1;
 
-        // For multiple versions of the same episode, which version is this one?
+        /// <summary>
+        /// Only applicable for TV shows
+        /// </summary>
+        [JsonInclude]
+        public long Episode = -1;
+
+        /// <summary>
+        /// For multiple versions of the same episode, which version is this one?
+        /// </summary>
         [JsonInclude]
         public string? MultiVersion;
 
@@ -83,27 +99,8 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public string? ExtraName;
 
-        public string GetFolderPath() {
-            List<string> folders = new();
-
-            folders.Add($"{this.ShowName} [{TmdbPrefix}{ShowID?.ID.ToString() ?? ""}]");
-
-            if (ShowID?.Type == ShowType.Movie)
-            {
-                // TODO this is bad
-            } else if (ShowID?.Type == ShowType.TV)
-            {
-                folders.Add($"Season {ShowID.Season}");
-            } else
-            {
-                throw new Exception();
-            }
-
-            return Path.Combine(folders.ToArray());
-        }
-
-        public string? GetBonusFolder() {
-            switch (ShowID?.Type)
+        public string? GetBonusFolder(ShowType showType) {
+            switch (showType)
             {
                 case ShowType.Movie:
                 case ShowType.TV:
@@ -113,14 +110,14 @@ namespace MakeMKV_Title_Decoder.Data
             }
         }
 
-        public string GetFileName() {
+        public string GetFileName(ShowOutputName ShowID) {
             string versionString = "";
             if (MultiVersion != null)
             {
                 versionString = $" - {MultiVersion}";
             }
 
-            if (ShowID?.Type == ShowType.Movie)
+            if (ShowID.Type == ShowType.Movie)
             {
                 string? bonusFolder = GetFolderName(this.Type ?? FeatureType.MainFeature);
                 if (bonusFolder != null)
@@ -128,9 +125,9 @@ namespace MakeMKV_Title_Decoder.Data
                     return $"{ExtraName ?? ""}{versionString}.mkv";
                 } else
                 {
-                    return $"{ShowName ?? ""} [{TmdbPrefix}{ShowID?.ID.ToString() ?? ""}]{versionString}.mkv";
+                    return $"{ShowID.Name ?? ""} [{ShowOutputName.TmdbPrefix}{ShowID.TmdbID.ToString() ?? ""}]{versionString}.mkv";
                 }
-            } else if (ShowID?.Type == ShowType.TV)
+            } else if (ShowID.Type == ShowType.TV)
             {
                 string? bonusFolder = GetFolderName(this.Type ?? FeatureType.MainFeature);
                 if (bonusFolder != null)
@@ -138,12 +135,29 @@ namespace MakeMKV_Title_Decoder.Data
                     return $"{ExtraName ?? ""}{versionString}.mkv";
                 } else
                 {
-                    return $"{ShowName ?? ""} S{ShowID.Season}E{ShowID.Episode}{versionString}.mkv";
+                    return $"{ShowID.Name ?? ""} S{Season}E{Episode}{versionString}.mkv";
                 }
             } else
             {
                 throw new Exception();
             }
+        }
+
+        public TmdbID? GetTmdbID(RenameData renameData)
+        {
+            if (this.ShowIndex < 0) return null;
+            var showName = renameData.ShowOutputNames[(int)this.ShowIndex];
+            TmdbID id = new TmdbID(showName.Type, showName.TmdbID);
+            if (this.Season >= 0) id.Season = this.Season;
+            if (this.Episode >= 0) id.Episode = this.Episode;
+
+            return id;
+        }
+
+        public ShowOutputName? GetShowName(RenameData rename)
+        {
+            if (this.ShowIndex < 0) return null;
+            return rename.ShowOutputNames[(int)this.ShowIndex];
         }
 
         private static string? GetFolderName(FeatureType type) {

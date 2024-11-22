@@ -363,6 +363,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
 
         public void Save(LoadedDisc disc) {
             RenameData.Name = this.Name;
+            RenameData.Title = this.Name;
             RenameData.SourceFiles.Clear();
             RenameData.SourceTracks.Clear();
 
