@@ -50,6 +50,9 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         [JsonInclude]
         public readonly bool? FlagCommentary;
 
+        /// <summary>
+        /// The track's language as an ISO 639-2 language code
+        /// </summary>
         [JsonInclude]
         public readonly string? Language;
 

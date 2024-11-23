@@ -143,7 +143,7 @@ namespace MakeMKV_Title_Decoder.Data
 					sourceTrack.EnableFlag = null;
 					sourceTrack.ForcedDisplayFlag = null;
 					sourceTrack.HearingImpairedFlag = loadedTrack.Identity.FlagHearingImpaired;
-					sourceTrack.Language = loadedTrack.Identity.Language;
+					sourceTrack.Language = loadedTrack.RenameData.Language ?? loadedTrack.Identity.Language;
 					sourceTrack.Name = loadedTrack.RenameData.Name ?? loadedTrack.Identity.TrackName;
 					sourceTrack.OriginalFlag = loadedTrack.Identity.FlagOriginal;
 					sourceTrack.VisualImpairedFlag = loadedTrack.Identity.FlagVisualImpaired;

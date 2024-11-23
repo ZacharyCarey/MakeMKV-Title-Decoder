@@ -1,6 +1,8 @@
 ﻿using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
+using MakeMKV_Title_Decoder.Forms.ClipRenamer;
+using MakeMKV_Title_Decoder.Util;
 using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
@@ -15,7 +17,8 @@ using Utils;
 
 namespace MakeMKV_Title_Decoder
 {
-    public partial class ClipRenamerForm : Form {
+    public partial class ClipRenamerForm : Form
+    {
 
         const string KeepIconKey = "dialog-ok-apply.png";
         const string DeleteIconKey = "dialog-cancel.png";
@@ -27,7 +30,8 @@ namespace MakeMKV_Title_Decoder
         private LoadedTrack? SelectedAudioTrack = null;
         private LoadedTrack? SelectedOtherTrack = null;
 
-        public ClipRenamerForm(LoadedDisc disc) {
+        public ClipRenamerForm(LoadedDisc disc)
+        {
             this.Disc = disc;
 
             InitializeComponent();
@@ -54,11 +58,13 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void ClipRenamer_FormClosing(object sender, FormClosingEventArgs e) {
+        private void ClipRenamer_FormClosing(object sender, FormClosingEventArgs e)
+        {
             this.VideoPreview.LoadVideo(null);
         }
 
-        private void SelectClip(LoadedStream? clip) {
+        private void SelectClip(LoadedStream? clip)
+        {
             this.SelectedClip = clip;
             this.NameTextBox.Text = (clip == null) ? "" : (clip.RenameData.Name ?? "");
 
@@ -66,7 +72,8 @@ namespace MakeMKV_Title_Decoder
             if (clip == null)
             {
                 this.VideoPreview.LoadVideo(null);
-            } else
+            }
+            else
             {
                 string path = Path.Combine(this.Disc.Root, clip.Identity.SourceFile);
                 this.VideoPreview.LoadVideo(path);
@@ -84,10 +91,12 @@ namespace MakeMKV_Title_Decoder
                     if (track.Identity.Type == MkvTrackType.Video)
                     {
                         this.VideoTrackList.Add(track);
-                    } else if (track.Identity.Type == MkvTrackType.Audio)
+                    }
+                    else if (track.Identity.Type == MkvTrackType.Audio)
                     {
                         this.AudioTrackList.Add(track);
-                    } else
+                    }
+                    else
                     {
                         this.OtherTrackList.Add(track);
                     }
@@ -95,7 +104,8 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void RefreshClipListItem(ListViewItem row, LoadedStream data) {
+        private void RefreshClipListItem(ListViewItem row, LoadedStream data)
+        {
             string name = (data.RenameData.Name ?? "");
 
             row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
@@ -105,11 +115,13 @@ namespace MakeMKV_Title_Decoder
 
 
 
-        private void ClipRenamer_Load(object sender, EventArgs e) {
+        private void ClipRenamer_Load(object sender, EventArgs e)
+        {
 
         }
 
-        private void ClipsList_SelectedIndexChanged(object sender, EventArgs e) {
+        private void ClipsList_SelectedIndexChanged(object sender, EventArgs e)
+        {
             if (ClipsList.SelectedItems.Count <= 0)
             {
                 return;
@@ -119,7 +131,8 @@ namespace MakeMKV_Title_Decoder
             SelectClip(selection);
         }
 
-        private void ApplyBtn_Click(object sender, EventArgs e) {
+        private void ApplyBtn_Click(object sender, EventArgs e)
+        {
             LoadedStream? selection = this.SelectedClip;
             if (selection != null)
             {
@@ -134,13 +147,15 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void compareToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void compareToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             // TODO make it smart enough to handle changes to Renames while open
             // This can likely be done with a "onChange" event in renames
             new VideoCompareForm(this.Disc).ShowDialog();
         }
 
-        private void SelectTrack(LoadedTrack? track, MkvTrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox? commentaryCheckBox, CheckBox defaultCheckBox) {
+        private void SelectTrack(LoadedTrack? track, MkvTrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox? commentaryCheckBox, CheckBox defaultCheckBox, TextBox langTextBox)
+        {
             TrackRename? rename = track?.RenameData;
 
             nameTextBox.Text = (rename?.Name ?? "");
@@ -156,7 +171,8 @@ namespace MakeMKV_Title_Decoder
                 {
                     selectedIndex = selectedClip.Tracks.Where(x => x.Identity.Type == track.Identity.Type).WithIndex().First(x => x.Value == track).Index;
                 }
-                catch (Exception) {
+                catch (Exception)
+                {
                     selectedIndex = -1;
                 }
             }
@@ -170,9 +186,12 @@ namespace MakeMKV_Title_Decoder
                     this.VideoPreview.AudioTrack = selectedIndex;
                     break;
             }
+
+            langTextBox.Text = track?.RenameData.Language ?? "";
         }
 
-        private void VideoTrackList_OnSelectionChanged(TrackListData? track) {
+        private void VideoTrackList_OnSelectionChanged(TrackListData? track)
+        {
             this.SelectedVideoTrack = track?.Track;
             SelectTrack(
                 track?.Track,
@@ -180,11 +199,13 @@ namespace MakeMKV_Title_Decoder
                 VideoTrackPanel,
                 VideoTrackName,
                 VideoTrackCommentary,
-                VideoTrackDefault
+                VideoTrackDefault,
+                VideoLangTextBox
             );
         }
 
-        private void AudioTrackList_OnSelectionChanged(TrackListData? track) {
+        private void AudioTrackList_OnSelectionChanged(TrackListData? track)
+        {
             this.SelectedAudioTrack = track?.Track;
             SelectTrack(
                 track?.Track,
@@ -192,11 +213,13 @@ namespace MakeMKV_Title_Decoder
                 AudioTrackPanel,
                 AudioTrackName,
                 AudioTrackCommentary,
-                AudioTrackDefault
+                AudioTrackDefault,
+                AudioLangTextBox
             );
         }
 
-        private void TrackApplyChanges(TrackList list, LoadedTrack? track, string? name, bool? commentaryFlag, bool? defaultFlag) {
+        private void TrackApplyChanges(TrackList list, LoadedTrack? track, string? name, bool? commentaryFlag, bool? defaultFlag, string? lang)
+        {
             if (this.SelectedClip != null && track != null)
             {
                 if (string.IsNullOrWhiteSpace(name))
@@ -204,45 +227,66 @@ namespace MakeMKV_Title_Decoder
                     name = null;
                 }
 
+                if (string.IsNullOrWhiteSpace(lang))
+                {
+                    lang = null;
+                }
+                else
+                {
+                    if (!Languages.IsValidLanguageCode(lang))
+                    {
+                        MessageBox.Show("Please enter a valid language code.", "Invalid language");
+                        return;
+                    }
+                }
+
                 var renames = track.RenameData;
                 renames.Name = name;
                 renames.CommentaryFlag = commentaryFlag;
                 renames.DefaultFlag = defaultFlag;
+                renames.Language = lang;
 
                 list.Update(track);
                 list.Invalidate();
             }
         }
 
-        private void VideoTrackApply_Click(object sender, EventArgs e) {
+        private void VideoTrackApply_Click(object sender, EventArgs e)
+        {
             TrackApplyChanges(
                 this.VideoTrackList,
                 this.SelectedVideoTrack,
                 this.VideoTrackName.Text,
                 this.VideoTrackCommentary.Checked,
-                this.VideoTrackDefault.Checked
+                this.VideoTrackDefault.Checked,
+                this.VideoLangTextBox.Text
             );
         }
 
-        private void AudioTrackApply_Click(object sender, EventArgs e) {
+        private void AudioTrackApply_Click(object sender, EventArgs e)
+        {
             TrackApplyChanges(
                 this.AudioTrackList,
                 this.SelectedAudioTrack,
                 this.AudioTrackName.Text,
                 this.AudioTrackCommentary.Checked,
-                this.AudioTrackDefault.Checked
+                this.AudioTrackDefault.Checked,
+                this.AudioLangTextBox.Text
             );
         }
 
-        private void VideoTrackList_SelectedIndexChanged(object sender, EventArgs e) {
+        private void VideoTrackList_SelectedIndexChanged(object sender, EventArgs e)
+        {
 
         }
 
-        private void AudioTrackList_SelectedIndexChanged(object sender, EventArgs e) {
+        private void AudioTrackList_SelectedIndexChanged(object sender, EventArgs e)
+        {
 
         }
 
-        private void OtherTrackList_OnSelectionChanged(TrackListData track) {
+        private void OtherTrackList_OnSelectionChanged(TrackListData track)
+        {
             this.SelectedOtherTrack = track?.Track;
             SelectTrack(
                 track?.Track,
@@ -250,18 +294,66 @@ namespace MakeMKV_Title_Decoder
                 OtherTrackPanel,
                 OtherTrackName,
                 null,
-                OtherTrackDefault
+                OtherTrackDefault,
+                OtherLangTextBox
             );
         }
 
-        private void OtherTrackApply_Click(object sender, EventArgs e) {
+        private void OtherTrackApply_Click(object sender, EventArgs e)
+        {
             TrackApplyChanges(
                 this.OtherTrackList,
                 this.SelectedOtherTrack,
                 this.OtherTrackName.Text,
                 false,
-                this.OtherTrackDefault.Checked
+                this.OtherTrackDefault.Checked,
+                this.OtherLangTextBox.Text
             );
+        }
+
+        private void LangTextBox_TextChanged(object sender, EventArgs e)
+        {
+            TextBox textBox = (TextBox)sender;
+            if (string.IsNullOrWhiteSpace(textBox.Text))
+            {
+                textBox.BackColor = SystemColors.Window;
+            }
+            else
+            {
+                if (Languages.IsValidLanguageCode(textBox.Text))
+                {
+                    textBox.BackColor = SystemColors.Window;
+                }
+                else
+                {
+                    textBox.BackColor = Color.Red;
+                }
+            }
+        }
+
+        private void SelectLangBtn(TextBox langTextBox)
+        {
+            var langSelector = new LanguageSelectorForm();
+            var result = langSelector.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                langTextBox.Text = langSelector.SelectedLanguageCode ?? "";
+            }
+        }
+
+        private void SelectVideoLangBtn_Click(object sender, EventArgs e)
+        {
+            SelectLangBtn(this.VideoLangTextBox);
+        }
+
+        private void SelectAudioLang_Click(object sender, EventArgs e)
+        {
+            SelectLangBtn(this.AudioLangTextBox);
+        }
+
+        private void SelectOtherLang_Click(object sender, EventArgs e)
+        {
+            SelectLangBtn(this.OtherLangTextBox);
         }
     }
 }

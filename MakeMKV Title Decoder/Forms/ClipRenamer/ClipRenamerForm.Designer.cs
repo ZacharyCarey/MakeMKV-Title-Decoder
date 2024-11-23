@@ -26,7 +26,8 @@ namespace MakeMKV_Title_Decoder
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent() {
+        private void InitializeComponent()
+        {
             components = new System.ComponentModel.Container();
             ListViewItem listViewItem4 = new ListViewItem(new string[] { "", "003339.m2ts", "Hello" }, "dialog-ok-apply.png");
             ListViewItem listViewItem5 = new ListViewItem("test2");
@@ -48,6 +49,9 @@ namespace MakeMKV_Title_Decoder
             VideoView1 = new LibVLCSharp.WinForms.VideoView();
             OtherTrackList = new TrackList();
             OtherTrackPanel = new Panel();
+            SelectOtherLang = new Button();
+            OtherLangTextBox = new TextBox();
+            label7 = new Label();
             OtherTrackDefault = new CheckBox();
             OtherTrackApply = new Button();
             OtherTrackName = new TextBox();
@@ -55,6 +59,9 @@ namespace MakeMKV_Title_Decoder
             splitContainer4 = new SplitContainer();
             VideoTrackList = new TrackList();
             VideoTrackPanel = new Panel();
+            SelectVideoLangBtn = new Button();
+            VideoLangTextBox = new TextBox();
+            label5 = new Label();
             VideoTrackDefault = new CheckBox();
             VideoTrackApply = new Button();
             VideoTrackCommentary = new CheckBox();
@@ -62,6 +69,9 @@ namespace MakeMKV_Title_Decoder
             label2 = new Label();
             AudioTrackList = new TrackList();
             AudioTrackPanel = new Panel();
+            SelectAudioLang = new Button();
+            AudioLangTextBox = new TextBox();
+            label6 = new Label();
             AudioTrackDefault = new CheckBox();
             AudioTrackApply = new Button();
             AudioTrackCommentary = new CheckBox();
@@ -272,7 +282,7 @@ namespace MakeMKV_Title_Decoder
             OtherTrackList.OwnerDraw = true;
             OtherTrackList.SelectedIndex = null;
             OtherTrackList.SelectedItem = null;
-            OtherTrackList.Size = new Size(929, 265);
+            OtherTrackList.Size = new Size(929, 238);
             OtherTrackList.SmallImageList = ImageList1;
             OtherTrackList.TabIndex = 5;
             OtherTrackList.UseCompatibleStateImageBehavior = false;
@@ -281,15 +291,45 @@ namespace MakeMKV_Title_Decoder
             // 
             // OtherTrackPanel
             // 
+            OtherTrackPanel.Controls.Add(SelectOtherLang);
+            OtherTrackPanel.Controls.Add(OtherLangTextBox);
+            OtherTrackPanel.Controls.Add(label7);
             OtherTrackPanel.Controls.Add(OtherTrackDefault);
             OtherTrackPanel.Controls.Add(OtherTrackApply);
             OtherTrackPanel.Controls.Add(OtherTrackName);
             OtherTrackPanel.Controls.Add(label4);
             OtherTrackPanel.Dock = DockStyle.Bottom;
-            OtherTrackPanel.Location = new Point(0, 265);
+            OtherTrackPanel.Location = new Point(0, 238);
             OtherTrackPanel.Name = "OtherTrackPanel";
-            OtherTrackPanel.Size = new Size(929, 89);
+            OtherTrackPanel.Size = new Size(929, 116);
             OtherTrackPanel.TabIndex = 4;
+            // 
+            // SelectOtherLang
+            // 
+            SelectOtherLang.Location = new Point(177, 55);
+            SelectOtherLang.Name = "SelectOtherLang";
+            SelectOtherLang.Size = new Size(75, 23);
+            SelectOtherLang.TabIndex = 12;
+            SelectOtherLang.Text = "Select";
+            SelectOtherLang.UseVisualStyleBackColor = true;
+            SelectOtherLang.Click += SelectOtherLang_Click;
+            // 
+            // OtherLangTextBox
+            // 
+            OtherLangTextBox.Location = new Point(71, 56);
+            OtherLangTextBox.Name = "OtherLangTextBox";
+            OtherLangTextBox.Size = new Size(100, 23);
+            OtherLangTextBox.TabIndex = 11;
+            OtherLangTextBox.TextChanged += LangTextBox_TextChanged;
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(3, 59);
+            label7.Name = "label7";
+            label7.Size = new Size(62, 15);
+            label7.TabIndex = 10;
+            label7.Text = "Language:";
             // 
             // OtherTrackDefault
             // 
@@ -303,7 +343,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // OtherTrackApply
             // 
-            OtherTrackApply.Location = new Point(3, 57);
+            OtherTrackApply.Location = new Point(3, 85);
             OtherTrackApply.Name = "OtherTrackApply";
             OtherTrackApply.Size = new Size(75, 23);
             OtherTrackApply.TabIndex = 5;
@@ -363,7 +403,7 @@ namespace MakeMKV_Title_Decoder
             VideoTrackList.OwnerDraw = true;
             VideoTrackList.SelectedIndex = null;
             VideoTrackList.SelectedItem = null;
-            VideoTrackList.Size = new Size(582, 203);
+            VideoTrackList.Size = new Size(582, 173);
             VideoTrackList.SmallImageList = ImageList1;
             VideoTrackList.TabIndex = 1;
             VideoTrackList.UseCompatibleStateImageBehavior = false;
@@ -373,16 +413,46 @@ namespace MakeMKV_Title_Decoder
             // 
             // VideoTrackPanel
             // 
+            VideoTrackPanel.Controls.Add(SelectVideoLangBtn);
+            VideoTrackPanel.Controls.Add(VideoLangTextBox);
+            VideoTrackPanel.Controls.Add(label5);
             VideoTrackPanel.Controls.Add(VideoTrackDefault);
             VideoTrackPanel.Controls.Add(VideoTrackApply);
             VideoTrackPanel.Controls.Add(VideoTrackCommentary);
             VideoTrackPanel.Controls.Add(VideoTrackName);
             VideoTrackPanel.Controls.Add(label2);
             VideoTrackPanel.Dock = DockStyle.Bottom;
-            VideoTrackPanel.Location = new Point(0, 203);
+            VideoTrackPanel.Location = new Point(0, 173);
             VideoTrackPanel.Name = "VideoTrackPanel";
-            VideoTrackPanel.Size = new Size(582, 110);
+            VideoTrackPanel.Size = new Size(582, 140);
             VideoTrackPanel.TabIndex = 0;
+            // 
+            // SelectVideoLangBtn
+            // 
+            SelectVideoLangBtn.Location = new Point(177, 81);
+            SelectVideoLangBtn.Name = "SelectVideoLangBtn";
+            SelectVideoLangBtn.Size = new Size(75, 23);
+            SelectVideoLangBtn.TabIndex = 9;
+            SelectVideoLangBtn.Text = "Select";
+            SelectVideoLangBtn.UseVisualStyleBackColor = true;
+            SelectVideoLangBtn.Click += SelectVideoLangBtn_Click;
+            // 
+            // VideoLangTextBox
+            // 
+            VideoLangTextBox.Location = new Point(71, 82);
+            VideoLangTextBox.Name = "VideoLangTextBox";
+            VideoLangTextBox.Size = new Size(100, 23);
+            VideoLangTextBox.TabIndex = 8;
+            VideoLangTextBox.TextChanged += LangTextBox_TextChanged;
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(3, 85);
+            label5.Name = "label5";
+            label5.Size = new Size(62, 15);
+            label5.TabIndex = 7;
+            label5.Text = "Language:";
             // 
             // VideoTrackDefault
             // 
@@ -396,7 +466,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // VideoTrackApply
             // 
-            VideoTrackApply.Location = new Point(3, 82);
+            VideoTrackApply.Location = new Point(3, 111);
             VideoTrackApply.Name = "VideoTrackApply";
             VideoTrackApply.Size = new Size(75, 23);
             VideoTrackApply.TabIndex = 5;
@@ -417,6 +487,7 @@ namespace MakeMKV_Title_Decoder
             // VideoTrackName
             // 
             VideoTrackName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            VideoTrackName.BackColor = SystemColors.Window;
             VideoTrackName.Location = new Point(51, 3);
             VideoTrackName.Name = "VideoTrackName";
             VideoTrackName.Size = new Size(528, 23);
@@ -445,7 +516,7 @@ namespace MakeMKV_Title_Decoder
             AudioTrackList.OwnerDraw = true;
             AudioTrackList.SelectedIndex = null;
             AudioTrackList.SelectedItem = null;
-            AudioTrackList.Size = new Size(582, 611);
+            AudioTrackList.Size = new Size(582, 582);
             AudioTrackList.SmallImageList = ImageList1;
             AudioTrackList.TabIndex = 2;
             AudioTrackList.UseCompatibleStateImageBehavior = false;
@@ -455,16 +526,46 @@ namespace MakeMKV_Title_Decoder
             // 
             // AudioTrackPanel
             // 
+            AudioTrackPanel.Controls.Add(SelectAudioLang);
+            AudioTrackPanel.Controls.Add(AudioLangTextBox);
+            AudioTrackPanel.Controls.Add(label6);
             AudioTrackPanel.Controls.Add(AudioTrackDefault);
             AudioTrackPanel.Controls.Add(AudioTrackApply);
             AudioTrackPanel.Controls.Add(AudioTrackCommentary);
             AudioTrackPanel.Controls.Add(AudioTrackName);
             AudioTrackPanel.Controls.Add(label3);
             AudioTrackPanel.Dock = DockStyle.Bottom;
-            AudioTrackPanel.Location = new Point(0, 611);
+            AudioTrackPanel.Location = new Point(0, 582);
             AudioTrackPanel.Name = "AudioTrackPanel";
-            AudioTrackPanel.Size = new Size(582, 111);
+            AudioTrackPanel.Size = new Size(582, 140);
             AudioTrackPanel.TabIndex = 3;
+            // 
+            // SelectAudioLang
+            // 
+            SelectAudioLang.Location = new Point(177, 81);
+            SelectAudioLang.Name = "SelectAudioLang";
+            SelectAudioLang.Size = new Size(75, 23);
+            SelectAudioLang.TabIndex = 12;
+            SelectAudioLang.Text = "Select";
+            SelectAudioLang.UseVisualStyleBackColor = true;
+            SelectAudioLang.Click += SelectAudioLang_Click;
+            // 
+            // AudioLangTextBox
+            // 
+            AudioLangTextBox.Location = new Point(71, 82);
+            AudioLangTextBox.Name = "AudioLangTextBox";
+            AudioLangTextBox.Size = new Size(100, 23);
+            AudioLangTextBox.TabIndex = 11;
+            AudioLangTextBox.TextChanged += LangTextBox_TextChanged;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(3, 85);
+            label6.Name = "label6";
+            label6.Size = new Size(62, 15);
+            label6.TabIndex = 10;
+            label6.Text = "Language:";
             // 
             // AudioTrackDefault
             // 
@@ -478,7 +579,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // AudioTrackApply
             // 
-            AudioTrackApply.Location = new Point(3, 82);
+            AudioTrackApply.Location = new Point(3, 111);
             AudioTrackApply.Name = "AudioTrackApply";
             AudioTrackApply.Size = new Size(75, 23);
             AudioTrackApply.TabIndex = 5;
@@ -610,5 +711,14 @@ namespace MakeMKV_Title_Decoder
         private Button OtherTrackApply;
         private TextBox OtherTrackName;
         private Label label4;
+        private Button SelectVideoLangBtn;
+        private TextBox VideoLangTextBox;
+        private Label label5;
+        private Button SelectAudioLang;
+        private TextBox AudioLangTextBox;
+        private Label label6;
+        private Button SelectOtherLang;
+        private TextBox OtherLangTextBox;
+        private Label label7;
     }
 }

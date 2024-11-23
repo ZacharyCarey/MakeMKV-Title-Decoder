@@ -21,6 +21,9 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		public bool? DefaultFlag;
 
 		[JsonInclude]
+		public string? Language;
+
+		[JsonInclude]
 		public TrackIdentity Identity { get; set; }
 
 		/// <summary>
@@ -35,15 +38,17 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 			this.Name = info.Properties?.TrackName;
 			this.CommentaryFlag = info.Properties?.FlagCommentary;
 			this.DefaultFlag = info.Properties?.DefaultTrack;
+			this.Language = info.Properties?.Language;
 		}
 
 		[JsonConstructor]
-		private TrackRename(string? name, bool? commentaryFlag, bool? defaultFlag, TrackIdentity identity, int uid) {
+		private TrackRename(string? name, bool? commentaryFlag, bool? defaultFlag, TrackIdentity identity, int uid, string? language) {
 			this.Name = name;
 			this.CommentaryFlag = commentaryFlag;
 			this.DefaultFlag = defaultFlag;
 			this.Identity = identity;
 			this.UID = uid;
+			this.Language = language;
 		}
 
 	}
