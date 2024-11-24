@@ -22,6 +22,9 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public List<ClipRename> Clips = new();
 
+        [JsonInclude]
+        public List<Attachment> Attachments = new();
+
         // Playlist data created by the user for how files should be multiplexed / outputted
         [JsonInclude]
         public List<Playlist> Playlists = new();

@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.Controls;
+﻿using FfmpegInterface;
+using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms.ClipRenamer;
@@ -354,6 +355,66 @@ namespace MakeMKV_Title_Decoder
         private void SelectOtherLang_Click(object sender, EventArgs e)
         {
             SelectLangBtn(this.OtherLangTextBox);
+        }
+
+        private void ExportAllFramesBtn_Click(object sender, EventArgs e)
+        {
+            LoadedStream? selection = this.SelectedClip;
+            if (selection != null)
+            {
+                DialogResult result;
+                if (selection.Identity.Duration.TotalMinutes < 1)
+                {
+                    result = MessageBox.Show("Clip is <1 minute long. Export all frames?", "Export Frames", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                }
+                else
+                {
+                    int min = (int)selection.Identity.Duration.TotalMinutes;
+                    string plural = "";
+                    if (min > 1)
+                    {
+                        plural = "s";
+                    }
+
+                    result = MessageBox.Show($"Clip is {min} minute{plural} long. Export all frames?", "Export Frames", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                }
+
+                if (result == DialogResult.Yes)
+                {
+                    bool any = false;
+                    foreach(Attachment attachment in AllFramesExtracted.Extract(this.Disc, selection))
+                    {
+                        any = true;
+                        this.Disc.RenameData.Attachments.Add(attachment);
+                    }
+
+                    if (any)
+                    {
+                        MessageBox.Show("Successfully extracted images.");
+                    } else
+                    {
+                        MessageBox.Show("Attachments already exists or failed to extract images.");
+                    }
+                }
+            }
+        }
+
+        private void ExportSingleFrameBtn_Click(object sender, EventArgs e)
+        {
+            LoadedStream? selection = this.SelectedClip;
+            if (selection != null)
+            {
+                Attachment? attachment = SingleFrameExtracted.Extract(this.Disc, selection);
+                if (attachment == null)
+                {
+                    MessageBox.Show("Attachment already exists or failed to extract image.");
+                    return;
+                } else
+                {
+                    MessageBox.Show("Successfully extracted image.");
+                    this.Disc.RenameData.Attachments.Add(attachment);
+                }
+            }
         }
     }
 }

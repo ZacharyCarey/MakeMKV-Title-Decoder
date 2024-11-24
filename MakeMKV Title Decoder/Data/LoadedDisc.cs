@@ -95,6 +95,15 @@ namespace MakeMKV_Title_Decoder.Data
 					streamMatches[stream] = clipRename;
 				}
 
+				// Extract attachments as needed
+				foreach(var attachment in renameData.Attachments)
+				{
+					if (!attachment.Extract(this))
+					{
+						throw new Exception("Failed to extract attachment.");
+					}
+				}
+
 				// Was able to match everything, now actually load the rename data
 				renameData.DiscID = this.Identity; // So if there are any changes in the discID they will be saved
 				this.RenameData = renameData;

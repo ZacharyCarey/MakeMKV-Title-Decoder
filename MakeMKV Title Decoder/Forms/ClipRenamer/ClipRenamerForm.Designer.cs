@@ -40,6 +40,7 @@ namespace MakeMKV_Title_Decoder
             ImageList1 = new ImageList(components);
             splitContainer1 = new SplitContainer();
             PropertiesPanel = new Panel();
+            ExportAllFramesBtn = new Button();
             ApplyBtn = new Button();
             NameTextBox = new TextBox();
             label1 = new Label();
@@ -79,6 +80,7 @@ namespace MakeMKV_Title_Decoder
             label3 = new Label();
             menuStrip1 = new MenuStrip();
             compareToolStripMenuItem = new ToolStripMenuItem();
+            ExportSingleFrameBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -169,6 +171,8 @@ namespace MakeMKV_Title_Decoder
             // 
             // PropertiesPanel
             // 
+            PropertiesPanel.Controls.Add(ExportSingleFrameBtn);
+            PropertiesPanel.Controls.Add(ExportAllFramesBtn);
             PropertiesPanel.Controls.Add(ApplyBtn);
             PropertiesPanel.Controls.Add(NameTextBox);
             PropertiesPanel.Controls.Add(label1);
@@ -177,6 +181,17 @@ namespace MakeMKV_Title_Decoder
             PropertiesPanel.Name = "PropertiesPanel";
             PropertiesPanel.Size = new Size(370, 66);
             PropertiesPanel.TabIndex = 0;
+            // 
+            // ExportAllFramesBtn
+            // 
+            ExportAllFramesBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            ExportAllFramesBtn.Location = new Point(242, 32);
+            ExportAllFramesBtn.Name = "ExportAllFramesBtn";
+            ExportAllFramesBtn.Size = new Size(125, 23);
+            ExportAllFramesBtn.TabIndex = 2;
+            ExportAllFramesBtn.Text = "Export All Frames";
+            ExportAllFramesBtn.UseVisualStyleBackColor = true;
+            ExportAllFramesBtn.Click += ExportAllFramesBtn_Click;
             // 
             // ApplyBtn
             // 
@@ -630,6 +645,17 @@ namespace MakeMKV_Title_Decoder
             compareToolStripMenuItem.Text = "Compare";
             compareToolStripMenuItem.Click += compareToolStripMenuItem_Click;
             // 
+            // ExportSingleFrameBtn
+            // 
+            ExportSingleFrameBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            ExportSingleFrameBtn.Location = new Point(111, 32);
+            ExportSingleFrameBtn.Name = "ExportSingleFrameBtn";
+            ExportSingleFrameBtn.Size = new Size(125, 23);
+            ExportSingleFrameBtn.TabIndex = 3;
+            ExportSingleFrameBtn.Text = "Export Single Frame";
+            ExportSingleFrameBtn.UseVisualStyleBackColor = true;
+            ExportSingleFrameBtn.Click += ExportSingleFrameBtn_Click;
+            // 
             // ClipRenamerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -720,5 +746,7 @@ namespace MakeMKV_Title_Decoder
         private Button SelectOtherLang;
         private TextBox OtherLangTextBox;
         private Label label7;
+        private Button ExportAllFramesBtn;
+        private Button ExportSingleFrameBtn;
     }
 }

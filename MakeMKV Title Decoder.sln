@@ -7,13 +7,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MakeMKV Title Decoder", "Ma
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PgcDemuxLib", "PgcDemuxLib\PgcDemuxLib.csproj", "{EC6A4E44-5A89-4E34-B275-F5D2549D524F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "Utils\Utils.csproj", "{F82B3EAD-C0CB-4D1F-848E-4DF9B3973673}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utils", "Utils\Utils.csproj", "{F82B3EAD-C0CB-4D1F-848E-4DF9B3973673}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libbluray", "libbluray\libbluray.csproj", "{FC0AD7A7-3297-45FA-8ECA-05EEFB70DC65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "libbluray", "libbluray\libbluray.csproj", "{FC0AD7A7-3297-45FA-8ECA-05EEFB70DC65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MkvToolNix", "MkvToolNix\MkvToolNix.csproj", "{B0EBB336-71DF-4615-87A1-EF6F68148E1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MkvToolNix", "MkvToolNix\MkvToolNix.csproj", "{B0EBB336-71DF-4615-87A1-EF6F68148E1F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MakeMkvInterface", "MakeMkvInterface\MakeMkvInterface.csproj", "{8157CF44-2B50-468C-8743-0398F743E8BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MakeMkvInterface", "MakeMkvInterface\MakeMkvInterface.csproj", "{8157CF44-2B50-468C-8743-0398F743E8BB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegInterface", "FfmpegInterface\FfmpegInterface.csproj", "{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +73,14 @@ Global
 		{8157CF44-2B50-468C-8743-0398F743E8BB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8157CF44-2B50-468C-8743-0398F743E8BB}.Release|x64.ActiveCfg = Release|Any CPU
 		{8157CF44-2B50-468C-8743-0398F743E8BB}.Release|x64.Build.0 = Release|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|x64.Build.0 = Debug|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|x64.ActiveCfg = Release|Any CPU
+		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
