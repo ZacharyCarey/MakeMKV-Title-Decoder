@@ -23,7 +23,8 @@
         ///  Required method for Designer support - do not modify
         ///  the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent() {
+        private void InitializeComponent()
+        {
             components = new System.ComponentModel.Container();
             toolTip1 = new ToolTip(components);
             menuStrip1 = new MenuStrip();
@@ -39,6 +40,7 @@
             PlaylistsBtn = new Button();
             FileRenamerBtn = new Button();
             BackupBtn = new Button();
+            AttachmentsBtn = new Button();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -62,14 +64,14 @@
             // saveToolStripMenuItem1
             // 
             saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
-            saveToolStripMenuItem1.Size = new Size(100, 22);
+            saveToolStripMenuItem1.Size = new Size(180, 22);
             saveToolStripMenuItem1.Text = "Save";
             saveToolStripMenuItem1.Click += saveToolStripMenuItem1_Click;
             // 
             // loadToolStripMenuItem
             // 
             loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-            loadToolStripMenuItem.Size = new Size(100, 22);
+            loadToolStripMenuItem.Size = new Size(180, 22);
             loadToolStripMenuItem.Text = "Load";
             loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
             // 
@@ -110,7 +112,7 @@
             // LoadDiscBtn
             // 
             LoadDiscBtn.Location = new Point(8, 55);
-            LoadDiscBtn.Margin = new Padding(2, 2, 2, 2);
+            LoadDiscBtn.Margin = new Padding(2);
             LoadDiscBtn.Name = "LoadDiscBtn";
             LoadDiscBtn.Size = new Size(78, 20);
             LoadDiscBtn.TabIndex = 9;
@@ -121,7 +123,7 @@
             // RenameClipsBtn
             // 
             RenameClipsBtn.Location = new Point(8, 112);
-            RenameClipsBtn.Margin = new Padding(2, 2, 2, 2);
+            RenameClipsBtn.Margin = new Padding(2);
             RenameClipsBtn.Name = "RenameClipsBtn";
             RenameClipsBtn.Size = new Size(102, 20);
             RenameClipsBtn.TabIndex = 10;
@@ -132,7 +134,7 @@
             // PlaylistsBtn
             // 
             PlaylistsBtn.Location = new Point(8, 136);
-            PlaylistsBtn.Margin = new Padding(2, 2, 2, 2);
+            PlaylistsBtn.Margin = new Padding(2);
             PlaylistsBtn.Name = "PlaylistsBtn";
             PlaylistsBtn.Size = new Size(102, 20);
             PlaylistsBtn.TabIndex = 12;
@@ -143,7 +145,7 @@
             // FileRenamerBtn
             // 
             FileRenamerBtn.Location = new Point(8, 160);
-            FileRenamerBtn.Margin = new Padding(2, 2, 2, 2);
+            FileRenamerBtn.Margin = new Padding(2);
             FileRenamerBtn.Name = "FileRenamerBtn";
             FileRenamerBtn.Size = new Size(102, 20);
             FileRenamerBtn.TabIndex = 14;
@@ -154,7 +156,7 @@
             // BackupBtn
             // 
             BackupBtn.Location = new Point(91, 55);
-            BackupBtn.Margin = new Padding(2, 2, 2, 2);
+            BackupBtn.Margin = new Padding(2);
             BackupBtn.Name = "BackupBtn";
             BackupBtn.Size = new Size(78, 20);
             BackupBtn.TabIndex = 15;
@@ -162,11 +164,23 @@
             BackupBtn.UseVisualStyleBackColor = true;
             BackupBtn.Click += BackupBtn_Click;
             // 
+            // AttachmentsBtn
+            // 
+            AttachmentsBtn.Location = new Point(142, 112);
+            AttachmentsBtn.Margin = new Padding(2);
+            AttachmentsBtn.Name = "AttachmentsBtn";
+            AttachmentsBtn.Size = new Size(102, 20);
+            AttachmentsBtn.TabIndex = 16;
+            AttachmentsBtn.Text = "Attachments";
+            AttachmentsBtn.UseVisualStyleBackColor = true;
+            AttachmentsBtn.Click += AttachmentsBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(309, 247);
+            Controls.Add(AttachmentsBtn);
             Controls.Add(BackupBtn);
             Controls.Add(FileRenamerBtn);
             Controls.Add(PlaylistsBtn);
@@ -200,5 +214,6 @@
 		private ToolStripMenuItem saveToolStripMenuItem1;
 		private ToolStripMenuItem loadToolStripMenuItem;
 		private Button BackupBtn;
-	}
+        private Button AttachmentsBtn;
+    }
 }

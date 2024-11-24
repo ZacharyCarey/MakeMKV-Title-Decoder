@@ -27,6 +27,12 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         [JsonIgnore]
         public abstract string FilePath { get; }
 
+        /// <summary>
+        /// The rename given by the user
+        /// </summary>
+        [JsonInclude]
+        public string? Name;
+
         protected Attachment()
         {
 

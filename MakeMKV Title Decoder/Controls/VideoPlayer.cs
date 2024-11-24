@@ -140,6 +140,11 @@ namespace MakeMKV_Title_Decoder {
             this.FileNotFoundLabel.Visible = (path == null) || (!File.Exists(path));
         }
 
+        public void Play()
+        {
+            PlayBtn_Click(null, null);
+        }
+
         private void PlayBtn_Click(object sender, EventArgs e) {
             Viewer?.MediaPlayer?.Play();
             this.SyncPlayer?.Viewer?.MediaPlayer?.Play();
