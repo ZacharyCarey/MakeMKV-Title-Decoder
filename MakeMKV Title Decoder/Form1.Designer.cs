@@ -41,6 +41,7 @@
             FileRenamerBtn = new Button();
             BackupBtn = new Button();
             AttachmentsBtn = new Button();
+            CollectionsBtn = new Button();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -64,14 +65,14 @@
             // saveToolStripMenuItem1
             // 
             saveToolStripMenuItem1.Name = "saveToolStripMenuItem1";
-            saveToolStripMenuItem1.Size = new Size(180, 22);
+            saveToolStripMenuItem1.Size = new Size(100, 22);
             saveToolStripMenuItem1.Text = "Save";
             saveToolStripMenuItem1.Click += saveToolStripMenuItem1_Click;
             // 
             // loadToolStripMenuItem
             // 
             loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-            loadToolStripMenuItem.Size = new Size(180, 22);
+            loadToolStripMenuItem.Size = new Size(100, 22);
             loadToolStripMenuItem.Text = "Load";
             loadToolStripMenuItem.Click += loadToolStripMenuItem_Click;
             // 
@@ -175,11 +176,23 @@
             AttachmentsBtn.UseVisualStyleBackColor = true;
             AttachmentsBtn.Click += AttachmentsBtn_Click;
             // 
+            // CollectionsBtn
+            // 
+            CollectionsBtn.Location = new Point(142, 136);
+            CollectionsBtn.Margin = new Padding(2);
+            CollectionsBtn.Name = "CollectionsBtn";
+            CollectionsBtn.Size = new Size(102, 20);
+            CollectionsBtn.TabIndex = 17;
+            CollectionsBtn.Text = "Collections";
+            CollectionsBtn.UseVisualStyleBackColor = true;
+            CollectionsBtn.Click += CollectionsBtn_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(309, 247);
+            Controls.Add(CollectionsBtn);
             Controls.Add(AttachmentsBtn);
             Controls.Add(BackupBtn);
             Controls.Add(FileRenamerBtn);
@@ -215,5 +228,6 @@
 		private ToolStripMenuItem loadToolStripMenuItem;
 		private Button BackupBtn;
         private Button AttachmentsBtn;
+        private Button CollectionsBtn;
     }
 }

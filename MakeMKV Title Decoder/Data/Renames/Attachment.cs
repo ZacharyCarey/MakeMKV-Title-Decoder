@@ -61,6 +61,11 @@ namespace MakeMKV_Title_Decoder.Data.Renames
                 return relativePath;
             }
         }
+
+        public override string ToString()
+        {
+            return Name ?? "[N/A]";
+        }
     }
 
     public enum AttachmentType

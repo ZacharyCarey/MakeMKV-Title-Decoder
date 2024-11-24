@@ -38,13 +38,13 @@
             columnHeader3 = new ColumnHeader();
             columnHeader1 = new ColumnHeader();
             columnHeader2 = new ColumnHeader();
+            ImageList1 = new ImageList(components);
             PropertiesPanel = new Panel();
             ApplyBtn = new Button();
             NameTextBox = new TextBox();
             label1 = new Label();
             videoView1 = new LibVLCSharp.WinForms.VideoView();
             VideoPreview = new VideoPlayer();
-            ImageList1 = new ImageList(components);
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -105,6 +105,19 @@
             columnHeader2.Text = "Rename";
             columnHeader2.Width = 240;
             // 
+            // ImageList1
+            // 
+            ImageList1.ColorDepth = ColorDepth.Depth32Bit;
+            ImageList1.ImageStream = (ImageListStreamer)resources.GetObject("ImageList1.ImageStream");
+            ImageList1.TransparentColor = Color.Transparent;
+            ImageList1.Images.SetKeyName(0, "dialog-ok-apply.png");
+            ImageList1.Images.SetKeyName(1, "dialog-cancel.png");
+            ImageList1.Images.SetKeyName(2, "tool-animator.png");
+            ImageList1.Images.SetKeyName(3, "audio-headphones.png");
+            ImageList1.Images.SetKeyName(4, "text.png");
+            ImageList1.Images.SetKeyName(5, "clock.png");
+            ImageList1.Images.SetKeyName(6, "application-octet-stream.png");
+            // 
             // PropertiesPanel
             // 
             PropertiesPanel.Controls.Add(ApplyBtn);
@@ -133,6 +146,7 @@
             NameTextBox.Name = "NameTextBox";
             NameTextBox.Size = new Size(496, 23);
             NameTextBox.TabIndex = 1;
+            NameTextBox.TextChanged += NameTextBox_TextChanged;
             // 
             // label1
             // 
@@ -166,19 +180,6 @@
             VideoPreview.VideoTrack = -1L;
             VideoPreview.VLC = null;
             VideoPreview.VlcViewer = videoView1;
-            // 
-            // ImageList1
-            // 
-            ImageList1.ColorDepth = ColorDepth.Depth32Bit;
-            ImageList1.ImageStream = (ImageListStreamer)resources.GetObject("ImageList1.ImageStream");
-            ImageList1.TransparentColor = Color.Transparent;
-            ImageList1.Images.SetKeyName(0, "dialog-ok-apply.png");
-            ImageList1.Images.SetKeyName(1, "dialog-cancel.png");
-            ImageList1.Images.SetKeyName(2, "tool-animator.png");
-            ImageList1.Images.SetKeyName(3, "audio-headphones.png");
-            ImageList1.Images.SetKeyName(4, "text.png");
-            ImageList1.Images.SetKeyName(5, "clock.png");
-            ImageList1.Images.SetKeyName(6, "application-octet-stream.png");
             // 
             // AttachmentsForm
             // 

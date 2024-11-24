@@ -103,8 +103,28 @@ namespace MakeMKV_Title_Decoder.Forms
                     name = null;
                 }
 
+                if (name != null) {
+                    string? err = Utils.IsValidFileName(name);
+                    if (err != null) {
+                        MessageBox.Show("Invalid file name: " + name);
+                        return;
+                    }
+                }
+
                 selection.Name = name;
                 RefreshAttachmentsListItem(AttachmentsList.SelectedItems[0], selection);
+            }
+        }
+
+        private void NameTextBox_TextChanged(object sender, EventArgs e)
+        {
+            bool valid = (Utils.IsValidFileName(NameTextBox.Text) == null);
+            if (valid)
+            {
+                NameTextBox.BackColor = SystemColors.Window;
+            } else
+            {
+                NameTextBox.BackColor = Color.Red;
             }
         }
     }

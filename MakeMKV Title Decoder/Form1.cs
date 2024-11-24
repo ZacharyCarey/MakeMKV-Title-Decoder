@@ -260,5 +260,15 @@ namespace MakeMKV_Title_Decoder
             }
             new AttachmentsForm(this.Disc).ShowDialog();
         }
+
+        private void CollectionsBtn_Click(object sender, EventArgs e)
+        {
+            if (Disc == null)
+            {
+                MessageBox.Show("Please load a disc first.");
+                return;
+            }
+            new CollectionsForm(this.Disc).ShowDialog();
+        }
     }
 }

@@ -30,6 +30,9 @@ namespace MakeMKV_Title_Decoder.Data
         public List<Playlist> Playlists = new();
 
         [JsonInclude]
+        public List<Collection> Collections = new(); 
+
+        [JsonInclude]
         public List<ShowOutputName> ShowOutputNames = new();
 
         public RenameData(DiscIdentity discID) {
