@@ -6,29 +6,29 @@ using System.Threading.Tasks;
 using MakeMKV_Title_Decoder.Data;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
-    public class PlaylistListItem {
-        public Playlist Playlist;
+    public class ExportableListItem {
+        public Exportable Export;
         public string? Icon = null;
 
-        public PlaylistListItem(Playlist playlist) {
-            this.Playlist = playlist;
+        public ExportableListItem(Exportable playlist) {
+            this.Export = playlist;
         }
 
         public override string ToString() {
-            return this.Playlist.Name ?? "?";
+            return this.Export.Name ?? "?";
         }
     }
 
-    public class PlaylistListBox : ListBox {
+    public class ExportableListBox : ListBox {
 
         public ImageList? SmallIconList { get; set; } = null;
 
-        public new PlaylistListItem? SelectedItem {
+        public new ExportableListItem? SelectedItem {
             get
             {
                 if (base.SelectedItem != null)
                 {
-                    return (PlaylistListItem)base.SelectedItem;
+                    return (ExportableListItem)base.SelectedItem;
                 }
                 return null;
             }
@@ -36,22 +36,22 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             set => base.SelectedItem = value;
         }
 
-        public IEnumerable<PlaylistListItem> AllItems => this.Items.Cast<PlaylistListItem>();
+        public IEnumerable<ExportableListItem> AllItems => this.Items.Cast<ExportableListItem>();
 
-        public PlaylistListBox() {
+        public ExportableListBox() {
             this.DrawMode = DrawMode.OwnerDrawFixed;
             this.DrawItem += LoadedPlaylistListBox_DrawItem;
         }
 
-        public void Add(PlaylistListItem item) {
+        public void Add(ExportableListItem item) {
             this.Items.Add(item);
         }
 
-        public void Add(Playlist playlist) {
-            this.Items.Add(new PlaylistListItem(playlist));
+        public void Add(Exportable export) {
+            this.Items.Add(new ExportableListItem(export));
         }
 
-        public void Remove(PlaylistListItem item) {
+        public void Remove(ExportableListItem item) {
             this.Items.Remove(item);
         }
 
@@ -59,11 +59,11 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             this.Items.Clear();
         }
 
-        public PlaylistListItem? FindItem(Playlist playlist) {
+        public ExportableListItem? FindItem(Exportable export) {
             foreach (var obj in this.Items)
             {
-                PlaylistListItem item = (PlaylistListItem)obj;
-                if (item.Playlist == playlist)
+                ExportableListItem item = (ExportableListItem)obj;
+                if (item.Export == export)
                 {
                     return item;
                 }
@@ -78,7 +78,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             if (e.Index >= 0 && e.Index < this.Items.Count)
             {
                 object? item = this.Items[e.Index];
-                if (item != null && item is PlaylistListItem itr)
+                if (item != null && item is ExportableListItem itr)
                 {
                     text = item.ToString() ?? "";
                     icon = itr.Icon;

@@ -18,6 +18,18 @@ using MakeMKV_Title_Decoder.Data.Renames;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
+    public interface Exportable
+    {
+        /// <summary>
+        /// The user-given name of the collection/playlist
+        /// </summary>
+        public string Name { get; }
+
+        public OutputName OutputFile { get; }
+
+        public void Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null);
+    }
+
     public partial class FileRenamerForm : Form
     {
         const string IconError = "dialog-error.png";
@@ -52,7 +64,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 { this.FeaturettesRadioButton, FeatureType.Featurettes },
                 { this.BehindTheScenesRadioButton, FeatureType.BehindTheScenes },
                 { this.DeletedScenesRadioButton, FeatureType.DeletedScenes },
-                { this.InterviewsRadioButton, FeatureType.Interviews }
+                { this.InterviewsRadioButton, FeatureType.Interviews },
+                { this.GalleryRadioButton, FeatureType.Gallery }
             };
 
             RadioButtonReverseLookup = new() {
@@ -65,29 +78,30 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 { FeatureType.Featurettes, this.FeaturettesRadioButton },
                 { FeatureType.BehindTheScenes, this.BehindTheScenesRadioButton },
                 { FeatureType.DeletedScenes, this.DeletedScenesRadioButton },
-                { FeatureType.Interviews, this.InterviewsRadioButton }
+                { FeatureType.Interviews, this.InterviewsRadioButton },
+                { FeatureType.Gallery, this.GalleryRadioButton }
             };
 
-            this.PlaylistListBox1.Clear();
-            foreach (var playlist in disc.RenameData.Playlists)
+            this.ExportableListBox1.Clear();
+            foreach (Exportable exportable in disc.RenameData.Playlists.Concat<Exportable>(disc.RenameData.Collections))
             {
-                var item = new PlaylistListItem(playlist);
+                var item = new ExportableListItem(exportable);
                 item.Icon = IconError;
-                this.PlaylistListBox1.Add(item);
+                this.ExportableListBox1.Add(item);
                 CheckForErrors(item);
             }
 
-            PlaylistListBox1_SelectedIndexChanged(null, null);
+            ExportableListBox1_SelectedIndexChanged(null, null);
         }
 
         private void FileRenamerForm_Load(object sender, EventArgs e)
         {
         }
 
-        private void PlaylistListBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void ExportableListBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var selected = this.PlaylistListBox1.SelectedItem;
-            var output = selected?.Playlist?.OutputFile;
+            var selected = this.ExportableListBox1.SelectedItem;
+            var output = selected?.Export?.OutputFile;
 
             this.OptionsPanel.Enabled = (selected != null);
             this.MultiVersionCheckBox.Checked = (output?.MultiVersion != null);
@@ -119,6 +133,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.BehindTheScenesRadioButton.Enabled = isMovie;
             this.DeletedScenesRadioButton.Enabled = isMovie;
             this.InterviewsRadioButton.Enabled = isMovie;
+            this.GalleryRadioButton.Enabled = isMovie;
 
             RadioButtonReverseLookup[output?.Type ?? FeatureType.MainFeature].PerformClick();
             this.ExtraNameTextBox.Text = (output?.ExtraName ?? "");
@@ -154,11 +169,11 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         private TmdbID? ParseID()
         {
-            PlaylistListItem playlist;
-            if (this.PlaylistListBox1.SelectedItem == null) return null;
-            if (this.PlaylistListBox1.SelectedItem is PlaylistListItem item)
+            ExportableListItem export;
+            if (this.ExportableListBox1.SelectedItem == null) return null;
+            if (this.ExportableListBox1.SelectedItem is ExportableListItem item)
             {
-                playlist = item;
+                export = item;
             }
             else
             {
@@ -166,9 +181,9 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             ShowOutputName? showName = null;
-            if (playlist.Playlist.OutputFile.ShowIndex >= 0)
+            if (export.Export.OutputFile.ShowIndex >= 0)
             {
-                showName = this.Disc.RenameData.ShowOutputNames[(int)playlist.Playlist.OutputFile.ShowIndex];
+                showName = this.Disc.RenameData.ShowOutputNames[(int)export.Export.OutputFile.ShowIndex];
             }
 
             TmdbID? id = null;
@@ -204,33 +219,33 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             return id;
         }
 
-        private bool IsError(Playlist playlist)
+        private bool IsError(Exportable export)
         {
-            TmdbID? id = playlist.OutputFile.GetTmdbID(this.Disc.RenameData);
+            TmdbID? id = export.OutputFile.GetTmdbID(this.Disc.RenameData);
             if (id == null) return true;
             if (id.Type == ShowType.TV)
             {
                 if (id.Season == null || id.Episode == null) return true;
             }
 
-            if (playlist.OutputFile.Type == null) return true;
-            if (string.IsNullOrWhiteSpace(playlist.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
-            if (playlist.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(playlist.OutputFile.MultiVersion)) return true;
-            if (playlist.OutputFile.Type != null && playlist.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(playlist.OutputFile.ExtraName)) return true;
+            if (export.OutputFile.Type == null) return true;
+            if (string.IsNullOrWhiteSpace(export.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
+            if (export.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(export.OutputFile.MultiVersion)) return true;
+            if (export.OutputFile.Type != null && export.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(export.OutputFile.ExtraName)) return true;
 
             return false;
         }
 
-        private void CheckForErrors(PlaylistListItem item)
+        private void CheckForErrors(ExportableListItem item)
         {
-            var playlist = item.Playlist;
-            if (playlist.OutputFile.GetShowName(this.Disc.RenameData) == null)
+            var export = item.Export;
+            if (export.OutputFile.GetShowName(this.Disc.RenameData) == null)
             {
                 item.Icon = IconError;
             }
             else
             {
-                if (IsError(playlist))
+                if (IsError(export))
                 {
                     item.Icon = IconWarn;
                 }
@@ -240,15 +255,15 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 }
             }
 
-            PlaylistListBox1.Invalidate();
+            ExportableListBox1.Invalidate();
         }
 
         private void ApplyChangesBtn_Click(object sender, EventArgs e)
         {
-            var selectedItem = this.PlaylistListBox1.SelectedItem;
+            var selectedItem = this.ExportableListBox1.SelectedItem;
             if (selectedItem != null)
             {
-                Playlist playlist = selectedItem.Playlist;
+                Exportable export = selectedItem.Export;
 
                 // Verify names before saving
                 if (this.MultiVersionCheckBox.Checked)
@@ -289,26 +304,26 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 }
 
 
-                playlist.OutputFile.MultiVersion = (this.MultiVersionCheckBox.Checked ? this.MultiVersionTextBox.Text : null);
-                playlist.OutputFile.Type = SelectedType;
-                playlist.OutputFile.ExtraName = (this.SelectedType == FeatureType.MainFeature) ? null : this.ExtraNameTextBox.Text;
+                export.OutputFile.MultiVersion = (this.MultiVersionCheckBox.Checked ? this.MultiVersionTextBox.Text : null);
+                export.OutputFile.Type = SelectedType;
+                export.OutputFile.ExtraName = (this.SelectedType == FeatureType.MainFeature) ? null : this.ExtraNameTextBox.Text;
 
                 long temp;
                 if (long.TryParse(this.SeasonTextBox.Text, out temp))
                 {
-                    playlist.OutputFile.Season = temp;
+                    export.OutputFile.Season = temp;
                 }
                 else
                 {
-                    playlist.OutputFile.Season = -1;
+                    export.OutputFile.Season = -1;
                 }
                 if (long.TryParse(this.EpisodeTextBox.Text, out temp))
                 {
-                    playlist.OutputFile.Episode = temp;
+                    export.OutputFile.Episode = temp;
                 }
                 else
                 {
-                    playlist.OutputFile.Episode = -1;
+                    export.OutputFile.Episode = -1;
                 }
                 CheckForErrors(selectedItem);
             }
@@ -327,12 +342,13 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 case FeatureType.DeletedScenes: return "deleted scenes";
                 case FeatureType.Interviews: return "interviews";
                 case FeatureType.Trailers: return "trailers";
+                case FeatureType.Gallery: return "Gallery";
                 default:
                     return null;
             }
         }
 
-        private void Export(params Playlist[] playlists)
+        private void Export(params Exportable[] exportables)
         {
             string rootFolder;
             using (FolderBrowserDialog browser = new())
@@ -353,21 +369,21 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             // Get a list of all exported items
-            List<Tuple<string, string?, string, Playlist>> exports = new();
-            foreach (var playlist in playlists)
+            List<(string OutputFolder, string? BonusFolder, string OutputFile, Exportable Export)> exports = new();
+            foreach (var export in exportables)
             {
-                OutputName output = playlist.OutputFile;
+                OutputName output = export.OutputFile;
                 try
                 {
                     ShowOutputName showName = this.Disc.RenameData.ShowOutputNames[(int)output.ShowIndex];
                     string outputFolder = showName.GetFolderPath(output.Season);
                     string? bonusFolder = output.GetBonusFolder(showName.Type);
                     string outputFile = output.GetFileName(showName);
-                    exports.Add(new(outputFolder, bonusFolder, outputFile, playlist));
+                    exports.Add((outputFolder, bonusFolder, outputFile, export));
                 }
                 catch (Exception ex)
                 {
-                    if (MessageBox.Show($"Failed to determine output file for playlist '{playlist.Name}'. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                    if (MessageBox.Show($"Failed to determine output file for export '{export.Name}'. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         return;
                     }
@@ -390,10 +406,10 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             // Export files
             for (int i = 0; i < exports.Count; i++)
             {
-                string outputFolder = exports[i].Item1;
-                string? bonusFolder = exports[i].Item2;
-                string outputFile = exports[i].Item3;
-                var playlist = exports[i].Item4;
+                string outputFolder = exports[i].OutputFolder;
+                string? bonusFolder = exports[i].BonusFolder;
+                string outputFile = exports[i].OutputFile;
+                var export = exports[i].Export;
 
                 string fullPath;
                 if (bonusFolder == null)
@@ -446,20 +462,20 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     }
                 }
 
-                MkvToolNix.MkvToolNixInterface.Merge(playlist.GetMergeData(this.Disc), Path.Combine(fullPath, outputFile), null, new SimpleProgress((uint)i, (uint)exports.Count));
+                export.Export(this.Disc, fullPath, outputFile, null, new SimpleProgress((uint)i, (uint)exports.Count));
             }
         }
 
         private void ExportAllBtn_Click(object sender, EventArgs e)
         {
-            List<Playlist> exports = new();
-            foreach (var selected in this.PlaylistListBox1.AllItems)
+            List<Exportable> exports = new();
+            foreach (var selected in this.ExportableListBox1.AllItems)
             {
                 if (selected != null)
                 {
                     if (selected.Icon != IconGood)
                     {
-                        if (MessageBox.Show($"Playlist '{selected.Playlist.Name}' has an error and can't be exported. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        if (MessageBox.Show($"Export '{selected.Export.Name}' has an error and can't be exported. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                         {
                             return;
                         }
@@ -469,7 +485,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         }
                     }
 
-                    exports.Add(selected.Playlist);
+                    exports.Add(selected.Export);
                 }
             }
 
@@ -488,56 +504,56 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         private void ExportSelectedBtn_Click(object sender, EventArgs e)
         {
-            var selected = PlaylistListBox1.SelectedItem;
+            var selected = ExportableListBox1.SelectedItem;
             if (selected != null)
             {
                 if (selected.Icon != IconGood)
                 {
-                    MessageBox.Show($"Playlist '{selected.Playlist.Name}' has an error and can't be exported.");
+                    MessageBox.Show($"Export '{selected.Export.Name}' has an error and can't be exported.");
                     return;
                 }
-                Export(selected.Playlist);
+                Export(selected.Export);
             }
         }
 
         private void CopyToOthersBtn_Click(object sender, EventArgs e)
         {
-            if (this.PlaylistListBox1.SelectedItem != null && this.PlaylistListBox1.SelectedItem is PlaylistListItem playlist)
+            if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
-                long showIndex = playlist.Playlist.OutputFile.ShowIndex;
+                long showIndex = export.Export.OutputFile.ShowIndex;
 
-                foreach (var item in PlaylistListBox1.AllItems.Where(x => x != playlist))
+                foreach (var item in ExportableListBox1.AllItems.Where(x => x != export))
                 {
-                    item.Playlist.OutputFile.ShowIndex = showIndex;
+                    item.Export.OutputFile.ShowIndex = showIndex;
                     CheckForErrors(item);
                 }
 
-                PlaylistListBox1.Invalidate();
+                ExportableListBox1.Invalidate();
             }
         }
 
         private void SelectShowBtn_Click(object sender, EventArgs e)
         {
-            if (this.PlaylistListBox1.SelectedItem != null && this.PlaylistListBox1.SelectedItem is PlaylistListItem playlist)
+            if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
                 var form = new ShowSelector(this.Disc.RenameData);
                 var result = form.ShowDialog();
                 if (result == DialogResult.OK && form.Result != null)
                 {
-                    playlist.Playlist.OutputFile.ShowIndex = this.Disc.RenameData.ShowOutputNames.IndexOf(form.Result);
+                    export.Export.OutputFile.ShowIndex = this.Disc.RenameData.ShowOutputNames.IndexOf(form.Result);
                     this.SelectedShowLabel.Text = form.Result.Name;
 
-                    CheckForErrors(playlist);
-                    PlaylistListBox1.Invalidate();
+                    CheckForErrors(export);
+                    ExportableListBox1.Invalidate();
                 }
             }
         }
 
         private void TmdbBtn_Click(object sender, EventArgs e)
         {
-            if (this.PlaylistListBox1.SelectedItem != null && this.PlaylistListBox1.SelectedItem is PlaylistListItem playlist)
+            if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
-                TmdbID? defaultID = playlist.Playlist.OutputFile.GetTmdbID(this.Disc.RenameData);
+                TmdbID? defaultID = export.Export.OutputFile.GetTmdbID(this.Disc.RenameData);
 
                 var form = new TmdbBrowserForm(/*!FirstTmdb*/false, false, false, defaultID);
                 //FirstTmdb = false;

@@ -178,6 +178,7 @@ namespace MakeMKV_Title_Decoder.Data
                 case FeatureType.DeletedScenes: return "deleted scenes";
                 case FeatureType.Interviews: return "interviews";
                 case FeatureType.Trailers: return "trailers";
+                case FeatureType.Gallery: return "gallery";
                 default:
                     return null;
             }

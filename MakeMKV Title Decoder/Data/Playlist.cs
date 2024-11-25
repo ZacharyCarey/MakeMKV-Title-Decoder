@@ -1,4 +1,6 @@
-﻿using MkvToolNix;
+﻿using libbluray.bdnav.Mpls;
+using MakeMKV_Title_Decoder.Forms.FileRenamer;
+using MkvToolNix;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,7 @@ using Utils;
 
 namespace MakeMKV_Title_Decoder.Data
 {
-	public class Playlist
+	public class Playlist : Exportable
 	{
 
 		/// <summary>
@@ -28,7 +30,7 @@ namespace MakeMKV_Title_Decoder.Data
 		/// How the output file should be renamed based on season, episode, type, etc
 		/// </summary>
 		[JsonInclude]
-		public OutputName OutputFile = new();
+		public OutputName OutputFile { get; private set; } = new();
 
 		/// <summary>
 		/// Source files added to the playlist
@@ -39,7 +41,10 @@ namespace MakeMKV_Title_Decoder.Data
 		[JsonInclude]
 		public List<PlaylistSourceTrack> SourceTracks = new();
 
-		public static Playlist? Import(LoadedDisc disc, DiscPlaylist importPlaylist)
+		[JsonIgnore]
+        string Exportable.Name => this.Name ?? "N/A";
+
+        public static Playlist? Import(LoadedDisc disc, DiscPlaylist importPlaylist)
 		{
 			int streamUID = 0;
 
@@ -96,7 +101,7 @@ namespace MakeMKV_Title_Decoder.Data
 			return playlist;
 		} 
 
-		public MergeData GetMergeData(LoadedDisc disc)
+		private MergeData GetMergeData(LoadedDisc disc)
 		{
 			var mergeData = new MergeData();
 			mergeData.Title = this.Title;
@@ -195,5 +200,10 @@ namespace MakeMKV_Title_Decoder.Data
 				return 0;
             }
         }
-	}
+
+        void Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress)
+        {
+            MkvToolNix.MkvToolNixInterface.Merge(this.GetMergeData(disc), Path.Combine(outputFolder, outputFile), progress, totalProgress);
+        }
+    }
 }

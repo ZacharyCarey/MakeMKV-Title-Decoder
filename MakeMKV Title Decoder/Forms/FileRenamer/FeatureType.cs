@@ -15,6 +15,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
         Featurettes,
         BehindTheScenes,
         DeletedScenes,
-        Interviews
+        Interviews,
+        Gallery
     }
 }

@@ -28,7 +28,7 @@
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FileRenamerForm));
             splitContainer1 = new SplitContainer();
-            PlaylistListBox1 = new PlaylistListBox();
+            ExportableListBox1 = new ExportableListBox();
             imageList1 = new ImageList(components);
             panel1 = new Panel();
             ExportSelectedBtn = new Button();
@@ -59,6 +59,7 @@
             SeasonTextBox = new TextBox();
             label4 = new Label();
             label3 = new Label();
+            GalleryRadioButton = new RadioButton();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -77,7 +78,7 @@
             // 
             // splitContainer1.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(PlaylistListBox1);
+            splitContainer1.Panel1.Controls.Add(ExportableListBox1);
             splitContainer1.Panel1.Controls.Add(panel1);
             // 
             // splitContainer1.Panel2
@@ -89,16 +90,16 @@
             // 
             // PlaylistListBox1
             // 
-            PlaylistListBox1.Dock = DockStyle.Fill;
-            PlaylistListBox1.DrawMode = DrawMode.OwnerDrawFixed;
-            PlaylistListBox1.FormattingEnabled = true;
-            PlaylistListBox1.Location = new Point(0, 0);
-            PlaylistListBox1.Name = "PlaylistListBox1";
-            PlaylistListBox1.SelectedItem = null;
-            PlaylistListBox1.Size = new Size(452, 775);
-            PlaylistListBox1.SmallIconList = imageList1;
-            PlaylistListBox1.TabIndex = 1;
-            PlaylistListBox1.SelectedIndexChanged += PlaylistListBox1_SelectedIndexChanged;
+            ExportableListBox1.Dock = DockStyle.Fill;
+            ExportableListBox1.DrawMode = DrawMode.OwnerDrawFixed;
+            ExportableListBox1.FormattingEnabled = true;
+            ExportableListBox1.Location = new Point(0, 0);
+            ExportableListBox1.Name = "ExportableListBox1";
+            ExportableListBox1.SelectedItem = null;
+            ExportableListBox1.Size = new Size(452, 775);
+            ExportableListBox1.SmallIconList = imageList1;
+            ExportableListBox1.TabIndex = 1;
+            ExportableListBox1.SelectedIndexChanged += ExportableListBox1_SelectedIndexChanged;
             // 
             // imageList1
             // 
@@ -184,7 +185,7 @@
             // 
             // ApplyChangesBtn
             // 
-            ApplyChangesBtn.Location = new Point(6, 699);
+            ApplyChangesBtn.Location = new Point(6, 722);
             ApplyChangesBtn.Name = "ApplyChangesBtn";
             ApplyChangesBtn.Size = new Size(75, 23);
             ApplyChangesBtn.TabIndex = 17;
@@ -195,6 +196,7 @@
             // OptionsPanel
             // 
             OptionsPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            OptionsPanel.Controls.Add(GalleryRadioButton);
             OptionsPanel.Controls.Add(ExtraName);
             OptionsPanel.Controls.Add(ExtraNameTextBox);
             OptionsPanel.Controls.Add(MainFeatureRadioButton);
@@ -211,13 +213,13 @@
             OptionsPanel.Controls.Add(MultiVersionCheckBox);
             OptionsPanel.Location = new Point(6, 305);
             OptionsPanel.Name = "OptionsPanel";
-            OptionsPanel.Size = new Size(892, 373);
+            OptionsPanel.Size = new Size(892, 411);
             OptionsPanel.TabIndex = 16;
             // 
             // ExtraName
             // 
             ExtraName.AutoSize = true;
-            ExtraName.Location = new Point(3, 344);
+            ExtraName.Location = new Point(3, 369);
             ExtraName.Name = "ExtraName";
             ExtraName.Size = new Size(42, 15);
             ExtraName.TabIndex = 15;
@@ -228,7 +230,7 @@
             ExtraNameTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             ExtraNameTextBox.BackColor = SystemColors.Window;
             ExtraNameTextBox.Enabled = false;
-            ExtraNameTextBox.Location = new Point(51, 341);
+            ExtraNameTextBox.Location = new Point(51, 366);
             ExtraNameTextBox.Name = "ExtraNameTextBox";
             ExtraNameTextBox.Size = new Size(838, 23);
             ExtraNameTextBox.TabIndex = 12;
@@ -422,6 +424,17 @@
             label3.TabIndex = 6;
             label3.Text = "Season:";
             // 
+            // GalleryRadioButton
+            // 
+            GalleryRadioButton.AutoSize = true;
+            GalleryRadioButton.Location = new Point(3, 341);
+            GalleryRadioButton.Name = "GalleryRadioButton";
+            GalleryRadioButton.Size = new Size(61, 19);
+            GalleryRadioButton.TabIndex = 16;
+            GalleryRadioButton.Text = "Gallery";
+            GalleryRadioButton.UseVisualStyleBackColor = true;
+            GalleryRadioButton.CheckedChanged += FeatureTypeRadioButton_CheckedChanged;
+            // 
             // FileRenamerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -448,7 +461,7 @@
         #endregion
 
         private SplitContainer splitContainer1;
-        private PlaylistListBox PlaylistListBox1;
+        private ExportableListBox ExportableListBox1;
         private ImageList imageList1;
         private Panel panel1;
         private Panel panel2;
@@ -479,5 +492,6 @@
         private Label SelectedShowLabel;
         private Button ApplyChangesBtn;
         private Button TmdbBtn;
+        private RadioButton GalleryRadioButton;
     }
 }
