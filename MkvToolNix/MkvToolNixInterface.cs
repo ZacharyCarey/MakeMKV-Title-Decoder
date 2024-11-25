@@ -8,6 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Utils;
 
@@ -111,15 +113,42 @@ namespace MkvToolNix
             }
         }
 
-        public static void Merge(MergeData playlist, string outputFile, IProgress<SimpleProgress>? progress = null, SimpleProgress? totalProgress = null)
+        public static Exception? Merge(MergeData playlist, string outputFile, IProgress<SimpleProgress>? progress = null, SimpleProgress? totalProgress = null)
         {
-            // TODO use the json file option to prevent console issues?
-
             //string args = $"--title \"Test Title\" -o \"{outputFile}\" --track-name 5:\"Director Commentary\" {Path.Combine(disc.RootPath, "BDMV", "STREAM", "00001.m2ts")}";
             IEnumerable<string> args = playlist.GetCommand(outputFile);
-            string cmd = string.Join(" ", args);
-            Console.WriteLine(cmd); // TODO put in ParseCommandForceArgs?
-            TestData? result = ParseCommandForceArgs<TestData>(progress, "mkvmerge.exe", cmd, totalProgress);
+            JsonArray json = [.. args];
+
+            string tempFilePath = "";
+            Stream? tempFile = null;
+            try
+            {
+                tempFilePath = Path.GetTempFileName();
+                tempFile = System.IO.File.OpenWrite(tempFilePath);
+                JsonSerializer.Serialize(tempFile, json);
+                tempFile.Close();
+                tempFile = null;
+            } catch(Exception ex)
+            {
+                try
+                {
+                    if (tempFile != null) tempFile.Close();
+                    System.IO.File.Delete(tempFilePath);
+                }
+                catch (Exception) { }
+
+                return ex;
+            }
+
+            TestData? result = ParseCommandForceArgs<TestData>(progress, "mkvmerge.exe", $"@{tempFilePath}", totalProgress);
+
+            try
+            {
+                System.IO.File.Delete(tempFilePath);
+            }catch(Exception) { 
+            }
+
+            return null;
         }
 
         

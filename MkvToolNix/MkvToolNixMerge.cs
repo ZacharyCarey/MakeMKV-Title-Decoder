@@ -28,11 +28,11 @@ namespace MkvToolNix
             if (Title != null)
             {
                 yield return "--title";
-                yield return $"\"{this.Title}\"";
+                yield return $"{this.Title}";
             }
 
             yield return "--output";
-            yield return $"\"{outputPath}\"";
+            yield return $"{outputPath}";
 
             foreach (var sourceFile in SourceFiles)
             {
@@ -168,7 +168,7 @@ namespace MkvToolNix
                 yield return command;
             }
 
-            yield return $"\"{this.Path}\"";
+            yield return $"{this.Path}";
 
             foreach(var appendedFile in this.AppendedFiles)
             {
@@ -177,7 +177,7 @@ namespace MkvToolNix
                     yield return command;
                 }
                 yield return "+";
-                yield return $"\"{appendedFile.Path}\"";
+                yield return $"{appendedFile.Path}";
             }
         }
     
@@ -337,7 +337,7 @@ namespace MkvToolNix
             if (this.Name != null)
             {
                 yield return "--track-name";
-                yield return $"{this.ID}:\"{this.Name}\"";
+                yield return $"{this.ID}:{this.Name}";
             }
 
             if (this.CommentaryFlag != null)
