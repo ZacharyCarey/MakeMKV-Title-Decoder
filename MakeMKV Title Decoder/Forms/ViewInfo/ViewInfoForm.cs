@@ -26,8 +26,8 @@ namespace MakeMKV_Title_Decoder
             this.disc = disc;
             InitializeComponent();
 
-            this.TitleList.Items.AddRange(disc.Streams.ToArray());
-            this.TitleList.Items.AddRange(disc.GetPlaylists().Cast<object>().ToArray());
+            this.TitleList.Items.AddRange(disc.Streams.ToArray()); // LoadedStream
+            //this.TitleList.Items.AddRange(disc.GetPlaylists().Cast<object>().ToArray()); // DiscPlaylist
             this.DiscNameLabel.Text = disc.Title ?? "";
             this.DiscSetLabel.Text = $"{disc.SetNumber?.ToString() ?? "?"}/{disc.NumberOfSets?.ToString() ?? "?"}";
         }
@@ -132,24 +132,19 @@ namespace MakeMKV_Title_Decoder
             return val.Value ? "dialog-ok-apply.png" : "dialog-cancel.png";
         }
 
-        private string GetPropertiesString(MkvTrack track) {
-            if (track.Properties == null)
-            {
-                return "";
-            }
-
+        private string GetPropertiesString(LoadedTrack track) {
             List<string> props = new();
-            switch (track.Type)
+            switch (track.Identity.Type)
             {
                 case MkvTrackType.Audio:
-                    if (track.Properties.AudioSamplingFrequency != null)
-                        props.Add(track.Properties.AudioSamplingFrequency.ToString() + " Hz");
-                    if (track.Properties.AudioChannels != null)
-                        props.Add(track.Properties.AudioChannels.ToString() + " channels");
+                    if (track.Identity.AudioSamplingFrequency != null)
+                        props.Add(track.Identity.AudioSamplingFrequency.ToString() + " Hz");
+                    if (track.Identity.AudioChannels != null)
+                        props.Add(track.Identity.AudioChannels.ToString() + " channels");
                     break;
                 case MkvTrackType.Video:
-                    if (track.Properties.PixelDimensions != null)
-                        props.Add(track.Properties.PixelDimensions + " pixels");
+                    if (track.Identity.PixelDimensions != null)
+                        props.Add(track.Identity.PixelDimensions + " pixels");
                     break;
                 case MkvTrackType.Subtitles:
 
@@ -162,10 +157,10 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void TitleList_SelectedIndexChanged(object sender, EventArgs e) {
-            MkvMergeID? stream = (MkvMergeID?)TitleList.SelectedItem;
-            this.ContainerLabel.Text = stream?.Container?.Type ?? "";
-            this.FileSizeLabel.Text = (stream?.FileSize ?? new DataSize()).ToString();
-            this.DirectoryLabel.Text = stream?.FileDirectory ?? "N/A";
+            LoadedStream? stream = (LoadedStream?)TitleList.SelectedItem;
+            this.ContainerLabel.Text = ""; //stream?.Container?.Type ?? "";
+            this.FileSizeLabel.Text = (stream?.Identity?.FileSize ?? new DataSize()).ToString();
+            this.DirectoryLabel.Text = stream?.Identity.SourceFile ?? "N/A";
 
             this.VideoPlayer.LoadVideo(null);
             TrackList.Items.Clear();
@@ -174,12 +169,12 @@ namespace MakeMKV_Title_Decoder
                 // Track info
                 foreach (var track in stream.Tracks)
                 {
-                    ListViewItem CodecItem = new ListViewItem(track.Codec ?? "");
+                    ListViewItem CodecItem = new ListViewItem(track.Identity.Codec ?? "");
                     CodecItem.UseItemStyleForSubItems = false;
                     CodecItem.Tag = track;
                     TrackList.Items.Add(CodecItem);
 
-                    MkvTrackType? type = track.Type;
+                    MkvTrackType? type = track.Identity.Type;
                     if (type == MkvTrackType.Unknown)
                     {
                         type = null;
@@ -188,47 +183,47 @@ namespace MakeMKV_Title_Decoder
                     TypeItem.Tag = GetTypeIcon(type);
                     CodecItem.SubItems.Add(TypeItem);
 
-                    ListViewItem.ListViewSubItem LanguageItem = new(CodecItem, track.Properties?.Language ?? "");
+                    ListViewItem.ListViewSubItem LanguageItem = new(CodecItem, track.Identity.Language ?? "");
                     CodecItem.SubItems.Add(LanguageItem);
 
-                    ListViewItem.ListViewSubItem NameItem = new(CodecItem, track.Properties?.TrackName ?? "");
+                    ListViewItem.ListViewSubItem NameItem = new(CodecItem, track.Identity.TrackName ?? "");
                     CodecItem.SubItems.Add(NameItem);
 
-                    ListViewItem.ListViewSubItem IdItem = new(CodecItem, track.ID.ToString() ?? "");
+                    ListViewItem.ListViewSubItem IdItem = new(CodecItem, track.MkvToolNixID.ToString() ?? "");
                     CodecItem.SubItems.Add(IdItem);
 
-                    bool? isDefault = track.Properties?.DefaultTrack;
+                    bool? isDefault = track.RenameData.DefaultFlag;
                     ListViewItem.ListViewSubItem DefaultItem = new(CodecItem, isDefault?.ToString() ?? "");
                     DefaultItem.Tag = GetBoolIcon(isDefault);
                     CodecItem.SubItems.Add(DefaultItem);
 
-                    bool? isForced = track.Properties?.ForcedTrack;
+                    bool? isForced = null;
                     ListViewItem.ListViewSubItem ForcedItem = new(CodecItem, isForced?.ToString() ?? "");
                     ForcedItem.Tag = GetBoolIcon(isForced);
                     CodecItem.SubItems.Add(ForcedItem);
 
-                    ListViewItem.ListViewSubItem CharSetItem = new(CodecItem, track.Properties?.Encoding);
+                    ListViewItem.ListViewSubItem CharSetItem = new(CodecItem, "N/A"); // Encoding
                     CodecItem.SubItems.Add(CharSetItem);
 
                     ListViewItem.ListViewSubItem PropsItem = new(CodecItem, GetPropertiesString(track));
                     CodecItem.SubItems.Add(PropsItem);
 
-                    ListViewItem.ListViewSubItem SourceFileItem = new(CodecItem, stream.FileName ?? "");
+                    ListViewItem.ListViewSubItem SourceFileItem = new(CodecItem, Path.GetFileName(stream.Identity.SourceFile));
                     CodecItem.SubItems.Add(SourceFileItem);
 
-                    ListViewItem.ListViewSubItem SourceDirItem = new(CodecItem, stream.FileDirectory ?? "");
+                    ListViewItem.ListViewSubItem SourceDirItem = new(CodecItem, Path.GetDirectoryName(stream.Identity.SourceFile));
                     CodecItem.SubItems.Add(SourceDirItem);
 
-                    ListViewItem.ListViewSubItem ProgramItem = new(CodecItem, track.Properties?.ProgramNumber?.ToString() ?? "");
+                    ListViewItem.ListViewSubItem ProgramItem = new(CodecItem, track.Identity.Number?.ToString() ?? "");
                     CodecItem.SubItems.Add(ProgramItem);
 
-                    ListViewItem.ListViewSubItem DelayItem = new(CodecItem, track.Properties?.CodecDelay?.ToString() ?? "");
+                    ListViewItem.ListViewSubItem DelayItem = new(CodecItem, "N/A"); // Codec delay
                     CodecItem.SubItems.Add(DelayItem);
                 }
 
-                if (stream.FileDirectory != null && stream.FileName != null && stream.FileName.EndsWith(".m2ts"))
+                if (stream.Identity.SourceFile != null)
                 {
-                    this.VideoPlayer.LoadVideo(Path.Combine(stream.FileDirectory, stream.FileName));
+                    this.VideoPlayer.LoadVideo(Path.Combine(disc.Root, stream.Identity.SourceFile));
                 }
             }
         }
