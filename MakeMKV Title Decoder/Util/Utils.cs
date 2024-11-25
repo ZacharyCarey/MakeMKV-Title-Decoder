@@ -45,7 +45,7 @@ namespace MakeMKV_Title_Decoder {
         /// <param name="fileName"></param>
         /// <returns></returns>
         public static IEnumerable<(int Index, char Value)> GetInvalidFileNameChars(string fileName) {
-            char[] invalidChars = { '<', '>', ':', '/', '\\', '|', '?', '*' };
+            char[] invalidChars = { '<', '>', ':', '/', '\\', '|', '?', '*', '\"' };
             for (int i = 0; i < fileName.Length; i++)
             {
                 char c = fileName[i];
