@@ -99,38 +99,12 @@ namespace MkvToolNix
         {
             this.Path = System.IO.Path.GetFullPath(filePath);
         }
-    }
 
-    public class SourceFile : File
-    {
-        internal List<AppendedFile> AppendedFiles = new();
-        private List<SourceTrack> Tracks = new();
-        internal override IEnumerable<Track> AllTracks => Tracks;
-
-        internal SourceFile(string filePath) : base(filePath)
+        protected IEnumerable<string> GetTrackSelectionCommands()
         {
-
-        }
-
-        public AppendedFile AddAppendedFile(string filePath)
-        {
-            AppendedFile file = new(filePath);
-            AppendedFiles.Add(file);
-            return file;
-        }
-
-        public SourceTrack AddTrack(long ID, MkvTrackType type, int index = -1)
-        {
-            SourceTrack track = new(ID, type, index);
-            this.Tracks.Add(track);
-            return track;
-        }
-
-        internal IEnumerable<string> GetCommand()
-        {
-            List<SourceTrack> audioTracks = this.Tracks.Where(x => x.CopyToOutput && x.TrackType == MkvTrackType.Audio).ToList();
-            List<SourceTrack> videoTracks = this.Tracks.Where(x => x.CopyToOutput && x.TrackType == MkvTrackType.Video).ToList();
-            List<SourceTrack> subtitleTracks = this.Tracks.Where(x => x.CopyToOutput && x.TrackType == MkvTrackType.Subtitles).ToList();
+            List<Track> audioTracks = this.AllTracks.Where(x => x.CopyToOutput && x.TrackType == MkvTrackType.Audio).ToList();
+            List<Track> videoTracks = this.AllTracks.Where(x => x.CopyToOutput && x.TrackType == MkvTrackType.Video).ToList();
+            List<Track> subtitleTracks = this.AllTracks.Where(x => x.CopyToOutput && x.TrackType == MkvTrackType.Subtitles).ToList();
 
             if (audioTracks.Count > 0)
             {
@@ -160,6 +134,40 @@ namespace MkvToolNix
             else
             {
                 yield return "--no-subtitles";
+            }
+        }
+    }
+
+    public class SourceFile : File
+    {
+        internal List<AppendedFile> AppendedFiles = new();
+        private List<SourceTrack> Tracks = new();
+        internal override IEnumerable<Track> AllTracks => Tracks;
+
+        internal SourceFile(string filePath) : base(filePath)
+        {
+
+        }
+
+        public AppendedFile AddAppendedFile(string filePath)
+        {
+            AppendedFile file = new(filePath);
+            AppendedFiles.Add(file);
+            return file;
+        }
+
+        public SourceTrack AddTrack(long ID, MkvTrackType type, int index = -1)
+        {
+            SourceTrack track = new(ID, type, index);
+            this.Tracks.Add(track);
+            return track;
+        }
+
+        internal IEnumerable<string> GetCommand()
+        {
+            foreach(var cmd in base.GetTrackSelectionCommands())
+            {
+                yield return cmd;
             }
 
             // Get all track flags
@@ -227,7 +235,12 @@ namespace MkvToolNix
 
         internal IEnumerable<string> GetCommands()
         {
-            foreach(var track in this.Tracks)
+            foreach (var cmd in base.GetTrackSelectionCommands())
+            {
+                yield return cmd;
+            }
+
+            foreach (var track in this.Tracks)
             {
                 foreach(string cmd in track.GetCommand())
                 {

@@ -171,7 +171,20 @@ namespace MakeMKV_Title_Decoder.Data
 							var appendedTrack = appendedFile.AddTrack(loadedTrack.MkvToolNixID, loadedTrack.Identity.Type ?? MkvToolNix.Data.MkvTrackType.Unknown, lastTrack);
 
 							appendedTrack.CopyToOutput = playlistAppendedTrack.Copy;
-							if (appendedDelay > 0) appendedTrack.DelayMS = appendedDelay;
+							if (playlistAppendedTrack.Copy == false)
+							{
+								DelayInfo delayInfo = new DelayInfo();
+								delayInfo.DelayType = DelayType.Source;
+								delayInfo.StreamUID = playlistAppendedTrack.PlaylistSource.StreamUID;
+								appendedDelay += CalculateDelay(delayInfo, disc, playlistFiles);
+							} else
+							{
+								if (appendedDelay > 0)
+								{
+									appendedTrack.DelayMS = appendedDelay;
+									appendedDelay = 0;
+								}
+                            }
 
                             lastTrack = appendedTrack;
 						}

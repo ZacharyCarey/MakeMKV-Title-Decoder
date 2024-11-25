@@ -223,12 +223,23 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         {
             TmdbID? id = export.OutputFile.GetTmdbID(this.Disc.RenameData);
             if (id == null) return true;
+            if (export.OutputFile.Type == null) return true;
+
             if (id.Type == ShowType.TV)
             {
-                if (id.Season == null || id.Episode == null) return true;
+                if (export.OutputFile.Type != null)
+                {
+                    if (export.OutputFile.Type == FeatureType.MainFeature)
+                    {
+                        if (id.Season == null || id.Episode == null) return true;
+                    } else
+                    {
+                        if (id.Season == null) return true;
+                    }
+                }
+                
             }
-
-            if (export.OutputFile.Type == null) return true;
+            
             if (string.IsNullOrWhiteSpace(export.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
             if (export.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(export.OutputFile.MultiVersion)) return true;
             if (export.OutputFile.Type != null && export.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(export.OutputFile.ExtraName)) return true;
@@ -545,6 +556,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
                     CheckForErrors(export);
                     ExportableListBox1.Invalidate();
+                    ExportableListBox1_SelectedIndexChanged(null, null);
                 }
             }
         }

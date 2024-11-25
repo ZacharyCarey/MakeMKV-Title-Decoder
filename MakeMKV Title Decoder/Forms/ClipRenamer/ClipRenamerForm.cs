@@ -125,6 +125,7 @@ namespace MakeMKV_Title_Decoder
         {
             if (ClipsList.SelectedItems.Count <= 0)
             {
+                SelectClip(null);
                 return;
             }
 
