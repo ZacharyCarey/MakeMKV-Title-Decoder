@@ -40,6 +40,29 @@ namespace MakeMKV_Title_Decoder {
             SetProgress(CurrentProgress, progress.Current, progress.CurrentMax);
             SetProgress(TotalProgress, progress.Total, progress.TotalMax);
         }
+
+        public static void Run<TProgress>(Action<IProgress<TProgress>> action) where TProgress : TaskProgress
+        {
+            var progressViewer = new TaskProgressViewer<Task, TProgress>((IProgress<TProgress> progress) =>
+            {
+                return Task.Run(() => {
+                    action(progress);
+                });
+            });
+            progressViewer.ShowDialog();
+        }
+
+        public static TResult Run<TProgress, TResult>(Func<IProgress<TProgress>, TResult> func) where TProgress : TaskProgress
+        {
+            var progressViewer = new TaskProgressViewer<Task<TResult>, TProgress>((IProgress<TProgress> progress) =>
+            {
+                return Task<TResult>.Run(() => {
+                    return func(progress);
+                });
+            });
+            progressViewer.ShowDialog();
+            return progressViewer.Task.Result;
+        }
     }
 
     public class TaskProgressViewer<TTask, TProgress> : TaskProgressViewerForm 

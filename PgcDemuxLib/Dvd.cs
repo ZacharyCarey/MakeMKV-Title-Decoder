@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using Utils;
 
 namespace PgcDemuxLib
 {
@@ -97,8 +98,29 @@ namespace PgcDemuxLib
             return true;
         }
 
-        public bool DemuxAllCells(string outputFolder)
+        public bool DemuxAllCells(string outputFolder, IProgress<SimpleProgress>? progress = null)
         {
+            // Get a count of the number of cells we need to extract
+            SimpleProgress currentProgress = new();
+            currentProgress.TotalMax = 0;
+            if (this.VMG.MenuCellAddressTable != null)
+            {
+                currentProgress.TotalMax += (uint)this.VMG.MenuCellAddressTable.All.Count();
+            }
+            foreach(var vts in this.TitleSets)
+            {
+                if (vts.MenuCellAddressTable != null)
+                {
+                    currentProgress.TotalMax += (uint)vts.MenuCellAddressTable.All.Count();
+                }
+                if (vts.TitleSetCellAddressTable != null)
+                {
+                    currentProgress.TotalMax += (uint)vts.TitleSetCellAddressTable.All.Count();
+                }
+            }
+
+            progress?.Report(currentProgress);
+
             if (this.VMG.MenuCellAddressTable != null)
             {
                 foreach (var cell in this.VMG.MenuCellAddressTable.All)
@@ -107,6 +129,8 @@ namespace PgcDemuxLib
                     {
                         return false;
                     }
+                    currentProgress.Total++;
+                    progress?.Report(currentProgress);
                 }
             }
 
@@ -120,6 +144,8 @@ namespace PgcDemuxLib
                         {
                             return false;
                         }
+                        currentProgress.Total++;
+                        progress?.Report(currentProgress);
                     }
                 }
 
@@ -131,6 +157,8 @@ namespace PgcDemuxLib
                         {
                             return false;
                         }
+                        currentProgress.Total++;
+                        progress?.Report(currentProgress);
                     }
                 }
             }

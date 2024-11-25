@@ -23,7 +23,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
 
         public override bool ForceVlcTrackIndex => true;
 
-        public static DvdDisc? Open(string root, IProgress<TaskProgress>? progress = null)
+        public static DvdDisc? Open(string root, IProgress<SimpleProgress>? progress = null)
         {
             string streamDir = "VIDEO_TS";
             string demuxDir = Path.Combine(streamDir, "demux");
@@ -51,7 +51,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
                 bool success;
                 try
                 {
-                    success = dvd.DemuxAllCells(fullDemuxPath);
+                    success = dvd.DemuxAllCells(fullDemuxPath, progress);
                 } catch (Exception)
                 {
                     success = false;
@@ -66,6 +66,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
 
             string[] streamFilePaths = Directory.GetFiles(fullDemuxPath);
             currentProgress.TotalMax = (uint)streamFilePaths.Length;
+            progress?.Report(currentProgress);
 
             List<LoadedStream> streams = new();
             for (int i = 0; i < streamFilePaths.Length; i++)

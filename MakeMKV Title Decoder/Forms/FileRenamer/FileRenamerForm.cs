@@ -415,66 +415,79 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             List<string> metaFolders = new();
 
             // Export files
-            for (int i = 0; i < exports.Count; i++)
+            TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) =>
             {
-                string outputFolder = exports[i].OutputFolder;
-                string? bonusFolder = exports[i].BonusFolder;
-                string outputFile = exports[i].OutputFile;
-                var export = exports[i].Export;
+                SimpleProgress currentProgress = new();
+                currentProgress.TotalMax = (uint)exports.Count * 100;
+                progress?.Report(currentProgress);
 
-                string fullPath;
-                if (bonusFolder == null)
+                for (int i = 0; i < exports.Count; i++)
                 {
-                    fullPath = Path.Combine(rootFolder, outputFolder);
-                }
-                else
-                {
-                    fullPath = Path.Combine(rootFolder, outputFolder, bonusFolder);
-                }
+                    currentProgress.Total = (uint)i * 100;
+                    progress?.Report(currentProgress);
 
-                if (!Directory.Exists(fullPath))
-                {
-                    // Attempt to create directory
-                    try
+                    string outputFolder = exports[i].OutputFolder;
+                    string? bonusFolder = exports[i].BonusFolder;
+                    string outputFile = exports[i].OutputFile;
+                    var export = exports[i].Export;
+
+                    string fullPath;
+                    if (bonusFolder == null)
                     {
-                        Directory.CreateDirectory(fullPath);
+                        fullPath = Path.Combine(rootFolder, outputFolder);
                     }
-                    catch (Exception)
+                    else
                     {
-                        MessageBox.Show("Failed to create output folder.");
-                        continue;
+                        fullPath = Path.Combine(rootFolder, outputFolder, bonusFolder);
                     }
-                }
 
-                if (saveMeta && !metaFolders.Contains(outputFolder))
-                {
-                    metaFolders.Add(outputFolder);
-
-                    try
+                    if (!Directory.Exists(fullPath))
                     {
-                        string optional = "";
-                        if (this.Disc.Identity.NumberOfSets != null || this.Disc.Identity.SetNumber != null)
+                        // Attempt to create directory
+                        try
                         {
-                            optional = $" {this.Disc.Identity.SetNumber?.ToString() ?? "_"} of {this.Disc.Identity.NumberOfSets?.ToString() ?? "_"}";
+                            Directory.CreateDirectory(fullPath);
                         }
-
-                        string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Utils.GetFileSafeName($"{this.Disc.Identity.Title}{optional}")}.json");
-                        Directory.CreateDirectory(Path.Combine(rootFolder, outputFolder, ".metadata"));
-
-                        var options = new JsonSerializerOptions { WriteIndented = false, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
-                        using var stream = File.Create(file);
-                        JsonSerializer.Serialize(stream, this.Disc.RenameData, options);
-                        stream.Flush();
-                        stream.Close();
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Failed to create output folder.");
+                            continue;
+                        }
                     }
-                    catch (Exception)
+
+                    if (saveMeta && !metaFolders.Contains(outputFolder))
                     {
-                        MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
+                        metaFolders.Add(outputFolder);
+
+                        try
+                        {
+                            string optional = "";
+                            if (this.Disc.Identity.NumberOfSets != null || this.Disc.Identity.SetNumber != null)
+                            {
+                                optional = $" {this.Disc.Identity.SetNumber?.ToString() ?? "_"} of {this.Disc.Identity.NumberOfSets?.ToString() ?? "_"}";
+                            }
+
+                            string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Utils.GetFileSafeName($"{this.Disc.Identity.Title}{optional}")}.json");
+                            Directory.CreateDirectory(Path.Combine(rootFolder, outputFolder, ".metadata"));
+
+                            var options = new JsonSerializerOptions { WriteIndented = false, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+                            using var stream = File.Create(file);
+                            JsonSerializer.Serialize(stream, this.Disc.RenameData, options);
+                            stream.Flush();
+                            stream.Close();
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
+                        }
                     }
+
+                    export.Export(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
                 }
 
-                export.Export(this.Disc, fullPath, outputFile, null, new SimpleProgress((uint)i, (uint)exports.Count));
-            }
+                currentProgress.Total = currentProgress.TotalMax;
+                progress?.Report(currentProgress);
+            });
         }
 
         private void ExportAllBtn_Click(object sender, EventArgs e)
@@ -523,6 +536,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     MessageBox.Show($"Export '{selected.Export.Name}' has an error and can't be exported.");
                     return;
                 }
+
                 Export(selected.Export);
             }
         }

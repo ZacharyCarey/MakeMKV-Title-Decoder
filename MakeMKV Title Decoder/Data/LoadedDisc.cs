@@ -43,7 +43,7 @@ namespace MakeMKV_Title_Decoder.Data
 			}
         }
 
-		public static LoadedDisc? TryLoadDisc(string rootFolder, IProgress<TaskProgress>? progress = null)
+		public static LoadedDisc? TryLoadDisc(string rootFolder, IProgress<SimpleProgress>? progress = null)
 		{
 			try
 			{
@@ -51,10 +51,10 @@ namespace MakeMKV_Title_Decoder.Data
 				
 				if (Directory.Exists(Path.Combine(rootFolder, "VIDEO_TS")))
 				{
-					return DvdDisc.Open(rootFolder);
+					return DvdDisc.Open(rootFolder, progress);
 				} else if (Directory.Exists(Path.Combine(rootFolder, "BDMV")))
 				{
-					return BlurayDisc.Open(rootFolder);
+					return BlurayDisc.Open(rootFolder, progress);
 				} else
 				{
 					throw new Exception("Unknown disc type.");

@@ -8,6 +8,7 @@ using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
 using PgcDemuxLib;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Utils;
 using static System.Windows.Forms.Design.AxImporter;
 
 namespace MakeMKV_Title_Decoder
@@ -114,8 +115,9 @@ namespace MakeMKV_Title_Decoder
                     LoadedDisc? parsedDisc = null;
                     try
                     {
-                        // TODO Async loading using progress bar dialog
-                        parsedDisc = LoadedDisc.TryLoadDisc(openFileDialog.SelectedPath);
+                        parsedDisc = TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) => {
+                            return LoadedDisc.TryLoadDisc(openFileDialog.SelectedPath, progress);
+                        });
                     }
                     catch (Exception ex)
                     {

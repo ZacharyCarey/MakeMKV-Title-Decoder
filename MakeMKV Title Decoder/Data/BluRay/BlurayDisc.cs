@@ -24,7 +24,7 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
             this.playlists = playlists;
         }
 
-        public static BlurayDisc? Open(string root, IProgress<TaskProgress>? progress = null)
+        public static BlurayDisc? Open(string root, IProgress<SimpleProgress>? progress = null)
         {
             string streamDir = Path.Combine("BDMV", "STREAM");
             string playlistDir = Path.Combine("BDMV", "PLAYLIST");
