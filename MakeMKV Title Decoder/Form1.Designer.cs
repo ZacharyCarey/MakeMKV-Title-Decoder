@@ -23,8 +23,7 @@
         ///  Required method for Designer support - do not modify
         ///  the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             components = new System.ComponentModel.Container();
             toolTip1 = new ToolTip(components);
             menuStrip1 = new MenuStrip();
@@ -42,6 +41,7 @@
             BackupBtn = new Button();
             AttachmentsBtn = new Button();
             CollectionsBtn = new Button();
+            DiscNameLabel = new Label();
             menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -93,7 +93,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(8, 38);
+            label1.Location = new Point(8, 24);
             label1.Margin = new Padding(2, 0, 2, 0);
             label1.Name = "label1";
             label1.Size = new Size(74, 15);
@@ -103,7 +103,7 @@
             // LoadedDiscLabel
             // 
             LoadedDiscLabel.AutoSize = true;
-            LoadedDiscLabel.Location = new Point(92, 38);
+            LoadedDiscLabel.Location = new Point(8, 39);
             LoadedDiscLabel.Margin = new Padding(2, 0, 2, 0);
             LoadedDiscLabel.Name = "LoadedDiscLabel";
             LoadedDiscLabel.Size = new Size(38, 15);
@@ -187,11 +187,22 @@
             CollectionsBtn.UseVisualStyleBackColor = true;
             CollectionsBtn.Click += CollectionsBtn_Click;
             // 
+            // DiscNameLabel
+            // 
+            DiscNameLabel.AutoSize = true;
+            DiscNameLabel.Location = new Point(86, 24);
+            DiscNameLabel.Margin = new Padding(2, 0, 2, 0);
+            DiscNameLabel.Name = "DiscNameLabel";
+            DiscNameLabel.Size = new Size(38, 15);
+            DiscNameLabel.TabIndex = 18;
+            DiscNameLabel.Text = "label2";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(309, 247);
+            Controls.Add(DiscNameLabel);
             Controls.Add(CollectionsBtn);
             Controls.Add(AttachmentsBtn);
             Controls.Add(BackupBtn);
@@ -229,5 +240,6 @@
 		private Button BackupBtn;
         private Button AttachmentsBtn;
         private Button CollectionsBtn;
+        private Label DiscNameLabel;
     }
 }

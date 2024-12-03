@@ -23,6 +23,7 @@ namespace MakeMKV_Title_Decoder
             InitializeComponent();
 
             LoadedDiscLabel.Text = "";
+            DiscNameLabel.Text = "";
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -136,6 +137,7 @@ namespace MakeMKV_Title_Decoder
             }
 
             LoadedDiscLabel.Text = this.Disc?.Root ?? "";
+            DiscNameLabel.Text = this.Disc?.Identity?.GetSafeDiscName() ?? "";
         }
 
         private void RenameClipsBtn_Click(object sender, EventArgs e)

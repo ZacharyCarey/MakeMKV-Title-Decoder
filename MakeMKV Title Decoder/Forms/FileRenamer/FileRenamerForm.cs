@@ -27,7 +27,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         public OutputName OutputFile { get; }
 
-        public void Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null);
+        public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null);
     }
 
     public partial class FileRenamerForm : Form
@@ -421,6 +421,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 currentProgress.TotalMax = (uint)exports.Count * 100;
                 progress?.Report(currentProgress);
 
+                List<string> exportErrors = new();
                 for (int i = 0; i < exports.Count; i++)
                 {
                     currentProgress.Total = (uint)i * 100;
@@ -461,13 +462,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
                         try
                         {
-                            string optional = "";
-                            if (this.Disc.Identity.NumberOfSets != null || this.Disc.Identity.SetNumber != null)
-                            {
-                                optional = $" {this.Disc.Identity.SetNumber?.ToString() ?? "_"} of {this.Disc.Identity.NumberOfSets?.ToString() ?? "_"}";
-                            }
-
-                            string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Utils.GetFileSafeName($"{this.Disc.Identity.Title}{optional}")}.json");
+                            string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Disc.Identity.GetSafeDiscName()}.json");
                             Directory.CreateDirectory(Path.Combine(rootFolder, outputFolder, ".metadata"));
 
                             var options = new JsonSerializerOptions { WriteIndented = false, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
@@ -482,7 +477,16 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         }
                     }
 
-                    export.Export(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                    bool result = export.Export(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                    if (!result)
+                    {
+                        exportErrors.Add($"Failed to export \"{export.Name}\"");
+                    }
+                }
+
+                foreach(var error in exportErrors)
+                {
+                    MessageBox.Show(error);
                 }
 
                 currentProgress.Total = currentProgress.TotalMax;

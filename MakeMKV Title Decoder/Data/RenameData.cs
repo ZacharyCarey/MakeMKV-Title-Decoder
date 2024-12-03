@@ -71,6 +71,16 @@ namespace MakeMKV_Title_Decoder.Data
             if (this.SetNumber != other.SetNumber) return "Disc set number does not match.";
             return null;
         }
+
+        public string GetSafeDiscName() {
+            string optional = "";
+            if (NumberOfSets != null || SetNumber != null)
+            {
+                optional = $" {SetNumber?.ToString() ?? "_"} of {NumberOfSets?.ToString() ?? "_"}";
+            }
+
+            return Utils.GetFileSafeName($"{Title ?? "Unknown"}{optional}");
+        }
     }
 
     public class OutputName {

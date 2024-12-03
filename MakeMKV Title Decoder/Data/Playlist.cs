@@ -214,9 +214,9 @@ namespace MakeMKV_Title_Decoder.Data
             }
         }
 
-        void Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress)
+        bool Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress)
         {
-            MkvToolNix.MkvToolNixInterface.Merge(this.GetMergeData(disc), Path.Combine(outputFolder, outputFile), progress, totalProgress);
+            return MkvToolNix.MkvToolNixInterface.Merge(this.GetMergeData(disc), Path.Combine(outputFolder, outputFile), progress, totalProgress) == null;
         }
     }
 }

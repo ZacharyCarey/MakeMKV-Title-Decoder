@@ -148,6 +148,11 @@ namespace MkvToolNix
             }catch(Exception) { 
             }
 
+            if (result == null || result.Errors.Count > 0 || !result.FoundSuccess)
+            {
+                return new Exception("Error occured while exporting.");
+            }
+
             return null;
         }
 

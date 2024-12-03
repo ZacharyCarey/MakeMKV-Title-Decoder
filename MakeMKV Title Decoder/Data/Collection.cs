@@ -24,7 +24,7 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public OutputName OutputFile { get; private set; } = new();
 
-        public void Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null)
+        public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null)
         {
             string folderName = Path.GetFileNameWithoutExtension(outputFile);
             string folderPath = Path.Combine(outputFolder, folderName);
@@ -36,9 +36,10 @@ namespace MakeMKV_Title_Decoder.Data
             catch (Exception ex)
             {
                 MessageBox.Show("Failed to create folder: " + folderPath);
-                return;
+                return false;
             }
 
+            bool success = true;
             foreach(var attachmentPath in this.Attachments)
             {
                 // Find attachment details.
@@ -58,15 +59,23 @@ namespace MakeMKV_Title_Decoder.Data
                         }
                         outputPath = Path.Combine(folderPath, outputPath);
                         File.Copy(sourcePath, outputPath, true);
+                        if (!File.Exists(outputPath))
+                        {
+                            success = false;
+                        }
                     }catch(Exception ex)
                     {
                         MessageBox.Show("Failed to copy file: " + ex.Message);
+                        success = false;
                     }
                 } else
                 {
                     MessageBox.Show("Critical error: Failed to find attachment rename data.");
+                    success = false;
                 }
             }
+
+            return success;
         }
 
         public override string ToString()
