@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -348,7 +349,7 @@ namespace PgcDemuxLib
             }
         }*/
 
-        public bool Demux(string output_folder) {
+        public bool Demux(string output_folder, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null) {
             if (m_iMode == DemuxingMode.PGC)
             {
                 // Check if PGC exists in done in PgcDemux
@@ -423,9 +424,9 @@ namespace PgcDemuxLib
                     return false;
                 }
                 if (m_iDomain == DemuxingDomain.Titles)
-                    return CIDDemux(output_folder, nSelCid, null);
+                    return CIDDemux(output_folder, nSelCid, progress, maxProgress);
                 else
-                    return CIDMDemux(output_folder, nSelCid, null);
+                    return CIDMDemux(output_folder, nSelCid, progress, maxProgress);
             } else
             {
                 throw new Exception($"Unknown Program Mode {m_iMode}");
@@ -1431,7 +1432,7 @@ namespace PgcDemuxLib
             return iRet;
         }
 
-        bool CIDDemux(string output_folder, int nCell, object? pDlg) {
+        bool CIDDemux(string output_folder, int nCell, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null) {
             int nTotalSectors;
             int nSector;
             int k;
@@ -1444,6 +1445,12 @@ namespace PgcDemuxLib
             bool bMyCell;
             bool iRet;
             int nFrames;
+
+            SimpleProgress currentProgress = new();
+            if (maxProgress != null)
+            {
+                currentProgress = maxProgress.Value;
+            }
 
             if (nCell >= ifo.SortedTitleCells.Count)
             {
@@ -1458,6 +1465,10 @@ namespace PgcDemuxLib
 
             // Calculate  the total number of sectors
             nTotalSectors = ifo.SortedTitleCells[nCell].Size;
+            currentProgress.Current = 0;
+            currentProgress.CurrentMax = (uint)nTotalSectors;
+            progress?.Report(currentProgress);
+
             nSector = 0;
             iRet = true;
 
@@ -1483,7 +1494,11 @@ namespace PgcDemuxLib
             for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
             {
                 //readpack
-                if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
+                if ((i64 % MODUPDATE) == 0)
+                {
+                    currentProgress.Current = (uint)nSector;
+                    progress?.Report(currentProgress);
+                }
                 if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                 {
                     Console.WriteLine("Input error: Reached end of VOB too early");
@@ -1544,7 +1559,7 @@ namespace PgcDemuxLib
             return iRet;
         }
 
-        bool CIDMDemux(string output_folder, int nCell, object? pDlg) {
+        bool CIDMDemux(string output_folder, int nCell, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null) {
             int nTotalSectors;
             int nSector;
             int CID, VID;
@@ -1554,6 +1569,12 @@ namespace PgcDemuxLib
             bool bMyCell;
             bool iRet;
             int nFrames;
+
+            SimpleProgress currentProgress = new();
+            if (maxProgress != null)
+            {
+                currentProgress = maxProgress.Value;
+            }
 
             if (nCell >= ifo.SortedMenuCells.Count)
             {
@@ -1568,6 +1589,10 @@ namespace PgcDemuxLib
 
             // Calculate  the total number of sectors
             nTotalSectors = ifo.SortedMenuCells[nCell].Size;
+            currentProgress.Current = 0;
+            currentProgress.CurrentMax = (uint)nTotalSectors;
+            progress?.Report(currentProgress);
+
             nSector = 0;
             iRet = true;
 
@@ -1583,7 +1608,11 @@ namespace PgcDemuxLib
             for (i64 = 0, bMyCell = true; i64 < (i64EndSec - i64IniSec + 1) && m_bInProcess == true; i64++)
             {
                 //readpack
-                if ((i64 % MODUPDATE) == 0) UpdateProgress(pDlg, (int)((100 * nSector) / nTotalSectors));
+                if ((i64 % MODUPDATE) == 0)
+                {
+                    currentProgress.Current = (uint)nSector;
+                    progress?.Report(currentProgress);
+                }
                 if (Util.readbuffer(m_buffer, vobStream) != Dvd.SECTOR_SIZE)
                 {
                     Console.WriteLine("Input error: Reached end of VOB too early");

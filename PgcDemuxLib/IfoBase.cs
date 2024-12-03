@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
 
 namespace PgcDemuxLib
 {
@@ -195,7 +196,7 @@ namespace PgcDemuxLib
             return vidCells;
         }
 
-        public bool DemuxMenuCell(string outputFolder, int vobID, int cellID)
+        public bool DemuxMenuCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
         {
             IfoOptions options = new IfoOptions();
             options.Angle = 1;
@@ -207,12 +208,12 @@ namespace PgcDemuxLib
             options.CombinedVobName = $"VTS-{this.TitleSet:00}_Menu_VID-{vobID:X4}_CID-{cellID:X2}.VOB";
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
-            bool result = demux.Demux(outputFolder); ;
+            bool result = demux.Demux(outputFolder, progress, maxProgress); ;
             demux.Close();
             return result;
         }
 
-        public bool DemuxTitleCell(string outputFolder, int vobID, int cellID)
+        public bool DemuxTitleCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
         {
             IfoOptions options = new IfoOptions();
             options.Angle = 1;
@@ -232,7 +233,7 @@ namespace PgcDemuxLib
             options.CustomVOB.WriteVideoPacks = true;
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
-            bool result = demux.Demux(outputFolder);
+            bool result = demux.Demux(outputFolder, progress, maxProgress);
             demux.Close();
             return result;
         }

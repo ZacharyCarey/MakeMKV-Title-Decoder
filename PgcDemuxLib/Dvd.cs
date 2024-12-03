@@ -125,7 +125,7 @@ namespace PgcDemuxLib
             {
                 foreach (var cell in this.VMG.MenuCellAddressTable.All)
                 {
-                    if (!this.VMG.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID))
+                    if (!this.VMG.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress))
                     {
                         return false;
                     }
@@ -140,7 +140,7 @@ namespace PgcDemuxLib
                 {
                     foreach (var cell in vts.MenuCellAddressTable.All)
                     {
-                        if (!vts.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID))
+                        if (!vts.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress))
                         {
                             return false;
                         }
@@ -153,7 +153,7 @@ namespace PgcDemuxLib
                 {
                     foreach (var cell in vts.TitleSetCellAddressTable.All)
                     {
-                        if (!vts.DemuxTitleCell(outputFolder, cell.VobID, cell.CellID))
+                        if (!vts.DemuxTitleCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress))
                         {
                             return false;
                         }
