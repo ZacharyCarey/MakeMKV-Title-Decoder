@@ -149,7 +149,7 @@ namespace PgcDemuxLib.Data.VMG
                 this.MenuSubpictureAttributes = null;
             }
 
-            OrganizeCells();
+            OrganizeCells(true);
         }
 
         public bool DemuxMenu(string outputFolder, int pgcIndex)

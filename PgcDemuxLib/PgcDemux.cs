@@ -420,7 +420,7 @@ namespace PgcDemuxLib
                         }
                 } else
                 {
-                    for (int k = 0; k < ifo.SortedTitleCells.Count && nSelCid == -1; k++)
+                    for (int k = 0; k < ifo.SortedMenuCells.Count && nSelCid == -1; k++)
                         if (ifo.SortedMenuCells[k].VobID == m_nVid && ifo.SortedMenuCells[k].CellID == m_nCid)
                         {
                             nSelCid = k;

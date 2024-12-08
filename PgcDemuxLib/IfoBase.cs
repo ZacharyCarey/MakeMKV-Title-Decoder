@@ -40,7 +40,7 @@ namespace PgcDemuxLib
         /// <returns></returns>
         internal abstract string GetVobPath(int id);
 
-        protected void OrganizeCells()
+        protected void OrganizeCells(bool isVMG)
         {
             IEnumerable<ADT> titleCells = (this.TitleSetCellAddressTable != null) ? this.TitleSetCellAddressTable.All : Enumerable.Empty<ADT>();
             IEnumerable<PGC> titlePGC = (this.TitleProgramChainTable != null) ? this.TitleProgramChainTable.All : Enumerable.Empty<PGC>();
@@ -52,17 +52,35 @@ namespace PgcDemuxLib
             SortedMenuCells = GetCells(menuCells, menuPGC);
             CombinedMenuVobCells = GetVidCells(SortedMenuCells);
 
-            for (int k = 0; k < 10; k++)
+            if (isVMG)
             {
-                string vobName = $"VTS_{this.TitleSet:00}_{k:0}.VOB";
-
                 try
                 {
-                    VobSize[k] = (new FileInfo(Path.Combine(this.ParentFolder, vobName)).Length);
-                }
-                catch (Exception)
+                    VobSize[0] = (new FileInfo(Path.Combine(this.ParentFolder, "VIDEO_TS.VOB")).Length);
+                } catch (Exception)
                 {
-                    continue;
+                    VobSize[0] = 0;
+                }
+
+                for (int i = 1; i < 10; i++)
+                {
+                    VobSize[i] = 0;
+                }
+            } else
+            {
+
+                for (int k = 0; k < 10; k++)
+                {
+                    string vobName = $"VTS_{this.TitleSet:00}_{k:0}.VOB";
+
+                    try
+                    {
+                        VobSize[k] = (new FileInfo(Path.Combine(this.ParentFolder, vobName)).Length);
+                    } catch (Exception)
+                    {
+                        VobSize[k] = 0;
+                        continue;
+                    }
                 }
             }
         }

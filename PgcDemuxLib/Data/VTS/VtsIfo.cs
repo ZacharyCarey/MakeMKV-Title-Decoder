@@ -156,7 +156,7 @@ namespace PgcDemuxLib.Data.VTS
                 this.TitleSetSubpictureAttributes[i] = new VTS_SubpictureAttributes(file, 0x256 + i * 6);
             }
 
-            OrganizeCells();
+            OrganizeCells(false);
         }
 
         public bool DemuxMenuPgc(string outputFolder, int pgcIndex)
