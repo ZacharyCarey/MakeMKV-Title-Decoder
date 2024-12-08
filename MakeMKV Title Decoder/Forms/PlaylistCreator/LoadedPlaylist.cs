@@ -219,7 +219,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator
                     if (appended.Delay != null && appended.Delay.ClipDelay == file)
                     {
                         appended.Delay.ClipDelay = null;
-                        appended.Delay.MillisecondDelay = (long)file.Source.Identity.Duration.TotalMilliseconds;
+                        appended.Delay.MillisecondDelay = (long)file.Source.Duration.TotalMilliseconds;
                     }
                 }
             }

@@ -18,7 +18,7 @@ namespace Utils {
             this.ExePath = exePath;
         }
 
-        protected static IEnumerable<string> SearchProgramFiles(string folderName, string? exeName) {
+        public static IEnumerable<string> SearchProgramFiles(string folderName, string? exeName) {
             Environment.SpecialFolder[] searchLocations = {
                 Environment.SpecialFolder.CommonProgramFiles,
                 Environment.SpecialFolder.CommonProgramFilesX86,
@@ -70,7 +70,7 @@ namespace Utils {
             }
         }
 
-        protected static string? SearchLocalExeFiles(string relativeExePath)
+        public static string? SearchLocalExeFiles(string relativeExePath)
         {
             try
             {

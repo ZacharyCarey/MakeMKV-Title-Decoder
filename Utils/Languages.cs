@@ -4,8 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MakeMKV_Title_Decoder.Util
+namespace Utils
 {
+
+    /// <summary>
+    /// ISO 639-2
+    /// </summary>
     public struct LanguageCode
     {
         public readonly string Code;
@@ -42,7 +46,7 @@ namespace MakeMKV_Title_Decoder.Util
         }
     }
 
-    internal static class Languages
+    public static class Languages
     {
 
         static readonly Dictionary<string, LanguageCode> LanguageLookup = new Dictionary<string, LanguageCode>() {
@@ -555,6 +559,192 @@ namespace MakeMKV_Title_Decoder.Util
             {"zza", new("zza", "Zaza; Dimili; Dimli; Kirdki; Kirmanjki; Zazaki", false, false) },
         };
 
+        static Dictionary<string, string> Iso1ToIso2 = new() {
+            { "ab", "abk" },
+            { "aa", "aar" },
+            { "af", "afr" },
+            { "ak", "aka" },
+            { "sq", "sqi" },
+            { "am", "amh" },
+            { "ar", "ara" },
+            { "an", "arg" },
+            { "hy", "hye" },
+            { "as", "asm" },
+            { "av", "ava" },
+            { "ae", "ave" },
+            { "ay", "aym" },
+            { "az", "aze" },
+            { "bm", "bam" },
+            { "ba", "bak" },
+            { "eu", "eus" },
+            { "be", "bel" },
+            { "bn", "ben" },
+            { "bi", "bis" },
+            { "bs", "bos" },
+            { "br", "bre" },
+            { "bg", "bul" },
+            { "my", "mya" },
+            { "ca", "cat" },
+            { "ch", "cha" },
+            { "ce", "che" },
+            { "ny", "nya" },
+            { "zh", "zho" },
+            { "cu", "chu" },
+            { "cv", "chv" },
+            { "kw", "cor" },
+            { "co", "cos" },
+            { "cr", "cre" },
+            { "hr", "hrv" },
+            { "cs", "ces" },
+            { "da", "dan" },
+            { "dv", "div" },
+            { "nl", "nld" },
+            { "dz", "dzo" },
+            { "en", "eng" },
+            { "eo", "epo" },
+            { "et", "est" },
+            { "ee", "ewe" },
+            { "fo", "fao" },
+            { "fj", "fij" },
+            { "fi", "fin" },
+            { "fr", "fra" },
+            { "fy", "fry" },
+            { "ff", "ful" },
+            { "gd", "gla" },
+            { "gl", "glg" },
+            { "lg", "lug" },
+            { "ka", "kat" },
+            { "de", "deu" },
+            { "el", "ell" },
+            { "kl", "kal" },
+            { "gn", "grn" },
+            { "gu", "guj" },
+            { "ht", "hat" },
+            { "ha", "hau" },
+            { "he", "heb" },
+            { "hz", "her" },
+            { "hi", "hin" },
+            { "ho", "hmo" },
+            { "hu", "hun" },
+            { "is", "isl" },
+            { "io", "ido" },
+            { "ig", "ibo" },
+            { "id", "ind" },
+            { "ia", "ina" },
+            { "ie", "ile" },
+            { "iu", "iku" },
+            { "ik", "ipk" },
+            { "ga", "gle" },
+            { "it", "ita" },
+            { "ja", "jpn" },
+            { "jv", "jav" },
+            { "kn", "kan" },
+            { "kr", "kau" },
+            { "ks", "kas" },
+            { "kk", "kaz" },
+            { "km", "khm" },
+            { "ki", "kik" },
+            { "rw", "kin" },
+            { "ky", "kir" },
+            { "kv", "kom" },
+            { "kg", "kon" },
+            { "ko", "kor" },
+            { "kj", "kua" },
+            { "ku", "kur" },
+            { "lo", "lao" },
+            { "la", "lat" },
+            { "lv", "lav" },
+            { "li", "lim" },
+            { "ln", "lin" },
+            { "lt", "lit" },
+            { "lu", "lub" },
+            { "lb", "ltz" },
+            { "mk", "mkd" },
+            { "mg", "mlg" },
+            { "ms", "msa" },
+            { "ml", "mal" },
+            { "mt", "mlt" },
+            { "gv", "glv" },
+            { "mi", "mri" },
+            { "mr", "mar" },
+            { "mh", "mah" },
+            { "mn", "mon" },
+            { "na", "nau" },
+            { "nv", "nav" },
+            { "nd", "nde" },
+            { "nr", "nbl" },
+            { "ng", "ndo" },
+            { "ne", "nep" },
+            { "no", "nor" },
+            { "nb", "nob" },
+            { "nn", "nno" },
+            { "oc", "oci" },
+            { "oj", "oji" },
+            { "or", "ori" },
+            { "om", "orm" },
+            { "os", "oss" },
+            { "pi", "pli" },
+            { "ps", "pus" },
+            { "fa", "fas" },
+            { "pl", "pol" },
+            { "pt", "por" },
+            { "pa", "pan" },
+            { "qu", "que" },
+            { "ro", "ron" },
+            { "rm", "roh" },
+            { "rn", "run" },
+            { "ru", "rus" },
+            { "se", "sme" },
+            { "sm", "smo" },
+            { "sg", "sag" },
+            { "sa", "san" },
+            { "sc", "srd" },
+            { "sr", "srp" },
+            { "sn", "sna" },
+            { "sd", "snd" },
+            { "si", "sin" },
+            { "sk", "slk" },
+            { "sl", "slv" },
+            { "so", "som" },
+            { "st", "sot" },
+            { "es", "spa" },
+            { "su", "sun" },
+            { "sw", "swa" },
+            { "ss", "ssw" },
+            { "sv", "swe" },
+            { "tl", "tgl" },
+            { "ty", "tah" },
+            { "tg", "tgk" },
+            { "ta", "tam" },
+            { "tt", "tat" },
+            { "te", "tel" },
+            { "th", "tha" },
+            { "bo", "bod" },
+            { "ti", "tir" },
+            { "to", "ton" },
+            { "ts", "tso" },
+            { "tn", "tsn" },
+            { "tr", "tur" },
+            { "tk", "tuk" },
+            { "tw", "twi" },
+            { "ug", "uig" },
+            { "uk", "ukr" },
+            { "ur", "urd" },
+            { "uz", "uzb" },
+            { "ve", "ven" },
+            { "vi", "vie" },
+            { "vo", "vol" },
+            { "wa", "wln" },
+            { "cy", "cym" },
+            { "wo", "wol" },
+            { "xh", "xho" },
+            { "ii", "iii" },
+            { "yi", "yid" },
+            { "yo", "yor" },
+            { "za", "zha" },
+            { "zu", "zul" },
+        };
+
         public static bool IsValidLanguageCode(string lang)
         {
             lang = lang.ToLower();
@@ -564,6 +754,20 @@ namespace MakeMKV_Title_Decoder.Util
         public static IEnumerable<LanguageCode> GetAllLanguages()
         {
             return LanguageLookup.Values;
+        }
+
+        public static LanguageCode? ParseFromIso1(string lang) {
+            string Iso2;
+            if (Iso1ToIso2.TryGetValue(lang, out Iso2))
+            {
+                LanguageCode result;
+                if (LanguageLookup.TryGetValue(Iso2, out result))
+                {
+                    return result;
+                }
+            }
+
+            return null;
         }
     }
 }

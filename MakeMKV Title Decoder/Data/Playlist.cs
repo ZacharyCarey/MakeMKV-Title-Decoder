@@ -203,7 +203,7 @@ namespace MakeMKV_Title_Decoder.Data
             }
             else if (delay.DelayType == DelayType.Source)
             {
-				return (long)disc[playlistFiles[delay.StreamUID].SourceUID].RenameData.Identity.Duration.TotalMilliseconds;
+				return (long)disc[playlistFiles[delay.StreamUID].SourceUID].Duration.TotalMilliseconds;
             }
             else
             {

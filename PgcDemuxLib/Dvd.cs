@@ -1,7 +1,10 @@
-﻿using PgcDemuxLib.Data.VMG;
+﻿using FfmpegInterface.FFMpegCore;
+using FfmpegInterface.FFProbeCore;
+using PgcDemuxLib.Data.VMG;
 using PgcDemuxLib.Data.VTS;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
@@ -118,19 +121,38 @@ namespace PgcDemuxLib
                     currentProgress.TotalMax += (uint)vts.TitleSetCellAddressTable.All.Count();
                 }
             }
-
+            currentProgress.TotalMax *= 2; // One for demuxing the mpg stream, a second one for transcoding to mp4
             progress?.Report(currentProgress);
 
             if (this.VMG.MenuCellAddressTable != null)
             {
                 foreach (var cell in this.VMG.MenuCellAddressTable.All)
                 {
-                    if (!this.VMG.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress))
+                    // Demux mpg stream
+                    DemuxResult demux = this.VMG.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress);
+                    if (!demux.Successful)
                     {
                         return false;
                     }
                     currentProgress.Total++;
                     progress?.Report(currentProgress);
+
+                    // transcode to mp4
+                    string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
+                    TranscodeToMP4(Path.Combine(outputFolder, demux.OutputFileName), outputFile, demux, this.VMG.MenuAudioAttributes, progress, currentProgress);
+                    currentProgress.Total++;
+                    progress?.Report(currentProgress);
+
+                    // Cleanup
+                    try
+                    {
+                        File.Delete(Path.Combine(outputFolder, demux.OutputFileName));
+                    } catch(Exception ex)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("Failed to delete temporary file: " + demux.OutputFileName);
+                        Console.ResetColor();
+                    }
                 }
             }
 
@@ -140,12 +162,31 @@ namespace PgcDemuxLib
                 {
                     foreach (var cell in vts.MenuCellAddressTable.All)
                     {
-                        if (!vts.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress))
+                        // Demux mpg stream
+                        DemuxResult demux = vts.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress);
+                        if (!demux.Successful)
                         {
                             return false;
                         }
                         currentProgress.Total++;
                         progress?.Report(currentProgress);
+
+                        // transcode to mp4
+                        string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
+                        TranscodeToMP4(Path.Combine(outputFolder, demux.OutputFileName), outputFile, demux, vts.MenuAudioAttributes, progress, currentProgress);
+                        currentProgress.Total++;
+                        progress?.Report(currentProgress);
+
+                        // Cleanup
+                        try
+                        {
+                            File.Delete(Path.Combine(outputFolder, demux.OutputFileName));
+                        } catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine("Failed to delete temporary file: " + demux.OutputFileName);
+                            Console.ResetColor();
+                        }
                     }
                 }
 
@@ -153,17 +194,71 @@ namespace PgcDemuxLib
                 {
                     foreach (var cell in vts.TitleSetCellAddressTable.All)
                     {
-                        if (!vts.DemuxTitleCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress))
+                        // Demux mpg stream
+                        DemuxResult demux = vts.DemuxTitleCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress);
+                        if (!demux.Successful)
                         {
                             return false;
                         }
                         currentProgress.Total++;
                         progress?.Report(currentProgress);
+
+                        // transcode to mp4
+                        string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
+                        TranscodeToMP4(Path.Combine(outputFolder, demux.OutputFileName), outputFile, demux, vts.TitleSetAudioAttributes, progress, currentProgress);
+                        currentProgress.Total++;
+                        progress?.Report(currentProgress);
+
+                        // Cleanup
+                        try
+                        {
+                            File.Delete(Path.Combine(outputFolder, demux.OutputFileName));
+                        } catch (Exception ex)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine("Failed to delete temporary file: " + demux.OutputFileName);
+                            Console.ResetColor();
+                        }
                     }
                 }
             }
 
             return true;
+        }
+
+        private bool TranscodeToMP4(string inputFile, string outputFile, DemuxResult demux, ReadOnlyArray<Data.VTS_AudioAttributes> audioAttribs, IProgress<SimpleProgress>? progress, SimpleProgress currentProgress) {
+            // Determine video length, used to determine transcode progress
+            var mediaInfo = ffprobe.Analyse(inputFile);
+            if (mediaInfo == null) return false;
+
+            SelectedStreams streamOrder = new SelectedStreams().ByType(StreamType.Video);
+            foreach((int audioStreamID, int index) in demux.AudioStreamIDs.Order().WithIndex())
+            {
+                var audioAttrib = audioAttribs[index];
+                LanguageCode? lang = null;
+                if (audioAttrib.LanguageCode != null)
+                {
+                    lang = Languages.ParseFromIso1(audioAttrib.LanguageCode);
+                }
+                streamOrder.FromAnalysis(mediaInfo.AudioStreams[demux.AudioStreamIDs.IndexOf(audioStreamID)], lang);
+            }
+            streamOrder.ByType(StreamType.Subtitle);
+            //streamOrder.ByType(StreamType.Attachment);
+
+            var cmd = ffmpeg.TranscodeToMP4(
+                inputFile, 
+                outputFile, 
+                streamOrder, 
+                16
+            );
+
+            return cmd.NotifyOnProgress(
+                    (double percentage) => {
+                        currentProgress.Current = (uint)percentage;
+                        currentProgress.CurrentMax = 100;
+                        progress?.Report(currentProgress);
+                    }, mediaInfo.Duration)
+                .ProcessSynchronously();
         }
 
         public bool SaveToFile(string filePath)

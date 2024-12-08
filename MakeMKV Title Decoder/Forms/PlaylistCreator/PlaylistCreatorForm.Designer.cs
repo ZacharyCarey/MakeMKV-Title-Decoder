@@ -54,6 +54,10 @@ namespace MakeMKV_Title_Decoder
             PlaylistSourceDeleteBtn = new Button();
             PlaylistTrackOrder = new TrackList();
             panel4 = new Panel();
+            DeleteDelayBtn = new Button();
+            EditDelayBtn = new Button();
+            AddDelayBtn = new Button();
+            label3 = new Label();
             DownTrackBtn = new Button();
             TrackUpBtn = new Button();
             DisableTrackBtn = new Button();
@@ -61,10 +65,6 @@ namespace MakeMKV_Title_Decoder
             SourceList = new ListBox();
             SourcePropertiesPanel = new Panel();
             SourceApplyButton = new Button();
-            label3 = new Label();
-            AddDelayBtn = new Button();
-            EditDelayBtn = new Button();
-            DeleteDelayBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -369,6 +369,45 @@ namespace MakeMKV_Title_Decoder
             panel4.Size = new Size(91, 721);
             panel4.TabIndex = 0;
             // 
+            // DeleteDelayBtn
+            // 
+            DeleteDelayBtn.Location = new Point(6, 275);
+            DeleteDelayBtn.Name = "DeleteDelayBtn";
+            DeleteDelayBtn.Size = new Size(75, 23);
+            DeleteDelayBtn.TabIndex = 16;
+            DeleteDelayBtn.Text = "Delete";
+            DeleteDelayBtn.UseVisualStyleBackColor = true;
+            DeleteDelayBtn.Click += DeleteDelayBtn_Click;
+            // 
+            // EditDelayBtn
+            // 
+            EditDelayBtn.Location = new Point(6, 246);
+            EditDelayBtn.Name = "EditDelayBtn";
+            EditDelayBtn.Size = new Size(75, 23);
+            EditDelayBtn.TabIndex = 15;
+            EditDelayBtn.Text = "Edit";
+            EditDelayBtn.UseVisualStyleBackColor = true;
+            EditDelayBtn.Click += EditDelayBtn_Click;
+            // 
+            // AddDelayBtn
+            // 
+            AddDelayBtn.Location = new Point(6, 217);
+            AddDelayBtn.Name = "AddDelayBtn";
+            AddDelayBtn.Size = new Size(75, 23);
+            AddDelayBtn.TabIndex = 14;
+            AddDelayBtn.Text = "Add";
+            AddDelayBtn.UseVisualStyleBackColor = true;
+            AddDelayBtn.Click += AddDelayBtn_Click;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(6, 199);
+            label3.Name = "label3";
+            label3.Size = new Size(36, 15);
+            label3.TabIndex = 13;
+            label3.Text = "Delay";
+            // 
             // DownTrackBtn
             // 
             DownTrackBtn.Location = new Point(6, 133);
@@ -391,6 +430,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // DisableTrackBtn
             // 
+            DisableTrackBtn.Enabled = false;
             DisableTrackBtn.Location = new Point(6, 32);
             DisableTrackBtn.Name = "DisableTrackBtn";
             DisableTrackBtn.Size = new Size(75, 23);
@@ -401,6 +441,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // EnableTrackBtn
             // 
+            EnableTrackBtn.Enabled = false;
             EnableTrackBtn.Location = new Point(6, 3);
             EnableTrackBtn.Name = "EnableTrackBtn";
             EnableTrackBtn.Size = new Size(75, 23);
@@ -439,45 +480,6 @@ namespace MakeMKV_Title_Decoder
             SourceApplyButton.Text = "Add";
             SourceApplyButton.UseVisualStyleBackColor = true;
             SourceApplyButton.Click += SourceApplyButton_Click;
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(6, 199);
-            label3.Name = "label3";
-            label3.Size = new Size(36, 15);
-            label3.TabIndex = 13;
-            label3.Text = "Delay";
-            // 
-            // AddDelayBtn
-            // 
-            AddDelayBtn.Location = new Point(6, 217);
-            AddDelayBtn.Name = "AddDelayBtn";
-            AddDelayBtn.Size = new Size(75, 23);
-            AddDelayBtn.TabIndex = 14;
-            AddDelayBtn.Text = "Add";
-            AddDelayBtn.UseVisualStyleBackColor = true;
-            AddDelayBtn.Click += AddDelayBtn_Click;
-            // 
-            // EditDelayBtn
-            // 
-            EditDelayBtn.Location = new Point(6, 246);
-            EditDelayBtn.Name = "EditDelayBtn";
-            EditDelayBtn.Size = new Size(75, 23);
-            EditDelayBtn.TabIndex = 15;
-            EditDelayBtn.Text = "Edit";
-            EditDelayBtn.UseVisualStyleBackColor = true;
-            EditDelayBtn.Click += EditDelayBtn_Click;
-            // 
-            // DeleteDelayBtn
-            // 
-            DeleteDelayBtn.Location = new Point(6, 275);
-            DeleteDelayBtn.Name = "DeleteDelayBtn";
-            DeleteDelayBtn.Size = new Size(75, 23);
-            DeleteDelayBtn.TabIndex = 16;
-            DeleteDelayBtn.Text = "Delete";
-            DeleteDelayBtn.UseVisualStyleBackColor = true;
-            DeleteDelayBtn.Click += DeleteDelayBtn_Click;
             // 
             // PlaylistCreatorForm
             // 

@@ -14,6 +14,7 @@ namespace MakeMKV_Title_Decoder.Controls
     public class TrackListData : PropertyData
     {
         public LoadedTrack? Track = null;
+        public bool? EnableOverride = null;
     }
 
     public class TrackList : PropertiesList
@@ -98,10 +99,16 @@ namespace MakeMKV_Title_Decoder.Controls
             col6.DisplayIndex = 8;
             Columns.Add(col6);
 
+            ColumnHeader col10 = new();
+            col10.Text = "Source";
+            col10.Width = 320;
+            col10.DisplayIndex = 9;
+            Columns.Add(col10);
+
             SelectedIndexChanged += Event_SelectedIndexChanged;
         }
 
-        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null, object? Tag = null)
+        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null, object? Tag = null, bool? enableOverride = null)
         {
             TrackListData data = new();
             data.Track = track;
@@ -110,8 +117,9 @@ namespace MakeMKV_Title_Decoder.Controls
             data.IconKey = Icon;
             data.BackColor = backColor;
             data.Tag = null;
+            data.EnableOverride = enableOverride;
 
-            TrackListData[] subItems = new TrackListData[8];
+            TrackListData[] subItems = new TrackListData[9];
             for (int i = 0; i < subItems.Length; i++)
             {
                 subItems[i] = new TrackListData();
@@ -178,10 +186,11 @@ namespace MakeMKV_Title_Decoder.Controls
                     item.SubItems[1].IconColor = null;
                     item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
                     item.SubItems[3].Text = data?.Language ?? track.Identity.Language ?? ""; // lang
-                    item.SubItems[4].IconKey = GetBoolIcon(track.Identity.Enabled); // enabled
+                    item.SubItems[4].IconKey = GetBoolIcon(item.EnableOverride ?? track.Identity.Enabled); // enabled
                     item.SubItems[5].IconKey = GetBoolIcon(data?.DefaultFlag ?? track.Identity.Default); // default
                     item.SubItems[6].IconKey = GetBoolIcon(track.Identity.Forced); // forced
                     item.SubItems[7].IconKey = GetBoolIcon(data?.CommentaryFlag ?? track.Identity.FlagCommentary); // commentary
+                    item.SubItems[8].Text = Path.GetFileName(track.SourceFile.Identity.SourceFile); // Source
 
                     return;
                 }
@@ -203,6 +212,7 @@ namespace MakeMKV_Title_Decoder.Controls
                     item.SubItems[5].IconKey = null;
                     item.SubItems[6].IconKey = null;
                     item.SubItems[7].IconKey = null;
+                    item.SubItems[8].Text = "";
 
                     if (delay.ClipDelay != null)
                     {

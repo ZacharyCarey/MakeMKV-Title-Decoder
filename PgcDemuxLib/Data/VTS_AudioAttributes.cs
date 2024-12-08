@@ -16,6 +16,9 @@ namespace PgcDemuxLib.Data
         [JsonInclude]
         public readonly bool MultichannelExtensionPresent;
 
+        /// <summary>
+        /// Iso 639-1
+        /// </summary>
         [JsonInclude]
         public readonly string? LanguageCode;
 

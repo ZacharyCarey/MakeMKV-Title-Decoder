@@ -23,13 +23,13 @@ namespace MakeMKV_Title_Decoder.Data
 
         Dictionary<LoadedTrack, TrackRename>? TrackMatches = null;
 
+        public TimeSpan Duration { get; protected set; }
 
         protected LoadedStream(string root, string filePath, MkvMergeID mergeInfo) {
-			var duration = GetDuration(root, filePath);
 			var fileSize = DataSize.FromFile(Path.Combine(root, filePath)) ?? new DataSize();
-			var ID = new StreamIdentity(filePath, duration, fileSize, mergeInfo);
+			var ID = new StreamIdentity(filePath, fileSize, mergeInfo);
             this.RenameData = new ClipRename(ID);
-            this.Tracks = mergeInfo.Tracks.Select(x => new LoadedTrack(x)).ToList();
+            this.Tracks = mergeInfo.Tracks.Select(x => new LoadedTrack(x, this)).ToList();
             int trackUID = 0;
             foreach(var track in this.Tracks)
             {
@@ -37,8 +37,6 @@ namespace MakeMKV_Title_Decoder.Data
                 this.RenameData.Tracks.Add(track.RenameData);
             }
 		}
-
-		protected abstract TimeSpan GetDuration(string root, string filePath);
 
 		public LoadedTrack? GetTrack(long index)
 		{

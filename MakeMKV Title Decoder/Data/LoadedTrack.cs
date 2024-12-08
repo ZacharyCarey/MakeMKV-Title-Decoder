@@ -15,6 +15,7 @@ namespace MakeMKV_Title_Decoder.Data
 	{
 		public TrackIdentity Identity => RenameData.Identity;
 		public TrackRename RenameData { get; private set; }
+        public LoadedStream SourceFile { get; }
 
         /// <summary>
         /// Identifies this track within the clip for MkvToolNix. ID is unique to this clip but not other clips.
@@ -22,10 +23,11 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonIgnore]
         public long MkvToolNixID;
 
-        public LoadedTrack(MkvTrack track)
+        public LoadedTrack(MkvTrack track, LoadedStream source)
 		{
 			this.RenameData = new TrackRename(track);
             this.MkvToolNixID = track.ID;
+            this.SourceFile = source;
         }
 
         internal string? TryMatchRenameData(TrackRename renameData)

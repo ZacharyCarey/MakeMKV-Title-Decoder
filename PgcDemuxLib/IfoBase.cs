@@ -196,7 +196,10 @@ namespace PgcDemuxLib
             return vidCells;
         }
 
-        public bool DemuxMenuCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
+        /// <summary>
+        /// Returns the file name of the generated file if successful, null if failed
+        /// </summary>
+        public DemuxResult DemuxMenuCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
         {
             IfoOptions options = new IfoOptions();
             options.Angle = 1;
@@ -210,10 +213,13 @@ namespace PgcDemuxLib
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
             bool result = demux.Demux(outputFolder, progress, maxProgress); ;
             demux.Close();
-            return result;
+            return result ? new DemuxResult(options.CombinedVobName, demux.StreamOrder) : new DemuxResult();
         }
 
-        public bool DemuxTitleCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
+        /// <summary>
+        /// Returns the file name of the generated file if successful, null if failed
+        /// </summary>
+        public DemuxResult DemuxTitleCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
         {
             IfoOptions options = new IfoOptions();
             options.Angle = 1;
@@ -235,7 +241,25 @@ namespace PgcDemuxLib
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
             bool result = demux.Demux(outputFolder, progress, maxProgress);
             demux.Close();
-            return result;
+            return result ? new DemuxResult(options.CombinedVobName, demux.StreamOrder) : new DemuxResult();
+        }
+    }
+
+    public struct DemuxResult {
+        public bool Successful;
+        public string OutputFileName;
+        public List<int> AudioStreamIDs;
+
+        public DemuxResult() {
+            Successful = false;
+            OutputFileName = "";
+            AudioStreamIDs = new();
+        }
+
+        internal DemuxResult(string outputFileName, List<int> audioStreamIDs) {
+            this.Successful = true;
+            this.OutputFileName = outputFileName;
+            this.AudioStreamIDs = audioStreamIDs;
         }
     }
 }

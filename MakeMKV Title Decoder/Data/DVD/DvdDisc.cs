@@ -203,7 +203,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
 
         private static string GetSourceFile(string demuxDir, int vts, int vid, int cid, bool isMenu)
         {
-            string fileName = $"VTS-{vts:00}{(isMenu ? "_Menu" : "")}_VID-{vid:X4}_CID-{cid:X2}.VOB";
+            string fileName = $"VTS-{vts:00}{(isMenu ? "_Menu" : "")}_VID-{vid:X4}_CID-{cid:X2}.mp4";
             return Path.Combine(demuxDir, fileName);
         }
 

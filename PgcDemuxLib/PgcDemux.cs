@@ -127,6 +127,15 @@ namespace PgcDemuxLib
 
     internal class PgcDemux {
 
+        HashSet<int> StreamIDs = new();
+
+        /// <summary>
+        /// After demuxing, this list stores the audio Stream ID's and the
+        /// order they were detected in. This is useful for transcoding the 
+        /// streams in FFProbe/FFMpeg.
+        /// </summary>
+        public List<int> StreamOrder = new();
+
         const string PGCDEMUX_VERSION = "1.2.0.5";
         const int MODUPDATE = 100;
         const int MAXLOOKFORAUDIO = 10000; // Max number of explored packs in audio delay check
@@ -610,8 +619,23 @@ namespace PgcDemuxLib
                 if ((Util.IsNav(m_buffer) && m_bCheckNavPack) ||
                      (Util.IsAudio(m_buffer) && m_bCheckAudioPack) ||
                      (Util.IsSubs(m_buffer) && m_bCheckSubPack))
+                {
+                    // Before writing the audio pack to the output file,
+                    // check if this StreamID has been seen before. If not
+                    // store it in a list. This is how FFProbe and FFMpeg 
+                    // detect the streams, so this info is useful for mapping
+                    // the streams later.
+                    if (Util.IsAudio(m_buffer))
+                    {
+                        int ID = Util.getAudId(m_buffer);
+                        if (this.StreamIDs.Add(ID))
+                        {
+                            this.StreamOrder.Add(ID);
+                        }
+                    }
+
                     WritePack(m_csOutputPath, m_buffer);
-                else if (Util.IsVideo(m_buffer) && m_bCheckVideoPack)
+                } else if (Util.IsVideo(m_buffer) && m_bCheckVideoPack)
                 {
                     if (!m_bCheckIFrame)
                         WritePack(m_csOutputPath, m_buffer);

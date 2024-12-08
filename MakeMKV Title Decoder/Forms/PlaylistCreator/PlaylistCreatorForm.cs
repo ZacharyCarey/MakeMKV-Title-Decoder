@@ -200,8 +200,10 @@ namespace MakeMKV_Title_Decoder
                                 appendedTrack.Track,
                                 appendedTrack.Color,
                                 IndentedTrackPadding,
-                                appendedTrack.Enabled ? EnableIconKey : DisableIconKey,
-                                compatible ? null : this.ErrorColor
+                                null,
+                                compatible ? null : this.ErrorColor,
+                                null,
+                                appendedTrack.Enabled
                             );
                         } else
                         {

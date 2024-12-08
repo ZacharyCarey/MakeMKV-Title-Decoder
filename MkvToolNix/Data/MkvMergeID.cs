@@ -334,7 +334,6 @@ namespace MkvToolNix.Data
         [JsonPropertyName("segment_uid"), JsonInclude]
         public string? SegmentUID = null;
 
-        // TODO is this used for the duration???
         /// <summary>
         /// Base unit for segment ticks and track ticks, in nanoseconds. A timestamp_scale value of 1.000.000 means scaled timestamps in the segment are expressed in milliseconds.
         /// </summary>
