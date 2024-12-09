@@ -80,5 +80,12 @@ namespace Utils {
             }
         }
 
+        public static string? GetFFMpegExe() {
+            return SearchLocalExeFiles(Path.Combine("lib", "ffmpeg.exe"));
+        }
+
+        public static string? GetFFProbeExe() {
+            return SearchLocalExeFiles(Path.Combine("lib", "ffprobe.exe"));
+        }
     }
 }

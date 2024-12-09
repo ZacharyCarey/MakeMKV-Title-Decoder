@@ -24,7 +24,7 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
                 Console.WriteLine("Failed to load duration from disc, using FFProbe instead.");
                 Console.ResetColor();
 
-                FFProbe ffprobe = new(FileUtils.SearchLocalExeFiles("ffprobe.exe"));
+                FFProbe ffprobe = new(FileUtils.GetFFProbeExe());
                 var info = ffprobe.Analyse(Path.Combine(root, filePath));
                 if (info != null)
                 {

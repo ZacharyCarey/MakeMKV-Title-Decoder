@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using Utils;
 using FFMpeg_Wrapper.Codecs;
 using Iso639;
+using PgcDemuxLib.Data;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PgcDemuxLib
 {
@@ -105,13 +107,32 @@ namespace PgcDemuxLib
 
         public bool DemuxAllCells(string outputFolder, IProgress<SimpleProgress>? progress = null)
         {
-            string? ffprobeEXE = FileUtils.SearchLocalExeFiles("ffprobe.exe");
-            string? ffmpegEXE = FileUtils.SearchLocalExeFiles("ffmpeg.exe");
-            if (ffprobeEXE == null || ffmpegEXE == null)
+            Action<string> PrintError = (string error) =>
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("FATAL ERROR: Failed to find local .exe files.");
+                Console.WriteLine(error);
                 Console.ResetColor();
+            };
+
+            Action<bool, int, int, int> PrintDemuxError = (bool isMenu, int vts, int VID, int CID) =>
+            {
+                string vtsStr = vts.ToString();
+                if (vts == 0) vtsStr = "VMG";
+                PrintError($"Failed to demux {(isMenu ? "menu" : "title")} cell: vts={vtsStr}, VID={VID}, CID={CID}");
+            };
+
+            Action<bool, int, int, int> PrintTranscodeError = (bool isMenu, int vts, int VID, int CID) =>
+            {
+                string vtsStr = vts.ToString();
+                if (vts == 0) vtsStr = "VMG";
+                PrintError($"Failed to transcode {(isMenu ? "menu" : "title")} cell to mp4: vts={vtsStr}, VID={VID}, CID={CID}");
+            };
+
+            string? ffprobeEXE = FileUtils.GetFFProbeExe();
+            string? ffmpegEXE = FileUtils.GetFFMpegExe();
+            if (ffprobeEXE == null || ffmpegEXE == null)
+            {
+                PrintError("FATAL ERROR: Failed to find local .exe files.");
                 return false;
             }
 
@@ -136,17 +157,17 @@ namespace PgcDemuxLib
             currentProgress.TotalMax = 0;
             if (this.VMG.MenuCellAddressTable != null)
             {
-                currentProgress.TotalMax += (uint)this.VMG.MenuCellAddressTable.All.Count();
+                currentProgress.TotalMax += (uint)this.VMG.MenuCellAddressTable.All.Distinct(new CellEqualityComparer()).Count();
             }
             foreach(var vts in this.TitleSets)
             {
                 if (vts.MenuCellAddressTable != null)
                 {
-                    currentProgress.TotalMax += (uint)vts.MenuCellAddressTable.All.Count();
+                    currentProgress.TotalMax += (uint)vts.MenuCellAddressTable.All.Distinct(new CellEqualityComparer()).Count();
                 }
                 if (vts.TitleSetCellAddressTable != null)
                 {
-                    currentProgress.TotalMax += (uint)vts.TitleSetCellAddressTable.All.Count();
+                    currentProgress.TotalMax += (uint)vts.TitleSetCellAddressTable.All.Distinct(new CellEqualityComparer()).Count();
                 }
             }
             currentProgress.TotalMax *= 2; // One for demuxing the mpg stream, a second one for transcoding to mp4
@@ -154,12 +175,13 @@ namespace PgcDemuxLib
 
             if (this.VMG.MenuCellAddressTable != null)
             {
-                foreach (var cell in this.VMG.MenuCellAddressTable.All)
+                foreach (var cell in this.VMG.MenuCellAddressTable.All.Distinct(new CellEqualityComparer()))
                 {
                     // Demux mpg stream
                     DemuxResult demux = this.VMG.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress);
                     if (!demux.Successful)
                     {
+                        PrintDemuxError(true, 0, cell.VobID, cell.CellID);
                         return false;
                     }
                     currentProgress.Total++;
@@ -169,7 +191,12 @@ namespace PgcDemuxLib
                     string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
                     string? logFile = null;
                     if (logFolder != null) logFile = Path.Combine(logFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.txt");
-                    TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, this.VMG.MenuAudioAttributes, progress, currentProgress);
+                    bool result = TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, this.VMG.MenuAudioAttributes, progress, currentProgress);
+                    if (!result)
+                    {
+                        PrintTranscodeError(true, 0, cell.VobID, cell.CellID);
+                        return false;
+                    }
                     currentProgress.Total++;
                     progress?.Report(currentProgress);
 
@@ -190,12 +217,13 @@ namespace PgcDemuxLib
             {
                 if (vts.MenuCellAddressTable != null)
                 {
-                    foreach (var cell in vts.MenuCellAddressTable.All)
+                    foreach (var cell in vts.MenuCellAddressTable.All.Distinct(new CellEqualityComparer()))
                     {
                         // Demux mpg stream
                         DemuxResult demux = vts.DemuxMenuCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress);
                         if (!demux.Successful)
                         {
+                            PrintDemuxError(true, vts.TitleSet, cell.VobID, cell.CellID);
                             return false;
                         }
                         currentProgress.Total++;
@@ -205,7 +233,12 @@ namespace PgcDemuxLib
                         string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
                         string? logFile = null;
                         if (logFolder != null) logFile = Path.Combine(logFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.txt");
-                        TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, vts.MenuAudioAttributes, progress, currentProgress);
+                        bool result = TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, vts.MenuAudioAttributes, progress, currentProgress);
+                        if (!result)
+                        {
+                            PrintTranscodeError(true, vts.TitleSet, cell.VobID, cell.CellID);
+                            return false;
+                        }
                         currentProgress.Total++;
                         progress?.Report(currentProgress);
 
@@ -224,12 +257,13 @@ namespace PgcDemuxLib
 
                 if (vts.TitleSetCellAddressTable != null)
                 {
-                    foreach (var cell in vts.TitleSetCellAddressTable.All)
+                    foreach (var cell in vts.TitleSetCellAddressTable.All.Distinct(new CellEqualityComparer()))
                     {
                         // Demux mpg stream
                         DemuxResult demux = vts.DemuxTitleCell(outputFolder, cell.VobID, cell.CellID, progress, currentProgress);
                         if (!demux.Successful)
                         {
+                            PrintDemuxError(false, vts.TitleSet, cell.VobID, cell.CellID);
                             return false;
                         }
                         currentProgress.Total++;
@@ -239,7 +273,12 @@ namespace PgcDemuxLib
                         string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
                         string? logFile = null;
                         if (logFolder != null) logFile = Path.Combine(logFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.txt");
-                        TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, vts.TitleSetAudioAttributes, progress, currentProgress);
+                        bool result = TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, vts.TitleSetAudioAttributes, progress, currentProgress);
+                        if (!result)
+                        {
+                            PrintTranscodeError(false, vts.TitleSet, cell.VobID, cell.CellID);
+                            return false;
+                        }
                         currentProgress.Total++;
                         progress?.Report(currentProgress);
 
@@ -319,6 +358,23 @@ namespace PgcDemuxLib
             catch (Exception ex)
             {
                 return false;
+            }
+        }
+
+        private class CellEqualityComparer : IEqualityComparer<ADT> {
+            public bool Equals(ADT? x, ADT? y) {
+                if (x != null && y != null)
+                {
+                    return (x.VobID == y.VobID) && (x.CellID == y.CellID);
+                } else
+                {
+                    if ((x == null) && (y == null)) return true; 
+                    else return false;
+                }
+            }
+
+            public int GetHashCode([DisallowNull] ADT obj) {
+                return HashCode.Combine(obj.VobID, obj.CellID);
             }
         }
     }

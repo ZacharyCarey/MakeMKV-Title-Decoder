@@ -107,7 +107,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
                 return true;
             }
 
-            FFMpeg ffmpeg = new(FileUtils.SearchLocalExeFiles("ffmpeg.exe"));
+            FFMpeg ffmpeg = new(FileUtils.GetFFMpegExe());
             bool result = ffmpeg.Snapshot(inputFile, this.FrameIndex, outputFile).Run();
             return result && File.Exists(outputFile);
         }

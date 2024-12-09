@@ -37,8 +37,8 @@ namespace MakeMKV_Title_Decoder.Forms
         private void FrameViewer_Load(object sender, EventArgs e) {
             string filePath = Path.Combine(disc.Root, loadedStream.Identity.SourceFile);
 
-            string? ffprobePath = FileUtils.SearchLocalExeFiles("ffprobe.exe");
-            string? ffmpegPath = FileUtils.SearchLocalExeFiles("ffmpeg.exe");
+            string? ffprobePath = FileUtils.GetFFProbeExe();
+            string? ffmpegPath = FileUtils.GetFFMpegExe();
             if (ffprobePath == null || ffmpegPath == null)
             {
                 MessageBox.Show("Failed to find ffprobe/ffmpeg.");
