@@ -15,8 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MkvToolNix", "MkvToolNix\Mk
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MakeMkvInterface", "MakeMkvInterface\MakeMkvInterface.csproj", "{8157CF44-2B50-468C-8743-0398F743E8BB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfmpegInterface", "FfmpegInterface\FfmpegInterface.csproj", "{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,14 +71,6 @@ Global
 		{8157CF44-2B50-468C-8743-0398F743E8BB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8157CF44-2B50-468C-8743-0398F743E8BB}.Release|x64.ActiveCfg = Release|Any CPU
 		{8157CF44-2B50-468C-8743-0398F743E8BB}.Release|x64.Build.0 = Release|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Debug|x64.Build.0 = Debug|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|x64.ActiveCfg = Release|Any CPU
-		{EADFCCB6-67A5-4A53-8F65-88E3F0E97D33}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

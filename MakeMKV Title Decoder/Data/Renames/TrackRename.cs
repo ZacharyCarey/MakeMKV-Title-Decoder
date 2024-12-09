@@ -1,4 +1,5 @@
-﻿using MkvToolNix.Data;
+﻿using Iso639;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Data.Renames
 {
@@ -20,8 +22,8 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		[JsonInclude]
 		public bool? DefaultFlag;
 
-		[JsonInclude]
-		public string? Language;
+		[JsonInclude, JsonConverter(typeof(LanguageJsonConverter))]
+		public Language? Language;
 
 		[JsonInclude]
 		public TrackIdentity Identity { get; set; }
@@ -42,7 +44,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		}
 
 		[JsonConstructor]
-		private TrackRename(string? name, bool? commentaryFlag, bool? defaultFlag, TrackIdentity identity, int uid, string? language) {
+		private TrackRename(string? name, bool? commentaryFlag, bool? defaultFlag, TrackIdentity identity, int uid, Language? language) {
 			this.Name = name;
 			this.CommentaryFlag = commentaryFlag;
 			this.DefaultFlag = defaultFlag;

@@ -1,5 +1,5 @@
-﻿using FfmpegInterface.FFMpegCore;
-using FfmpegInterface.FFProbeCore;
+﻿using FFMpeg_Wrapper;
+using FFMpeg_Wrapper.ffprobe;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
 using System;
@@ -37,6 +37,18 @@ namespace MakeMKV_Title_Decoder.Forms
         private void FrameViewer_Load(object sender, EventArgs e) {
             string filePath = Path.Combine(disc.Root, loadedStream.Identity.SourceFile);
 
+            string? ffprobePath = FileUtils.SearchLocalExeFiles("ffprobe.exe");
+            string? ffmpegPath = FileUtils.SearchLocalExeFiles("ffmpeg.exe");
+            if (ffprobePath == null || ffmpegPath == null)
+            {
+                MessageBox.Show("Failed to find ffprobe/ffmpeg.");
+                this.Close();
+                return;
+            }
+
+            FFProbe ffprobe = new FFProbe(ffprobePath);
+            FFMpeg ffmpeg = new FFMpeg(ffmpegPath);
+
             uint? frames = ffprobe.GetNumberOfFrames(filePath);
             if (frames == null || frames < 0)
             {
@@ -73,7 +85,7 @@ namespace MakeMKV_Title_Decoder.Forms
                 for (uint i = 0; i < nFrames; i++)
                 {
                     string outputFile = Path.Combine(this.TempFolder, $"Frame_{i}.png");
-                    bool result = ffmpeg.ExtractFrame(filePath, i, outputFile).ProcessSynchronously();
+                    bool result = ffmpeg.Snapshot(filePath, i, outputFile).Run();
                     if (result == false) return i;
                     this.FramesPaths.Add(outputFile);
                     progress.Report(new SimpleProgress(i, nFrames));

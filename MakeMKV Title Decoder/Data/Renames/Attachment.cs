@@ -1,4 +1,4 @@
-﻿using FfmpegInterface.FFMpegCore;
+﻿using FFMpeg_Wrapper;
 using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Data.Renames
 {
@@ -106,8 +107,8 @@ namespace MakeMKV_Title_Decoder.Data.Renames
                 return true;
             }
 
-            bool result = ffmpeg.ExtractFrame(inputFile, this.FrameIndex, outputFile).ProcessSynchronously();
-
+            FFMpeg ffmpeg = new(FileUtils.SearchLocalExeFiles("ffmpeg.exe"));
+            bool result = ffmpeg.Snapshot(inputFile, this.FrameIndex, outputFile).Run();
             return result && File.Exists(outputFile);
         }
 

@@ -1,10 +1,12 @@
-﻿using MkvToolNix.Data;
+﻿using Iso639;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Data.Renames
 {
@@ -53,8 +55,8 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         /// <summary>
         /// The track's language as an ISO 639-2 language code
         /// </summary>
-        [JsonInclude]
-        public readonly string? Language;
+        [JsonInclude, JsonConverter(typeof(LanguageJsonConverter))]
+        public readonly Language? Language;
 
         [JsonInclude]
         public readonly long? Number;
@@ -101,7 +103,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         [JsonConstructor]
         private TrackIdentity(string codec, MkvTrackType? type, long? audioBitsPerSample, long? audioChannels, long? audioSamplingFrequency, string? codecID,
             string? displayDimensions, long? displayUnit, bool? flagHearingImpaired, bool? flagVisualImpaired, bool? flagTextDescriptions, bool? flagOriginal,
-            bool? flagCommentary, string? language, long? number, string? pixelDimensions, string? trackName, bool? enabled, bool? forced, bool? Default) 
+            bool? flagCommentary, Language? language, long? number, string? pixelDimensions, string? trackName, bool? enabled, bool? forced, bool? Default) 
         { 
             this.Codec = codec;
             this.Type = type;

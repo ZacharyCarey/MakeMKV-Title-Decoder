@@ -1,4 +1,4 @@
-﻿using FfmpegInterface;
+﻿using Iso639;
 using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
@@ -176,7 +176,7 @@ namespace MakeMKV_Title_Decoder
                     break;
             }
 
-            langTextBox.Text = track?.RenameData.Language ?? "";
+            langTextBox.Text = track?.RenameData?.Language?.Part2 ?? "";
         }
 
         private void VideoTrackList_OnSelectionChanged(TrackListData? track) {
@@ -213,12 +213,14 @@ namespace MakeMKV_Title_Decoder
                     name = null;
                 }
 
+                Language? parsedLang = null;
                 if (string.IsNullOrWhiteSpace(lang))
                 {
-                    lang = null;
+                    parsedLang = null;
                 } else
                 {
-                    if (!Languages.IsValidLanguageCode(lang))
+                    parsedLang = Language.FromPart2(lang);
+                    if (parsedLang != null)
                     {
                         MessageBox.Show("Please enter a valid language code.", "Invalid language");
                         return;
@@ -229,7 +231,7 @@ namespace MakeMKV_Title_Decoder
                 renames.Name = name;
                 renames.CommentaryFlag = commentaryFlag;
                 renames.DefaultFlag = defaultFlag;
-                renames.Language = lang;
+                renames.Language = parsedLang;
 
                 list.Update(track);
                 list.Invalidate();
@@ -297,7 +299,7 @@ namespace MakeMKV_Title_Decoder
                 textBox.BackColor = SystemColors.Window;
             } else
             {
-                if (Languages.IsValidLanguageCode(textBox.Text))
+                if (Language.FromPart2(textBox.Text) != null)
                 {
                     textBox.BackColor = SystemColors.Window;
                 } else
@@ -312,7 +314,7 @@ namespace MakeMKV_Title_Decoder
             var result = langSelector.ShowDialog();
             if (result == DialogResult.OK)
             {
-                langTextBox.Text = langSelector.SelectedLanguageCode ?? "";
+                langTextBox.Text = langSelector.SelectedLanguage?.Part2 ?? "";
             }
         }
 

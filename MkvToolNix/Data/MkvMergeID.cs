@@ -1,4 +1,5 @@
-﻿using MkvToolNix;
+﻿using Iso639;
+using MkvToolNix;
 using MkvToolNix.Util;
 using System;
 using System.Collections.Generic;
@@ -559,8 +560,8 @@ namespace MkvToolNix.Data
         /// <summary>
         /// The track's language as an ISO 639-2 language code
         /// </summary>
-        [JsonPropertyName("language"), JsonInclude]
-        public string? Language = null;
+        [JsonPropertyName("language"), JsonInclude, JsonConverter(typeof(LanguageJsonConverter))]
+        public Language? Language = null;
 
         /// <summary>
         /// The track's language as an IETF BCP 47/RFC 5646 language tag

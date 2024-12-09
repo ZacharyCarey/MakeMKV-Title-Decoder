@@ -185,7 +185,7 @@ namespace MakeMKV_Title_Decoder.Controls
                     item.SubItems[1].Text = data?.Name ?? track.Identity.TrackName ?? ""; // name
                     item.SubItems[1].IconColor = null;
                     item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
-                    item.SubItems[3].Text = data?.Language ?? track.Identity.Language ?? ""; // lang
+                    item.SubItems[3].Text = (data?.Language ?? track.Identity.Language)?.Part2 ?? ""; // lang
                     item.SubItems[4].IconKey = GetBoolIcon(item.EnableOverride ?? track.Identity.Enabled); // enabled
                     item.SubItems[5].IconKey = GetBoolIcon(data?.DefaultFlag ?? track.Identity.Default); // default
                     item.SubItems[6].IconKey = GetBoolIcon(track.Identity.Forced); // forced

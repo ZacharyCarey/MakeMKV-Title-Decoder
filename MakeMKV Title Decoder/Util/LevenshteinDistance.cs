@@ -9,45 +9,52 @@ namespace MakeMKV_Title_Decoder
 	public static partial class Utils
 	{
 
-		/// <summary>
-		///     Calculate the difference between 2 strings using the Levenshtein distance algorithm
-		/// </summary>
-		/// <param name="str1">First string</param>
-		/// <param name="str2">Second string</param>
-		/// <returns></returns>
-		public static int LevenshteinDistance(string str1, string str2) //O(n*m)
-		{
-			var source1Length = str1.Length;
-			var source2Length = str2.Length;
+        /// <summary>
+        /// Compute the distance between two strings.
+        /// </summary>
+        public static int LevenshteinDistance(string s, string t) {
+            int n = s.Length;
+            int m = t.Length;
+            int[,] d = new int[n + 1, m + 1];
 
-			var matrix = new int[source1Length + 1, source2Length + 1];
+            // Verify arguments
+            if (n == 0)
+            {
+                return m;
+            }
 
-			// First calculation, if one entry is empty return full length
-			if (source1Length == 0)
-				return source2Length;
+            if (m == 0)
+            {
+                return n;
+            }
 
-			if (source2Length == 0)
-				return source1Length;
+            // Initialize arrays.
+            for (int i = 0; i <= n; i++)
+            {
+                d[i, 0] = i;
+            }
 
-			// Initialization of matrix with row size source1Length and columns size source2Length
-			for (var i = 0; i <= source1Length; matrix[i, 0] = i++) { }
-			for (var j = 0; j <= source2Length; matrix[0, j] = j++) { }
+            for (int j = 0; j <= m; j++)
+            {
+                d[0, j] = j;
+            }
 
-			// Calculate rows and collumns distances
-			for (var i = 1; i <= source1Length; i++)
-			{
-				for (var j = 1; j <= source2Length; j++)
-				{
-					var cost = (str2[j - 1] == str1[i - 1]) ? 0 : 1;
+            // Begin looping.
+            for (int i = 1; i <= n; i++)
+            {
+                for (int j = 1; j <= m; j++)
+                {
+                    // Compute cost
+                    int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            }
 
-					matrix[i, j] = Math.Min(
-						Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
-						matrix[i - 1, j - 1] + cost);
-				}
-			}
-			// return result
-			return matrix[source1Length, source2Length];
-		}
+            // Return cost.
+            return d[n, m];
+        }
 
-	}
+    }
 }

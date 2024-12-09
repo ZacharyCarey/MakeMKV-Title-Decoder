@@ -1,4 +1,5 @@
-﻿using MkvToolNix.Data;
+﻿using Iso639;
+using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -294,7 +295,7 @@ namespace MkvToolNix
         /// Both ISO 639-2 and ISO 639-1 country codes are allowed. Country codes will be converted
         /// to language codes automatically.
         /// </summary>
-        public string? Language = null;
+        public Language? Language = null;
 
         /// <summary>
         /// Whether or not this track should be considered for playback.
@@ -399,7 +400,7 @@ namespace MkvToolNix
             if (this.Language != null)
             {
                 yield return "--language";
-                yield return $"{this.ID}:{this.Language}";
+                yield return $"{this.ID}:{this.Language.Part2}";
             }
         }
     }

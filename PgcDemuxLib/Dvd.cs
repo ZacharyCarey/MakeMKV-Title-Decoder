@@ -1,5 +1,5 @@
-﻿using FfmpegInterface.FFMpegCore;
-using FfmpegInterface.FFProbeCore;
+﻿using FFMpeg_Wrapper.ffprobe;
+using FFMpeg_Wrapper;
 using PgcDemuxLib.Data.VMG;
 using PgcDemuxLib.Data.VTS;
 using System;
@@ -13,6 +13,8 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Utils;
+using FFMpeg_Wrapper.Codecs;
+using Iso639;
 
 namespace PgcDemuxLib
 {
@@ -103,6 +105,32 @@ namespace PgcDemuxLib
 
         public bool DemuxAllCells(string outputFolder, IProgress<SimpleProgress>? progress = null)
         {
+            string? ffprobeEXE = FileUtils.SearchLocalExeFiles("ffprobe.exe");
+            string? ffmpegEXE = FileUtils.SearchLocalExeFiles("ffmpeg.exe");
+            if (ffprobeEXE == null || ffmpegEXE == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("FATAL ERROR: Failed to find local .exe files.");
+                Console.ResetColor();
+                return false;
+            }
+
+            FFProbe ffprobe = new FFProbe(ffprobeEXE);
+            FFMpeg ffmpeg = new FFMpeg(ffmpegEXE);
+
+            string? logFolder = Path.Combine(outputFolder, "logs");
+            try
+            {
+                var result = Directory.CreateDirectory(logFolder);
+                if (!result.Exists) throw new Exception();
+            } catch(Exception)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Failed to create ffmpeg logs folder!");
+                Console.ResetColor();
+                logFolder = null;
+            }
+
             // Get a count of the number of cells we need to extract
             SimpleProgress currentProgress = new();
             currentProgress.TotalMax = 0;
@@ -139,7 +167,9 @@ namespace PgcDemuxLib
 
                     // transcode to mp4
                     string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
-                    TranscodeToMP4(Path.Combine(outputFolder, demux.OutputFileName), outputFile, demux, this.VMG.MenuAudioAttributes, progress, currentProgress);
+                    string? logFile = null;
+                    if (logFolder != null) logFile = Path.Combine(logFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.txt");
+                    TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, this.VMG.MenuAudioAttributes, progress, currentProgress);
                     currentProgress.Total++;
                     progress?.Report(currentProgress);
 
@@ -173,7 +203,9 @@ namespace PgcDemuxLib
 
                         // transcode to mp4
                         string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
-                        TranscodeToMP4(Path.Combine(outputFolder, demux.OutputFileName), outputFile, demux, vts.MenuAudioAttributes, progress, currentProgress);
+                        string? logFile = null;
+                        if (logFolder != null) logFile = Path.Combine(logFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.txt");
+                        TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, vts.MenuAudioAttributes, progress, currentProgress);
                         currentProgress.Total++;
                         progress?.Report(currentProgress);
 
@@ -205,7 +237,9 @@ namespace PgcDemuxLib
 
                         // transcode to mp4
                         string outputFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.mp4");
-                        TranscodeToMP4(Path.Combine(outputFolder, demux.OutputFileName), outputFile, demux, vts.TitleSetAudioAttributes, progress, currentProgress);
+                        string? logFile = null;
+                        if (logFolder != null) logFile = Path.Combine(logFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(demux.OutputFileName)}.txt");
+                        TranscodeToMP4(ffprobe, ffmpeg, Path.Combine(outputFolder, demux.OutputFileName), outputFile, logFile, demux, vts.TitleSetAudioAttributes, progress, currentProgress);
                         currentProgress.Total++;
                         progress?.Report(currentProgress);
 
@@ -226,39 +260,49 @@ namespace PgcDemuxLib
             return true;
         }
 
-        private bool TranscodeToMP4(string inputFile, string outputFile, DemuxResult demux, ReadOnlyArray<Data.VTS_AudioAttributes> audioAttribs, IProgress<SimpleProgress>? progress, SimpleProgress currentProgress) {
+        private bool TranscodeToMP4(FFProbe ffprobe, FFMpeg ffmpeg, string inputFile, string outputFile, string? logFile, DemuxResult demux, ReadOnlyArray<Data.VTS_AudioAttributes> audioAttribs, IProgress<SimpleProgress>? progress, SimpleProgress currentProgress) {
             // Determine video length, used to determine transcode progress
-            var mediaInfo = ffprobe.Analyse(inputFile);
-            if (mediaInfo == null) return false;
+            var info = ffprobe.Analyse(inputFile);
+            if (info == null) return false;
 
-            SelectedStreams streamOrder = new SelectedStreams().ByType(StreamType.Video);
+            var ffmpegArgs = ffmpeg.Transcode(outputFile)
+                .AddVideoStreams(info, new VideoStreamOptions()
+                    .SetCodec(
+                        Codecs.Libx264.SetCRF(16)
+                    ));
+
+            // Add audio streams in a particular order
             foreach((int audioStreamID, int index) in demux.AudioStreamIDs.Order().WithIndex())
             {
                 var audioAttrib = audioAttribs[index];
-                LanguageCode? lang = null;
+                Language? lang = null;
                 if (audioAttrib.LanguageCode != null)
                 {
-                    lang = Languages.ParseFromIso1(audioAttrib.LanguageCode);
+                    lang = Language.FromPart1(audioAttrib.LanguageCode);
                 }
-                streamOrder.FromAnalysis(mediaInfo.AudioStreams[demux.AudioStreamIDs.IndexOf(audioStreamID)], lang);
+
+                ffmpegArgs.AddAudioStream(
+                    info.AudioStreams[demux.AudioStreamIDs.IndexOf(audioStreamID)],
+                    new AudioStreamOptions()
+                        .SetCodec(Codecs.AAC)
+                        .SetLanguage(lang)
+                );
             }
-            streamOrder.ByType(StreamType.Subtitle);
-            //streamOrder.ByType(StreamType.Attachment);
 
-            var cmd = ffmpeg.TranscodeToMP4(
-                inputFile, 
-                outputFile, 
-                streamOrder, 
-                16
-            );
+            ffmpegArgs.AddSubtitleStreams(info.SubtitleStreams, null);
 
-            return cmd.NotifyOnProgress(
-                    (double percentage) => {
-                        currentProgress.Current = (uint)percentage;
+            var cmd = ffmpegArgs
+                .NotifyOnProgress(
+                    (double percent) => {
+                        currentProgress.Current = (uint)percent;
                         currentProgress.CurrentMax = 100;
                         progress?.Report(currentProgress);
-                    }, mediaInfo.Duration)
-                .ProcessSynchronously();
+                    })
+                .SetOverwrite(false);
+
+            if (logFile != null) cmd.SetLogPath(logFile);
+
+            return cmd.Run();
         }
 
         public bool SaveToFile(string filePath)

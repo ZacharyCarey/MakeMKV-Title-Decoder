@@ -1,4 +1,4 @@
-﻿using FfmpegInterface.FFProbeCore;
+﻿using FFMpeg_Wrapper.ffprobe;
 using libbluray.bdnav.Clpi;
 using MkvToolNix.Data;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Data.BluRay
 {
@@ -23,6 +24,7 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
                 Console.WriteLine("Failed to load duration from disc, using FFProbe instead.");
                 Console.ResetColor();
 
+                FFProbe ffprobe = new(FileUtils.SearchLocalExeFiles("ffprobe.exe"));
                 var info = ffprobe.Analyse(Path.Combine(root, filePath));
                 if (info != null)
                 {

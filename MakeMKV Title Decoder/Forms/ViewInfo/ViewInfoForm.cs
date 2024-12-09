@@ -183,7 +183,7 @@ namespace MakeMKV_Title_Decoder
                     TypeItem.Tag = GetTypeIcon(type);
                     CodecItem.SubItems.Add(TypeItem);
 
-                    ListViewItem.ListViewSubItem LanguageItem = new(CodecItem, track.Identity.Language ?? "");
+                    ListViewItem.ListViewSubItem LanguageItem = new(CodecItem, track.Identity.Language?.Part2 ?? "");
                     CodecItem.SubItems.Add(LanguageItem);
 
                     ListViewItem.ListViewSubItem NameItem = new(CodecItem, track.Identity.TrackName ?? "");
@@ -288,7 +288,7 @@ namespace MakeMKV_Title_Decoder
 
                     AppendTrackTextLine("General", FontStyle.Bold);
                     AppendTrackTextLine($"Track name:\t\t{track.Properties?.TrackName ?? ""}");
-                    AppendTrackTextLine($"Language:\t\t{track.Properties?.Language ?? ""}");
+                    AppendTrackTextLine($"Language:\t\t{track.Properties?.Language?.Part2 ?? ""}");
                     AppendTrackTextLine($"\"Default track\" flag:\t{track.Properties?.DefaultTrack?.ToString() ?? ""}");
                     AppendTrackTextLine($"\"Track enabled\" flag:\t{track.Properties?.EnabledTrack?.ToString() ?? ""}");
                     AppendTrackTextLine($"\"Forced display\" flag:\t{track.Properties?.ForcedTrack?.ToString() ?? ""}");
