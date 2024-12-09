@@ -13,7 +13,7 @@ using Utils;
 
 namespace MkvToolNix.Data
 {
-    public class MkvMergeID : MkvToolNixData<MkvMergeID>
+    public class MkvMergeID
     {
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace MkvToolNix.Data
             }
         }
 
-        public static MkvMergeID? TryParse(IEnumerable<string> std, IProgress<SimpleProgress>? progress = null, object? tag = null)
+        public static MkvMergeID? TryParse(IEnumerable<string> std)
         {
             try
             {
