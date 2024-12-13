@@ -111,16 +111,16 @@ namespace MakeMKV_Title_Decoder.Data
 			Dictionary<long, PlaylistFile> playlistFiles = new();
 			foreach (var sourceFile in this.SourceFiles)
 			{
-				string relativeFilePath = disc[sourceFile.SourceUID].Identity.SourceFile;
-				string fullFilePath = Path.Combine(disc.Root, relativeFilePath);
+
+				string fullFilePath = disc[sourceFile.SourceUID].GetFullPath(disc);
 				MkvToolNix.SourceFile source = mergeData.AddSourceFile(fullFilePath);
 				SourceFileLookup[sourceFile.PlaylistUID] = source;
 				playlistFiles[sourceFile.PlaylistUID] = sourceFile;
 
 				foreach(var appendedFile in sourceFile.AppendedFiles)
 				{
-					relativeFilePath = disc[appendedFile.SourceUID].Identity.SourceFile;
-					fullFilePath = Path.Combine(disc.Root, relativeFilePath);
+
+					fullFilePath = disc[appendedFile.SourceUID].GetFullPath(disc);
 					MkvToolNix.AppendedFile appended = source.AddAppendedFile(fullFilePath);
 					AppendedFileLookup[appendedFile.PlaylistUID] = appended;
 					playlistFiles[appendedFile.PlaylistUID] = appendedFile;

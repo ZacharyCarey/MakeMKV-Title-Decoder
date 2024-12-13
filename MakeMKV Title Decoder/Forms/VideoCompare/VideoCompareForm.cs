@@ -71,7 +71,7 @@ namespace MakeMKV_Title_Decoder
             if (clip == null) {
                 player.LoadVideo(null);
             } else {
-                string path = Path.Combine(this.Disc.Root, clip.Identity.SourceFile);
+                string path = clip.GetFullPath(this.Disc);
                 player.LoadVideo(path);
             }
         }

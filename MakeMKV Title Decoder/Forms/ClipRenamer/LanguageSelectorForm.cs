@@ -61,10 +61,13 @@ namespace MakeMKV_Title_Decoder.Forms.ClipRenamer
             this.LanguageList.Items.Clear();
             foreach(var lang in languages)
             {
-                this.LanguageList.Items.Add(lang);
+                this.LanguageList.Items.Add(new LanguageWrapper(lang));
             }
         }
 
+        // Unfortunately the language nuget package I decided on doesn't
+        // override .ToString(), so I created this wrapper class to
+        // do it
         private class LanguageWrapper {
 
             public Language Language;
@@ -74,7 +77,7 @@ namespace MakeMKV_Title_Decoder.Forms.ClipRenamer
             }
 
             public override string ToString() {
-                return Language.Part2;
+                return $"{Language.Name} - ({Language.Part2})";
             }
         }
     }

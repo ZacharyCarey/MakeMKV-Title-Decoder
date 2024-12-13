@@ -33,7 +33,7 @@ namespace MakeMKV_Title_Decoder
 
         private void testToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Dvd? dvd = null;
+            /*Dvd? dvd = null;
             using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
                 openFileDialog.InitialDirectory = "C:\\Users\\Zack\\Downloads\\WILLY_WONKA";
@@ -48,7 +48,7 @@ namespace MakeMKV_Title_Decoder
             {
                 MessageBox.Show($"Failed to parse disc data.", "Failed to read MkvToolNix", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
-            }
+            }*/
 
             /*using (SaveFileDialog dialog = new())
             {
@@ -64,7 +64,7 @@ namespace MakeMKV_Title_Decoder
                     }
                 }
             }*/
-            using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
+            /*using (FolderBrowserDialog openFileDialog = new FolderBrowserDialog())
             {
                 openFileDialog.InitialDirectory = "C:\\Users\\Zack\\Downloads\\TestOutput";
 
@@ -72,7 +72,7 @@ namespace MakeMKV_Title_Decoder
                 {
                     dvd.TitleSets[0].DemuxTitleCell(openFileDialog.SelectedPath, 1, 1);
                 }
-            }
+            }*/
         }
 
         private void viewInfoToolStripMenuItem_Click(object sender, EventArgs e)

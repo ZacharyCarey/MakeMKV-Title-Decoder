@@ -39,6 +39,7 @@ namespace MakeMKV_Title_Decoder
             ImageList1 = new ImageList(components);
             splitContainer1 = new SplitContainer();
             PropertiesPanel = new Panel();
+            DeinterlaceCheckBox = new CheckBox();
             ApplyBtn = new Button();
             NameTextBox = new TextBox();
             label1 = new Label();
@@ -113,7 +114,7 @@ namespace MakeMKV_Title_Decoder
             ClipsList.Location = new Point(0, 0);
             ClipsList.MultiSelect = false;
             ClipsList.Name = "ClipsList";
-            ClipsList.Size = new Size(370, 977);
+            ClipsList.Size = new Size(370, 959);
             ClipsList.SmallImageList = ImageList1;
             ClipsList.TabIndex = 2;
             ClipsList.UseCompatibleStateImageBehavior = false;
@@ -169,18 +170,30 @@ namespace MakeMKV_Title_Decoder
             // 
             // PropertiesPanel
             // 
+            PropertiesPanel.Controls.Add(DeinterlaceCheckBox);
             PropertiesPanel.Controls.Add(ApplyBtn);
             PropertiesPanel.Controls.Add(NameTextBox);
             PropertiesPanel.Controls.Add(label1);
             PropertiesPanel.Dock = DockStyle.Bottom;
-            PropertiesPanel.Location = new Point(0, 977);
+            PropertiesPanel.Location = new Point(0, 959);
             PropertiesPanel.Name = "PropertiesPanel";
-            PropertiesPanel.Size = new Size(370, 66);
+            PropertiesPanel.Size = new Size(370, 84);
             PropertiesPanel.TabIndex = 0;
+            // 
+            // DeinterlaceCheckBox
+            // 
+            DeinterlaceCheckBox.AutoSize = true;
+            DeinterlaceCheckBox.Location = new Point(10, 32);
+            DeinterlaceCheckBox.Name = "DeinterlaceCheckBox";
+            DeinterlaceCheckBox.Size = new Size(85, 19);
+            DeinterlaceCheckBox.TabIndex = 3;
+            DeinterlaceCheckBox.Text = "Deinterlace";
+            DeinterlaceCheckBox.UseVisualStyleBackColor = true;
+            DeinterlaceCheckBox.CheckedChanged += DeinterlaceCheckBox_CheckedChanged;
             // 
             // ApplyBtn
             // 
-            ApplyBtn.Location = new Point(3, 32);
+            ApplyBtn.Location = new Point(10, 57);
             ApplyBtn.Name = "ApplyBtn";
             ApplyBtn.Size = new Size(75, 23);
             ApplyBtn.TabIndex = 2;
@@ -728,5 +741,6 @@ namespace MakeMKV_Title_Decoder
         private TextBox OtherLangTextBox;
         private Label label7;
         private ToolStripMenuItem viewFramesToolStripMenuItem;
+        private CheckBox DeinterlaceCheckBox;
     }
 }

@@ -217,7 +217,7 @@ namespace PgcDemuxLib
         /// <summary>
         /// Returns the file name of the generated file if successful, null if failed
         /// </summary>
-        public DemuxResult DemuxMenuCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
+        public DemuxResult DemuxMenuCell(string outputFolder, string outputFile, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
         {
             IfoOptions options = new IfoOptions();
             options.Angle = 1;
@@ -226,7 +226,15 @@ namespace PgcDemuxLib
             options.Mode = DemuxingMode.CID;
             options.VID = vobID;
             options.CID = cellID;
-            options.CombinedVobName = $"VTS-{this.TitleSet:00}_Menu_VID-{vobID:X4}_CID-{cellID:X2}.VOB";
+            options.CombinedVobName = outputFile;
+            options.CustomVOB = new();
+            options.CustomVOB.PatchLbaNumber = true;
+            options.CustomVOB.OnlyFirstIFrame = false;
+            options.CustomVOB.SplitVOB = false;
+            options.CustomVOB.WriteAudioPacks = true;
+            options.CustomVOB.WriteSubPacks = true;
+            options.CustomVOB.WriteNavPacks = true;
+            options.CustomVOB.WriteVideoPacks = true;
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
             bool result = demux.Demux(outputFolder, progress, maxProgress); ;
@@ -237,7 +245,7 @@ namespace PgcDemuxLib
         /// <summary>
         /// Returns the file name of the generated file if successful, null if failed
         /// </summary>
-        public DemuxResult DemuxTitleCell(string outputFolder, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
+        public DemuxResult DemuxTitleCell(string outputFolder, string outputFile, int vobID, int cellID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null)
         {
             IfoOptions options = new IfoOptions();
             options.Angle = 1;
@@ -246,7 +254,7 @@ namespace PgcDemuxLib
             options.Mode = DemuxingMode.CID;
             options.VID = vobID;
             options.CID = cellID;
-            options.CombinedVobName = $"VTS-{this.TitleSet:00}_VID-{vobID:X4}_CID-{cellID:X2}.VOB";
+            options.CombinedVobName = outputFile;
             options.CustomVOB = new();
             options.CustomVOB.PatchLbaNumber = true;
             options.CustomVOB.OnlyFirstIFrame = false;

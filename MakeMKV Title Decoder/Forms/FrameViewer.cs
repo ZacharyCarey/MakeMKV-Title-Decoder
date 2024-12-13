@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,7 +36,23 @@ namespace MakeMKV_Title_Decoder.Forms
         }
 
         private void FrameViewer_Load(object sender, EventArgs e) {
-            string filePath = Path.Combine(disc.Root, loadedStream.Identity.SourceFile);
+            string filePath = loadedStream.GetFullPath(disc);
+            DataSize? fileSize = DataSize.FromFile(filePath);
+            if (fileSize == null)
+            {
+                MessageBox.Show("Failed to find file.");
+                this.Close();
+                return;
+            }
+            if (fileSize >= new DataSize(10, Unit.Mega))
+            {
+                var user = MessageBox.Show($"The file size is {fileSize}, this may take a while to process. Continue?", "Continue?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                if (user != DialogResult.Yes)
+                {
+                    this.Close();
+                    return;
+                }
+            }
 
             string? ffprobePath = FileUtils.GetFFProbeExe();
             string? ffmpegPath = FileUtils.GetFFMpegExe();
@@ -49,7 +66,7 @@ namespace MakeMKV_Title_Decoder.Forms
             FFProbe ffprobe = new FFProbe(ffprobePath);
             FFMpeg ffmpeg = new FFMpeg(ffmpegPath);
 
-            uint? frames = ffprobe.GetNumberOfFrames(filePath);
+            uint? frames = ffprobe.GetNumberOfFrames(filePath, true);
             if (frames == null || frames < 0)
             {
                 nFrames = 0;
@@ -59,7 +76,7 @@ namespace MakeMKV_Title_Decoder.Forms
             }
             Console.WriteLine($"Detected {nFrames} frames");
 
-            if (nFrames >= 20)
+            if (nFrames >= 30)
             {
                 var result = MessageBox.Show($"There are {nFrames} frames. Are you sure", "Extract frames?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 if (result != DialogResult.Yes)
@@ -182,6 +199,15 @@ namespace MakeMKV_Title_Decoder.Forms
                     MessageBox.Show("Attachments already exists or failed to extract images.");
                 }
             }
+        }
+
+        protected override bool ProcessDialogKey(Keys keyData) {
+            if (Form.ModifierKeys == Keys.None && keyData == Keys.Escape)
+            {
+                this.Close();
+                return true;
+            }
+            return base.ProcessDialogKey(keyData);
         }
     }
 }

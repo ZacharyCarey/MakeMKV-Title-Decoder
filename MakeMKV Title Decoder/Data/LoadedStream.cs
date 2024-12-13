@@ -23,6 +23,18 @@ namespace MakeMKV_Title_Decoder.Data
 
         Dictionary<LoadedTrack, TrackRename>? TrackMatches = null;
 
+        /// <summary>
+        /// Retrieves the path to the source file on the disc. Takes into account
+        /// if the file is supposed to be deinterlaced or not.
+        /// </summary>
+        public string GetFullPath(LoadedDisc disc) {
+            return Path.Combine(
+                disc.Root,
+                Path.GetDirectoryName(this.Identity.SourceFile),
+                $"{Path.GetFileNameWithoutExtension(this.Identity.SourceFile)}{(this.RenameData.Deinterlaced ? ".dint" : "")}{Path.GetExtension(this.Identity.SourceFile)}"
+            );
+        }
+
         public TimeSpan Duration { get; protected set; }
 
         protected LoadedStream(string root, string filePath, MkvMergeID mergeInfo) {

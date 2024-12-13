@@ -18,6 +18,7 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
         private List<DiscPlaylist> playlists;
 
         public override bool ForceVlcTrackIndex => false;
+        public override bool SupportsDeinterlacing => false;
 
         private BlurayDisc(string root, List<LoadedStream> streams, string? title, long? numSets, long? setNum, List<DiscPlaylist> playlists) : base(root, title, numSets, setNum, streams)
         {
@@ -176,6 +177,12 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
         public override List<DiscPlaylist> GetPlaylists()
         {
             return this.playlists.Select(x => x.DeepCopy()).ToList();
+        }
+
+        protected override bool GenerateVideo(LoadedStream stream, bool newDeinterlaceSetting, IProgress<SimpleProgress> progress, SimpleProgress baseProgress) {
+            // Bluray does not support deinterlacing features.
+            // If deinterlacing is attempted, this function will fail
+            return !newDeinterlaceSetting;
         }
     }
 }

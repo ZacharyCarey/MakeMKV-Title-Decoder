@@ -56,6 +56,8 @@ namespace MakeMKV_Title_Decoder
 
                 RefreshClipListItem(keepIconItem, clip);
             }
+
+            this.DeinterlaceCheckBox.Enabled = disc.SupportsDeinterlacing;
         }
 
         private void ClipRenamer_FormClosing(object sender, FormClosingEventArgs e) {
@@ -65,6 +67,7 @@ namespace MakeMKV_Title_Decoder
         private void SelectClip(LoadedStream? clip) {
             this.SelectedClip = clip;
             this.NameTextBox.Text = (clip == null) ? "" : (clip.RenameData.Name ?? "");
+            this.DeinterlaceCheckBox.Checked = clip?.RenameData?.Deinterlaced ?? false;
 
             this.PropertiesPanel.Enabled = (clip != null);
             if (clip == null)
@@ -72,7 +75,7 @@ namespace MakeMKV_Title_Decoder
                 this.VideoPreview.LoadVideo(null);
             } else
             {
-                string path = Path.Combine(this.Disc.Root, clip.Identity.SourceFile);
+                string path = clip.GetFullPath(this.Disc);
                 this.VideoPreview.LoadVideo(path);
             }
 
@@ -220,7 +223,7 @@ namespace MakeMKV_Title_Decoder
                 } else
                 {
                     parsedLang = Language.FromPart2(lang);
-                    if (parsedLang != null)
+                    if (parsedLang == null)
                     {
                         MessageBox.Show("Please enter a valid language code.", "Invalid language");
                         return;
@@ -336,6 +339,56 @@ namespace MakeMKV_Title_Decoder
             {
                 new FrameViewer(this.Disc, selected).Show();
             }
+        }
+
+        private void DeinterlaceCheckBox_CheckedChanged(object sender, EventArgs e) {
+            bool state = this.DeinterlaceCheckBox.Checked;
+
+            LoadedStream? selection = this.SelectedClip;
+            if (selection != null)
+            {
+                if (state != selection.RenameData.Deinterlaced)
+                {
+                    var user = MessageBox.Show("This will require regenerating the video. Continue?", "Regenerate video?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                    if (user == DialogResult.Yes)
+                    {
+                        user = MessageBox.Show("Would you like to apply this change to the entire disc?", "Apply to disc?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                        if (user == DialogResult.Yes)
+                        {
+                            // Whole disc deinterlace
+                            DeinterlaceStreams(this.Disc.Streams, state);
+                            ClipsList_SelectedIndexChanged(null, null); //Reload settings and video
+                            this.DeinterlaceCheckBox.Checked = selection.RenameData.Deinterlaced;
+                            return;
+                        } else if (user == DialogResult.No)
+                        {
+                            // Single video deinterlace
+                            DeinterlaceStreams([selection], state);
+                            ClipsList_SelectedIndexChanged(null, null); //Reload settings and video
+                            this.DeinterlaceCheckBox.Checked = selection.RenameData.Deinterlaced;
+                            return;
+                        }
+                    }
+
+                    // Operation canceled, revert state
+                    this.DeinterlaceCheckBox.Checked = selection.RenameData.Deinterlaced;
+                }
+            }
+        }
+
+        private void DeinterlaceStreams(IEnumerable<LoadedStream> streams, bool deinterlace) {
+            streams = streams.Where(stream => stream.RenameData.Deinterlaced != deinterlace);
+            SimpleProgress currentProgress = new SimpleProgress(0, (uint)streams.Count());
+            this.VideoPreview.LoadVideo(null);
+
+            TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) =>
+            {
+                foreach ((int index, var stream) in streams.WithIndex())
+                {
+                    this.Disc.SetDeinterlace(stream, deinterlace, progress, currentProgress);
+                    currentProgress.Total = (uint)index;
+                }
+            });
         }
     }
 }

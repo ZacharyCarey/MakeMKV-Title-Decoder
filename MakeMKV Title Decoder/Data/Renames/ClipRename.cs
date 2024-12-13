@@ -19,6 +19,9 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		[JsonInclude]
 		public List<TrackRename> Tracks { get; }
 
+		[JsonInclude]
+		public bool Deinterlaced { get; set; } = false;
+
 		/// <summary>
 		/// Used to identify the clip within the disc (i.e. index)
 		/// </summary>

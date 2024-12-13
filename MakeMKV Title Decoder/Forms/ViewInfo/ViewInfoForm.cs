@@ -223,7 +223,7 @@ namespace MakeMKV_Title_Decoder
 
                 if (stream.Identity.SourceFile != null)
                 {
-                    this.VideoPlayer.LoadVideo(Path.Combine(disc.Root, stream.Identity.SourceFile));
+                    this.VideoPlayer.LoadVideo(stream.GetFullPath(disc));
                 }
             }
         }

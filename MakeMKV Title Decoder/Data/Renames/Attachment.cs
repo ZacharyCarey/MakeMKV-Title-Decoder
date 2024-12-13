@@ -99,7 +99,10 @@ namespace MakeMKV_Title_Decoder.Data.Renames
             string? attachmentsFolder = Attachment.GenerateAttachmentsFolder(disc);
             if (attachmentsFolder == null) return false;
 
-            string inputFile = Path.Combine(disc.Root, SourceFile);
+            LoadedStream? stream = disc.TryGetStreamFromPath(this.SourceFile);
+            if (stream == null) return false;
+
+            string inputFile = stream.GetFullPath(disc);
             string outputFile = Path.Combine(disc.Root, attachmentsFolder, $"{Path.GetFileNameWithoutExtension(SourceFile)}.png");
 
             if (File.Exists(outputFile))

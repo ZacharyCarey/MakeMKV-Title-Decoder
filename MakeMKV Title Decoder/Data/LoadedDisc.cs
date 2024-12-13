@@ -26,6 +26,7 @@ namespace MakeMKV_Title_Decoder.Data
         public long? NumberOfSets { get => Identity.NumberOfSets; }
         public long? SetNumber { get => Identity.SetNumber; }
 		public abstract bool ForceVlcTrackIndex { get; }
+		public abstract bool SupportsDeinterlacing { get; }
 
 		public RenameData RenameData { get; private set; }
 
@@ -112,7 +113,23 @@ namespace MakeMKV_Title_Decoder.Data
 					stream.LoadRenameData(streamMatches[stream]);
 				}
 
-				return true;
+                // Successfully matched rename data, now regenerate any deinterlaced videos as needed
+                SimpleProgress currentProgress = new(0, (uint)this.Streams.Count * 2);
+                bool failed = TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) => {
+                    bool failure = false;
+                    foreach ((int index, var stream) in this.Streams.WithIndex())
+                    {
+                        currentProgress.Total = (uint)index * 2;
+                        bool result = this.GenerateVideo(stream, stream.RenameData.Deinterlaced, progress, currentProgress);
+                        if (!result) failure |= true;
+                    }
+                    return failure;
+                });
+
+                if (failed)
+                {
+                    MessageBox.Show("Failed to deinterlace some videos. Recommend deleting temporary files and reloading the disc.");
+                }
             }
             catch (Exception e)
 			{
@@ -120,7 +137,9 @@ namespace MakeMKV_Title_Decoder.Data
 				MessageBox.Show("Failed to match rename data: " + e.Message, "Failed to load", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return false;
 			}
-		}
+
+			return true;
+        }
 
 		public abstract List<DiscPlaylist> GetPlaylists();
 
@@ -189,7 +208,45 @@ namespace MakeMKV_Title_Decoder.Data
 			}
 			return null;
 		}
-    }
+
+		/// <summary>
+		/// Used to regenerate the video later when deinterlacing settings change.
+		/// This is only used for DVD where the video is transcoded, and other 
+		/// types of media will simply return false if this function is called.
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="progress"></param>
+		/// <param name="baseProgress"></param>
+		/// <returns></returns>
+		protected abstract bool GenerateVideo(LoadedStream stream, bool newDeinterlaceSetting, IProgress<SimpleProgress> progress, SimpleProgress baseProgress);
+    
+		public bool SetDeinterlace(LoadedStream stream, bool deinterlace, IProgress<SimpleProgress> progress, SimpleProgress currentProgress) {
+			bool result = GenerateVideo(stream, deinterlace, progress, currentProgress);
+			if (!result) return false;
+
+			//stream.RenameData.Deinterlaced = deinterlace;
+
+			// Regenerate attachments as needed
+			bool failed = false;
+			foreach(var attachment in this.RenameData.Attachments)
+			{
+				if (attachment.FilePath == stream.Identity.SourceFile)
+				{
+					if (!attachment.Extract(this))
+					{
+						failed |= true;
+					}
+				}
+			}
+
+			if (failed)
+			{
+				MessageBox.Show("Failed regenerating attachments. Try deleting temporary files and reloading disc.");
+			}
+
+			return true;
+		}
+	}
 
 	public struct DiscPlaylist
 	{
