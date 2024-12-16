@@ -1,5 +1,5 @@
-﻿using MakeMKV_Title_Decoder.Data.Renames;
-using MkvToolNix.Data;
+﻿using FFMpeg_Wrapper.ffprobe;
+using MakeMKV_Title_Decoder.Data.Renames;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,18 +16,25 @@ namespace MakeMKV_Title_Decoder.Data
 		public TrackIdentity Identity => RenameData.Identity;
 		public TrackRename RenameData { get; private set; }
         public LoadedStream SourceFile { get; }
+        public readonly MediaStream FFProbeInfo;
 
-        /// <summary>
-        /// Identifies this track within the clip for MkvToolNix. ID is unique to this clip but not other clips.
-        /// </summary>
-        [JsonIgnore]
-        public long MkvToolNixID;
-
-        public LoadedTrack(MkvTrack track, LoadedStream source)
+        public LoadedTrack(VideoStream track, LoadedStream source)
 		{
 			this.RenameData = new TrackRename(track);
-            this.MkvToolNixID = track.ID;
             this.SourceFile = source;
+            this.FFProbeInfo = track;
+        }
+
+        public LoadedTrack(AudioStream track, LoadedStream source) {
+            this.RenameData = new TrackRename(track);
+            this.SourceFile = source;
+            this.FFProbeInfo = track;
+        }
+
+        public LoadedTrack(SubtitleStream track, LoadedStream source) {
+            this.RenameData = new TrackRename(track);
+            this.SourceFile = source;
+            this.FFProbeInfo = track;
         }
 
         internal string? TryMatchRenameData(TrackRename renameData)

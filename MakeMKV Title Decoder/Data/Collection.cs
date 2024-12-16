@@ -1,4 +1,5 @@
-﻿using MakeMKV_Title_Decoder.Data.Renames;
+﻿using FFMpeg_Wrapper.Filters.Video;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms.FileRenamer;
 using System;
 using System.Collections.Generic;
@@ -24,23 +25,30 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public OutputName OutputFile { get; private set; } = new();
 
-        public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null)
+        string Exportable.Name => throw new NotImplementedException();
+
+        OutputName Exportable.OutputFile => throw new NotImplementedException();
+
+        public override string ToString()
         {
+            return Name;
+        }
+
+        bool Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
             string folderName = Path.GetFileNameWithoutExtension(outputFile);
             string folderPath = Path.Combine(outputFolder, folderName);
 
             try
             {
                 Directory.CreateDirectory(folderPath);
-            }
-            catch (Exception ex)
+            } catch (Exception ex)
             {
                 MessageBox.Show("Failed to create folder: " + folderPath);
                 return false;
             }
 
             bool success = true;
-            foreach(var attachmentPath in this.Attachments)
+            foreach (var attachmentPath in this.Attachments)
             {
                 // Find attachment details.
                 Attachment? attachment = disc.RenameData.Attachments.Where(x => x.FilePath == attachmentPath).FirstOrDefault();
@@ -53,7 +61,7 @@ namespace MakeMKV_Title_Decoder.Data
                         if (attachment.Name == null)
                         {
                             outputPath = Path.GetFileName(attachmentPath);
-                        }else
+                        } else
                         {
                             outputPath = attachment.Name + Path.GetExtension(attachmentPath);
                         }
@@ -63,7 +71,7 @@ namespace MakeMKV_Title_Decoder.Data
                         {
                             success = false;
                         }
-                    }catch(Exception ex)
+                    } catch (Exception ex)
                     {
                         MessageBox.Show("Failed to copy file: " + ex.Message);
                         success = false;
@@ -78,9 +86,8 @@ namespace MakeMKV_Title_Decoder.Data
             return success;
         }
 
-        public override string ToString()
-        {
-            return Name;
+        bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+            return true;
         }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using MakeMKV_Title_Decoder.Data.BluRay;
 using MakeMKV_Title_Decoder.Data.Renames;
-using MkvToolNix.Data;
-using MkvToolNix;
 using PgcDemuxLib;
 using System;
 using System.Collections.Generic;
@@ -11,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Utils;
 using MakeMKV_Title_Decoder.Data.DVD;
+using FFMpeg_Wrapper.ffprobe;
 
 namespace MakeMKV_Title_Decoder.Data
 {
@@ -26,7 +25,13 @@ namespace MakeMKV_Title_Decoder.Data
         public long? NumberOfSets { get => Identity.NumberOfSets; }
         public long? SetNumber { get => Identity.SetNumber; }
 		public abstract bool ForceVlcTrackIndex { get; }
-		public abstract bool SupportsDeinterlacing { get; }
+
+		/// <summary>
+		/// Used mostly for DVD's where devices have issues playing
+		/// the older MPEG streams, so we force transcoding original files
+		/// to fix streaming issues.
+		/// </summary>
+		public abstract bool ForceTranscoding { get; }
 
 		public RenameData RenameData { get; private set; }
 
@@ -96,15 +101,6 @@ namespace MakeMKV_Title_Decoder.Data
 					streamMatches[stream] = clipRename;
 				}
 
-				// Extract attachments as needed
-				foreach(var attachment in renameData.Attachments)
-				{
-					if (!attachment.Extract(this))
-					{
-						throw new Exception("Failed to extract attachment.");
-					}
-				}
-
 				// Was able to match everything, now actually load the rename data
 				renameData.DiscID = this.Identity; // So if there are any changes in the discID they will be saved
 				this.RenameData = renameData;
@@ -113,22 +109,13 @@ namespace MakeMKV_Title_Decoder.Data
 					stream.LoadRenameData(streamMatches[stream]);
 				}
 
-                // Successfully matched rename data, now regenerate any deinterlaced videos as needed
-                SimpleProgress currentProgress = new(0, (uint)this.Streams.Count * 2);
-                bool failed = TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) => {
-                    bool failure = false;
-                    foreach ((int index, var stream) in this.Streams.WithIndex())
-                    {
-                        currentProgress.Total = (uint)index * 2;
-                        bool result = this.GenerateVideo(stream, stream.RenameData.Deinterlaced, progress, currentProgress);
-                        if (!result) failure |= true;
-                    }
-                    return failure;
-                });
-
-                if (failed)
+                // Extract attachments as needed
+                foreach (var attachment in renameData.Attachments)
                 {
-                    MessageBox.Show("Failed to deinterlace some videos. Recommend deleting temporary files and reloading the disc.");
+                    if (!attachment.Extract(this))
+                    {
+                        throw new Exception("Failed to extract attachment.");
+                    }
                 }
             }
             catch (Exception e)
@@ -143,20 +130,16 @@ namespace MakeMKV_Title_Decoder.Data
 
 		public abstract List<DiscPlaylist> GetPlaylists();
 
-        protected static MkvMergeID? ParseIdentify(string root, string directory, string fileName)
+        protected static MediaAnalysis? ParseIdentify(FFProbe ffprobe, string root, string directory, string fileName)
         {
-            MkvMergeID? identification = MkvToolNixInterface.Identify(root, directory, fileName);
+			MediaAnalysis? identification = ffprobe.Analyse(Path.Combine(root, directory, fileName));
             if (identification == null)
             {
-                // TODO move to logger??
-                // TODO how to handle error?
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"Failed to identify stream file: {fileName}");
-                Console.ResetColor();
+				Log.Error($"Failed to identify stream file: {fileName}");
             }
             else
             {
-                Console.WriteLine($"Identified stream file: {fileName}");
+				Log.Info($"Identified stream file: {fileName}");
             }
             return identification;
         }
@@ -207,44 +190,6 @@ namespace MakeMKV_Title_Decoder.Data
 				}
 			}
 			return null;
-		}
-
-		/// <summary>
-		/// Used to regenerate the video later when deinterlacing settings change.
-		/// This is only used for DVD where the video is transcoded, and other 
-		/// types of media will simply return false if this function is called.
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <param name="progress"></param>
-		/// <param name="baseProgress"></param>
-		/// <returns></returns>
-		protected abstract bool GenerateVideo(LoadedStream stream, bool newDeinterlaceSetting, IProgress<SimpleProgress> progress, SimpleProgress baseProgress);
-    
-		public bool SetDeinterlace(LoadedStream stream, bool deinterlace, IProgress<SimpleProgress> progress, SimpleProgress currentProgress) {
-			bool result = GenerateVideo(stream, deinterlace, progress, currentProgress);
-			if (!result) return false;
-
-			//stream.RenameData.Deinterlaced = deinterlace;
-
-			// Regenerate attachments as needed
-			bool failed = false;
-			foreach(var attachment in this.RenameData.Attachments)
-			{
-				if (attachment.FilePath == stream.Identity.SourceFile)
-				{
-					if (!attachment.Extract(this))
-					{
-						failed |= true;
-					}
-				}
-			}
-
-			if (failed)
-			{
-				MessageBox.Show("Failed regenerating attachments. Try deleting temporary files and reloading disc.");
-			}
-
-			return true;
 		}
 	}
 

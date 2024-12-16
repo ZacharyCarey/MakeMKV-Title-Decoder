@@ -1,12 +1,20 @@
-﻿using libbluray.bdnav.Mpls;
+﻿using FFMpeg_Wrapper.Codecs;
+using FFMpeg_Wrapper.ffmpeg;
+using FFMpeg_Wrapper.ffprobe;
+using FFMpeg_Wrapper.Filters;
+using FFMpeg_Wrapper.Filters.Video;
+using libbluray.bdnav.Mpls;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms.FileRenamer;
-using MkvToolNix;
+using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Utils;
 
 namespace MakeMKV_Title_Decoder.Data
@@ -24,7 +32,7 @@ namespace MakeMKV_Title_Decoder.Data
 		/// The user given name of the playlist for renaming purposes
 		/// </summary>
 		[JsonInclude]
-		public string? Name = null;
+		public string Name = "New Playlist";
 
 		/// <summary>
 		/// How the output file should be renamed based on season, episode, type, etc
@@ -36,18 +44,16 @@ namespace MakeMKV_Title_Decoder.Data
 		/// Source files added to the playlist
 		/// </summary>
 		[JsonInclude]
-		public List<PlaylistSourceFile> SourceFiles = new();
+		public List<PlaylistFile> SourceFiles = new();
 
 		[JsonInclude]
-		public List<PlaylistSourceTrack> SourceTracks = new();
+		public List<PlaylistTrack> SourceTracks = new();
 
 		[JsonIgnore]
         string Exportable.Name => this.Name ?? "N/A";
 
         public static Playlist? Import(LoadedDisc disc, DiscPlaylist importPlaylist)
 		{
-			int streamUID = 0;
-
 			Playlist playlist = new();
 			playlist.Name = importPlaylist.Name;
 			playlist.Title = importPlaylist.Name;
@@ -61,139 +67,94 @@ namespace MakeMKV_Title_Decoder.Data
 				bool first = (playlist.SourceFiles.Count == 0);
 				if (first)
 				{
-					PlaylistSourceFile sourceFile = new PlaylistSourceFile();
-                    sourceFile.SourceUID = stream.RenameData.UID;
-                    sourceFile.PlaylistUID = streamUID++;
-					playlist.SourceFiles.Add(sourceFile);
-
 					foreach(var track in stream.Tracks)
 					{
-						PlaylistSourceTrack sourceTrack = new PlaylistSourceTrack();
-						sourceTrack.PlaylistSource = new();
-						sourceTrack.PlaylistSource.StreamUID = sourceFile.PlaylistUID;
-						sourceTrack.PlaylistSource.TrackUID = track.RenameData.UID;
+						PlaylistTrack sourceTrack = new PlaylistTrack();
+						sourceTrack.Copy = true;
 						playlist.SourceTracks.Add(sourceTrack);
 					}
-				} else
-				{
-					PlaylistFile file = new PlaylistFile();
-					file.SourceUID = stream.RenameData.UID;
-					file.PlaylistUID = streamUID++;
-					playlist.SourceFiles[0].AppendedFiles.Add(file);
-
-					foreach((int index, var track) in stream.Tracks.WithIndex())
-					{
-						PlaylistTrack playlistTrack = new PlaylistTrack();
-						playlistTrack.PlaylistSource = new();
-						playlistTrack.PlaylistSource.StreamUID = file.PlaylistUID;
-						playlistTrack.PlaylistSource.TrackUID = track.RenameData.UID;
-
-						int i = index;
-						if (i >= playlist.SourceTracks.Count)
-						{
-							i = playlist.SourceTracks.Count - 1;
-						}
-						playlist.SourceTracks[i].AppendedTracks.Add(playlistTrack);
-					}
 				}
+
+				PlaylistFile file = new PlaylistFile();
+				file.SourceUID = stream.RenameData.UID;
+				playlist.SourceFiles.Add(file);
 			}
 
 			return playlist;
 		} 
 
-		private MergeData GetMergeData(LoadedDisc disc)
+		private FFMpegCliArgs GetMergeData(FFMpeg ffmpeg, LoadedDisc disc, OutputFile outputFile, ScaleResolution? resolution = null)
 		{
-			var mergeData = new MergeData();
-			mergeData.Title = this.Title;
+			if (this.Title != null) outputFile.Title = this.Title;
+			var args = ffmpeg.Transcode(outputFile);
 
-			Dictionary<long, MkvToolNix.SourceFile> SourceFileLookup = new();
-			Dictionary<long, MkvToolNix.AppendedFile> AppendedFileLookup = new();
-			Dictionary<long, PlaylistFile> playlistFiles = new();
-			foreach (var sourceFile in this.SourceFiles)
+			// Adds all the source files into a concat arg so that they are combined into a single file
+			int concatInputIndex = args.AddInput(
+				new ConcatArguments()
+					.AddFiles(this.SourceFiles.Select(file => disc[file.SourceUID].FFProbeInfo))
+			);
+
+			FilterArguments? filter = null;
+			int nextFilterName = 0;
+
+			// Add all the streams in the correct order, applying relevent options
+			LoadedStream sourceFile = disc[this.SourceFiles[0].SourceUID];
+            foreach ((PlaylistTrack track, LoadedTrack loadedTrack) in this.SourceTracks.Zip(sourceFile.Tracks))
 			{
-
-				string fullFilePath = disc[sourceFile.SourceUID].GetFullPath(disc);
-				MkvToolNix.SourceFile source = mergeData.AddSourceFile(fullFilePath);
-				SourceFileLookup[sourceFile.PlaylistUID] = source;
-				playlistFiles[sourceFile.PlaylistUID] = sourceFile;
-
-				foreach(var appendedFile in sourceFile.AppendedFiles)
-				{
-
-					fullFilePath = disc[appendedFile.SourceUID].GetFullPath(disc);
-					MkvToolNix.AppendedFile appended = source.AddAppendedFile(fullFilePath);
-					AppendedFileLookup[appendedFile.PlaylistUID] = appended;
-					playlistFiles[appendedFile.PlaylistUID] = appendedFile;
-				}
-			}
-
-			long sourceDelay = 0;
-			foreach((int index, var playlistSourceTrack) in this.SourceTracks.WithIndex())
-			{
-				if (playlistSourceTrack.Delay != null)
-				{
-					sourceDelay += CalculateDelay(playlistSourceTrack.Delay, disc, playlistFiles);
-				}
-				else
-				{
-					var playlistFile = playlistFiles[playlistSourceTrack.PlaylistSource.StreamUID];
-					var loadedTrack = disc[playlistFile.SourceUID, playlistSourceTrack.PlaylistSource.TrackUID];
-
-					MkvToolNix.SourceFile sourceFile = SourceFileLookup[playlistSourceTrack.PlaylistSource.StreamUID];
-					var sourceTrack = sourceFile.AddTrack(loadedTrack.MkvToolNixID, loadedTrack.Identity.Type ?? MkvToolNix.Data.MkvTrackType.Unknown, index);
-
-					sourceTrack.CommentaryFlag = loadedTrack.RenameData.CommentaryFlag ?? loadedTrack.Identity.FlagCommentary;
-					sourceTrack.CopyToOutput = playlistSourceTrack.Copy;
-					sourceTrack.DefaultTrackFlag = loadedTrack.RenameData.DefaultFlag ?? loadedTrack.Identity.FlagCommentary;
-					sourceTrack.EnableFlag = null;
-					sourceTrack.ForcedDisplayFlag = null;
-					sourceTrack.HearingImpairedFlag = loadedTrack.Identity.FlagHearingImpaired;
-					sourceTrack.Language = loadedTrack.RenameData.Language ?? loadedTrack.Identity.Language;
-					sourceTrack.Name = loadedTrack.RenameData.Name ?? loadedTrack.Identity.TrackName;
-					sourceTrack.OriginalFlag = loadedTrack.Identity.FlagOriginal;
-					sourceTrack.VisualImpairedFlag = loadedTrack.Identity.FlagVisualImpaired;
-
-                    if (sourceDelay > 0) sourceTrack.DelayMS = sourceDelay;
-					sourceDelay = 0;
-
-					MkvToolNix.Track lastTrack = sourceTrack;
-					long appendedDelay = 0;
-					foreach (var playlistAppendedTrack in playlistSourceTrack.AppendedTracks)
+				if (track.Copy) {
+					TrackRename rename = loadedTrack.RenameData;
+                    if (loadedTrack.FFProbeInfo is VideoStream videoStream)
 					{
-						if (playlistAppendedTrack.Delay != null)
-						{
-							appendedDelay += CalculateDelay(playlistAppendedTrack.Delay, disc, playlistFiles);
-                        } else {
-							playlistFile = playlistFiles[playlistAppendedTrack.PlaylistSource.StreamUID];
-							loadedTrack = disc[playlistFile.SourceUID, playlistAppendedTrack.PlaylistSource.TrackUID];
+						VideoStreamOptions options;
 
-							MkvToolNix.AppendedFile appendedFile = AppendedFileLookup[playlistAppendedTrack.PlaylistSource.StreamUID];
-							var appendedTrack = appendedFile.AddTrack(loadedTrack.MkvToolNixID, loadedTrack.Identity.Type ?? MkvToolNix.Data.MkvTrackType.Unknown, lastTrack);
-
-							appendedTrack.CopyToOutput = playlistAppendedTrack.Copy;
-							if (playlistAppendedTrack.Copy == false)
-							{
-								DelayInfo delayInfo = new DelayInfo();
-								delayInfo.DelayType = DelayType.Source;
-								delayInfo.StreamUID = playlistAppendedTrack.PlaylistSource.StreamUID;
-								appendedDelay += CalculateDelay(delayInfo, disc, playlistFiles);
-							} else
-							{
-								if (appendedDelay > 0)
-								{
-									appendedTrack.DelayMS = appendedDelay;
-									appendedDelay = 0;
-								}
+                        if (sourceFile.RenameData.Deinterlaced || resolution != null)
+                        {
+                            if (filter == null)
+                            {
+                                filter = new();
+                                if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
+								if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
                             }
+                            filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
+                            filter.AddOutput($"video{nextFilterName}");
 
-                            lastTrack = appendedTrack;
-						}
+                            // Add stream using the named stream
+                            options = new($"video{nextFilterName}");
+							nextFilterName++;
+                        } else
+                        {
+                            // Add stream directly from the input file
+                            options = new(concatInputIndex, loadedTrack.Identity.Index);
+                        }
+
+                        ApplyStreamOptions(options, disc, sourceFile, rename);
+                        if (disc.ForceTranscoding) options.SetCodec(Codecs.LibSvtAV1.SetPreset(5).SetCRF(20));
+						args.AddStream(options);
+					} else 
+					{
+						// Simply copy other streams
+						StreamOptions options = new StreamOptions(concatInputIndex, loadedTrack.Identity.Index);
+						ApplyStreamOptions(options, disc, sourceFile, rename);
+						args.AddStream(options);
 					}
 				}
 			}
+			
+			// Only apply an input/deinterlace filter if it is required
+			if (filter != null)
+			{
+				args.SetInputFilter(filter);
+			}
 
-			return mergeData;
+			return args;
 		}
+
+		private static void ApplyStreamOptions(StreamOptions options, LoadedDisc disc, LoadedStream sourceFile, TrackRename rename) {
+            if (rename.Name != null) options.SetName(rename.Name);
+            if (rename.DefaultFlag != null) options.SetFlag(StreamFlag.Default, rename.DefaultFlag.Value);
+            if (rename.CommentaryFlag != null) options.SetFlag(StreamFlag.Commentary, rename.CommentaryFlag.Value);
+            if (rename.Language != null) options.SetLanguage(rename.Language);
+        }
 
 		private static long CalculateDelay(DelayInfo delay, LoadedDisc disc, Dictionary<long, PlaylistFile> playlistFiles)
 		{
@@ -216,7 +177,94 @@ namespace MakeMKV_Title_Decoder.Data
 
         bool Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress)
         {
-            return MkvToolNix.MkvToolNixInterface.Merge(this.GetMergeData(disc), Path.Combine(outputFolder, outputFile), progress, totalProgress) == null;
+            string? ffmpegPath = FileUtils.GetFFMpegExe();
+            if (ffmpegPath == null) return false;
+
+            FFMpeg ffmpeg = new FFMpeg();
+            OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
+            FFMpegCliArgs args = this.GetMergeData(ffmpeg, disc, file);
+            return Export(disc, args, Path.Combine(outputFolder, outputFile), 0, progress, totalProgress);
         }
+
+		bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+			string? ffmpegPath = FileUtils.GetFFMpegExe();
+			if (ffmpegPath == null) return false;
+
+			FFMpeg ffmpeg = new FFMpeg();
+			OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
+			FFMpegCliArgs args = this.GetMergeData(ffmpeg, disc, file, resolution);
+			return Export(disc, args, Path.Combine(outputFolder, outputFile), GetVerticalResolution(resolution), progress, totalProgress);
+		}
+
+		private bool Export(LoadedDisc disc, FFMpegCliArgs args, string outputFilePath, int outputResolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+            SimpleProgress currentProgress;
+			if (totalProgress.HasValue) currentProgress = totalProgress.Value;
+			else currentProgress = new();
+            currentProgress.CurrentMax = 100;
+
+			Stopwatch timer = new();
+			timer.Start();
+			string? error = /*args
+				.NotifyOnProgress((double percent) =>
+				{
+					currentProgress.Current = (uint)percent;
+					progress?.Report(currentProgress);
+				})
+				//TODO .SetLogPath()
+				.SetOverwrite(true)
+				.Run();*/null;
+			timer.Stop();
+
+			if (error != null)
+			{
+				Log.Error($"FFMpeg error: {error}");
+				return false;
+			}
+
+			PrintDevStats(disc, outputFilePath, timer.Elapsed, outputResolution);
+			return true;
+		}
+
+		private static int GetVerticalResolution(ScaleResolution resolution) {
+			switch(resolution)
+			{
+				case ScaleResolution.UHD_7680x4320: return 4320;
+				case ScaleResolution.UHD_3840x2160: return 2160;
+				case ScaleResolution.HD_1920x1080: return 1080;
+				case ScaleResolution.HD_1280x720: return 720;
+				case ScaleResolution.SD_720x480: return 480;
+				default: return 0;
+			}
+		}
+
+		private void PrintDevStats(LoadedDisc disc, string outputFilePath, TimeSpan transcodeTime, int outputResolution = 0) {
+			TimeSpan totalInputDuration = new();
+			DataSize totalInputSize = new();
+			int inputResolution = 0;
+			foreach (var input in this.SourceFiles)
+			{
+				LoadedStream file = disc[input.SourceUID];
+				totalInputDuration += file.Duration;
+				totalInputSize += file.Identity.FileSize;
+				if (inputResolution <= 0)
+				{
+					inputResolution = file.Tracks
+						.Select(track => track.Identity.Height ?? -1)
+						.Where(height => height > 0)
+						.FirstOrDefault(0);
+				}
+			}
+
+			if (outputResolution <= 0)
+			{
+				outputResolution = inputResolution;
+			}
+
+			DataSize outputFileSize = DataSize.FromFile(outputFilePath) ?? new DataSize();
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+			Console.WriteLine($"{Path.GetFileName(outputFilePath)}: \t[{inputResolution}p\t{outputResolution}p\t{totalInputDuration.TotalMinutes}\t{transcodeTime.TotalMinutes}\t{totalInputSize.AsGB()}\t{outputFileSize.AsGB()}]");
+			Console.ResetColor();
+		}
     }
 }

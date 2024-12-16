@@ -30,14 +30,6 @@ namespace MakeMKV_Title_Decoder.Data
 	public class PlaylistTrack
 	{
         /// <summary>
-        /// The source track that this class represents.
-        /// The StreamUID is the UID of source/appended files in the playlist,
-        /// and the TrackUID is the track UID of that source file.
-        /// </summary>
-        [JsonInclude]
-        public TrackID PlaylistSource = new();
-
-        /// <summary>
         /// whether or not the track should be copied to the output.
         /// Could also be called enable/disable.
         /// 
@@ -47,17 +39,8 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public bool Copy = true;
 
-        [JsonInclude]
-        public DelayInfo? Delay = null;
+        //[JsonInclude]
+        //public DelayInfo? Delay = null;
     }
-
-	public class PlaylistSourceTrack : PlaylistTrack
-    {
-		/// <summary>
-		/// Only allows a depth of 1. I.e. an appended track can't itself have appended tracks
-		/// </summary>
-		[JsonInclude]
-		public List<PlaylistTrack> AppendedTracks = new();
-	}
 
 }

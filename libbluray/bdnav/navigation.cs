@@ -89,7 +89,7 @@ namespace libbluray.bdnav {
         public UInt32 packets;
         public UInt32 duration;
 
-        public PlayList? pl = null;
+        //public PlayList? pl = null;
     }
 
     public class NAV_TITLE_INFO {

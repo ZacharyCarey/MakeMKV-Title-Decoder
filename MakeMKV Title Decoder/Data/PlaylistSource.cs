@@ -8,12 +8,6 @@ using System.Threading.Tasks;
 namespace MakeMKV_Title_Decoder.Data
 {
 
-	public class PlaylistSourceFile : PlaylistFile
-	{
-		[JsonInclude]
-		public List<PlaylistFile> AppendedFiles = new();
-	}
-
 	public class PlaylistFile
 	{
 
@@ -22,12 +16,5 @@ namespace MakeMKV_Title_Decoder.Data
 		/// </summary>
         [JsonInclude]
         public long SourceUID = -1;
-
-		/// <summary>
-		/// The UID of this particular source file in the playlist. This is because
-		/// the same disc source file can be used multiple times in the same playlist.
-		/// </summary>
-		[JsonInclude]
-		public long PlaylistUID = -1;
     }
 }

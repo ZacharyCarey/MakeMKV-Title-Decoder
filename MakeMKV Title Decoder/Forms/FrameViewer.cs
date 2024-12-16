@@ -1,4 +1,5 @@
 ﻿using FFMpeg_Wrapper;
+using FFMpeg_Wrapper.ffmpeg;
 using FFMpeg_Wrapper.ffprobe;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
@@ -102,8 +103,12 @@ namespace MakeMKV_Title_Decoder.Forms
                 for (uint i = 0; i < nFrames; i++)
                 {
                     string outputFile = Path.Combine(this.TempFolder, $"Frame_{i}.png");
-                    bool result = ffmpeg.Snapshot(filePath, i, outputFile).Run();
-                    if (result == false) return i;
+                    string? error = ffmpeg.Snapshot(filePath, i, outputFile).Run();
+                    if (error != null)
+                    {
+                        Log.Error($"FFMpeg snapshot: {error}");
+                        return i;
+                    }
                     this.FramesPaths.Add(outputFile);
                     progress.Report(new SimpleProgress(i, nFrames));
                 }

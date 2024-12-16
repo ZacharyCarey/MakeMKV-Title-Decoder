@@ -5,7 +5,6 @@ using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms;
 using MakeMKV_Title_Decoder.Forms.ClipRenamer;
 using MakeMKV_Title_Decoder.Util;
-using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -57,7 +56,7 @@ namespace MakeMKV_Title_Decoder
                 RefreshClipListItem(keepIconItem, clip);
             }
 
-            this.DeinterlaceCheckBox.Enabled = disc.SupportsDeinterlacing;
+            //this.DeinterlaceCheckBox.Enabled = disc.SupportsDeinterlacing;
         }
 
         private void ClipRenamer_FormClosing(object sender, FormClosingEventArgs e) {
@@ -88,10 +87,10 @@ namespace MakeMKV_Title_Decoder
             {
                 foreach (var track in clip.Tracks)
                 {
-                    if (track.Identity.Type == MkvTrackType.Video)
+                    if (track.Identity.TrackType == TrackType.Video)
                     {
                         this.VideoTrackList.Add(track);
-                    } else if (track.Identity.Type == MkvTrackType.Audio)
+                    } else if (track.Identity.TrackType == TrackType.Audio)
                     {
                         this.AudioTrackList.Add(track);
                     } else
@@ -148,7 +147,7 @@ namespace MakeMKV_Title_Decoder
             new VideoCompareForm(this.Disc).ShowDialog();
         }
 
-        private void SelectTrack(LoadedTrack? track, MkvTrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox? commentaryCheckBox, CheckBox defaultCheckBox, TextBox langTextBox) {
+        private void SelectTrack(LoadedTrack? track, TrackType type, Panel propertiesPanel, TextBox nameTextBox, CheckBox? commentaryCheckBox, CheckBox defaultCheckBox, TextBox langTextBox) {
             TrackRename? rename = track?.RenameData;
 
             nameTextBox.Text = (rename?.Name ?? "");
@@ -156,7 +155,7 @@ namespace MakeMKV_Title_Decoder
             defaultCheckBox.Checked = (rename?.DefaultFlag ?? false);
             propertiesPanel.Enabled = (track != null);
 
-            long selectedIndex = (track?.Identity?.Number ?? -1);
+            long selectedIndex = (track?.Identity?.Index ?? -1);
             var selectedClip = this.SelectedClip;
             if (this.Disc.ForceVlcTrackIndex && track != null && selectedClip != null)
             {
@@ -171,10 +170,10 @@ namespace MakeMKV_Title_Decoder
 
             switch (type)
             {
-                case MkvTrackType.Video:
+                case TrackType.Video:
                     this.VideoPreview.VideoTrack = selectedIndex;
                     break;
-                case MkvTrackType.Audio:
+                case TrackType.Audio:
                     this.VideoPreview.AudioTrack = selectedIndex;
                     break;
             }
@@ -186,7 +185,7 @@ namespace MakeMKV_Title_Decoder
             this.SelectedVideoTrack = track?.Track;
             SelectTrack(
                 track?.Track,
-                MkvTrackType.Video,
+                TrackType.Video,
                 VideoTrackPanel,
                 VideoTrackName,
                 VideoTrackCommentary,
@@ -199,7 +198,7 @@ namespace MakeMKV_Title_Decoder
             this.SelectedAudioTrack = track?.Track;
             SelectTrack(
                 track?.Track,
-                MkvTrackType.Audio,
+                TrackType.Audio,
                 AudioTrackPanel,
                 AudioTrackName,
                 AudioTrackCommentary,
@@ -275,7 +274,7 @@ namespace MakeMKV_Title_Decoder
             this.SelectedOtherTrack = track?.Track;
             SelectTrack(
                 track?.Track,
-                MkvTrackType.Unknown,
+                TrackType.Subtitle,
                 OtherTrackPanel,
                 OtherTrackName,
                 null,
@@ -347,48 +346,8 @@ namespace MakeMKV_Title_Decoder
             LoadedStream? selection = this.SelectedClip;
             if (selection != null)
             {
-                if (state != selection.RenameData.Deinterlaced)
-                {
-                    var user = MessageBox.Show("This will require regenerating the video. Continue?", "Regenerate video?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
-                    if (user == DialogResult.Yes)
-                    {
-                        user = MessageBox.Show("Would you like to apply this change to the entire disc?", "Apply to disc?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-                        if (user == DialogResult.Yes)
-                        {
-                            // Whole disc deinterlace
-                            DeinterlaceStreams(this.Disc.Streams, state);
-                            ClipsList_SelectedIndexChanged(null, null); //Reload settings and video
-                            this.DeinterlaceCheckBox.Checked = selection.RenameData.Deinterlaced;
-                            return;
-                        } else if (user == DialogResult.No)
-                        {
-                            // Single video deinterlace
-                            DeinterlaceStreams([selection], state);
-                            ClipsList_SelectedIndexChanged(null, null); //Reload settings and video
-                            this.DeinterlaceCheckBox.Checked = selection.RenameData.Deinterlaced;
-                            return;
-                        }
-                    }
-
-                    // Operation canceled, revert state
-                    this.DeinterlaceCheckBox.Checked = selection.RenameData.Deinterlaced;
-                }
+                selection.RenameData.Deinterlaced = state;
             }
-        }
-
-        private void DeinterlaceStreams(IEnumerable<LoadedStream> streams, bool deinterlace) {
-            streams = streams.Where(stream => stream.RenameData.Deinterlaced != deinterlace);
-            SimpleProgress currentProgress = new SimpleProgress(0, (uint)streams.Count());
-            this.VideoPreview.LoadVideo(null);
-
-            TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) =>
-            {
-                foreach ((int index, var stream) in streams.WithIndex())
-                {
-                    this.Disc.SetDeinterlace(stream, deinterlace, progress, currentProgress);
-                    currentProgress.Total = (uint)index;
-                }
-            });
         }
     }
 }

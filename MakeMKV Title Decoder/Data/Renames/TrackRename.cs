@@ -1,5 +1,5 @@
-﻿using Iso639;
-using MkvToolNix.Data;
+﻿using FFMpeg_Wrapper.ffprobe;
+using Iso639;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,13 +34,24 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		[JsonInclude]
 		public int UID = -1;
 
-        public TrackRename(MkvTrack info) {
-			this.Identity = new TrackIdentity(info);
+		private TrackRename(TrackIdentity id, MediaStream info) {
+			this.Identity = id;
+			this.Name = id.Title;
+			this.CommentaryFlag = id.CommentFlag;
+			this.DefaultFlag = id.DefaultFlag ?? false;
+			this.Language = id.Language;
+		}
 
-			this.Name = info.Properties?.TrackName;
-			this.CommentaryFlag = info.Properties?.FlagCommentary;
-			this.DefaultFlag = info.Properties?.DefaultTrack;
-			this.Language = info.Properties?.Language;
+        public TrackRename(VideoStream info) : this(new TrackIdentity(info), info) {
+
+		}
+
+		public TrackRename(AudioStream info) : this(new TrackIdentity(info), info) {
+
+		}
+
+		public TrackRename(SubtitleStream info) : this(new TrackIdentity(info), info) {
+
 		}
 
 		[JsonConstructor]

@@ -52,14 +52,10 @@ namespace MakeMKV_Title_Decoder
             columnHeader4 = new ColumnHeader();
             panel1 = new Panel();
             PlaylistSourceDeleteBtn = new Button();
+            FileUpBtn = new Button();
+            DownFileBtn = new Button();
             PlaylistTrackOrder = new TrackList();
             panel4 = new Panel();
-            DeleteDelayBtn = new Button();
-            EditDelayBtn = new Button();
-            AddDelayBtn = new Button();
-            label3 = new Label();
-            DownTrackBtn = new Button();
-            TrackUpBtn = new Button();
             DisableTrackBtn = new Button();
             EnableTrackBtn = new Button();
             SourceList = new ListBox();
@@ -317,6 +313,8 @@ namespace MakeMKV_Title_Decoder
             // panel1
             // 
             panel1.Controls.Add(PlaylistSourceDeleteBtn);
+            panel1.Controls.Add(FileUpBtn);
+            panel1.Controls.Add(DownFileBtn);
             panel1.Dock = DockStyle.Right;
             panel1.Location = new Point(1027, 0);
             panel1.Name = "panel1";
@@ -332,6 +330,26 @@ namespace MakeMKV_Title_Decoder
             PlaylistSourceDeleteBtn.Text = "Delete";
             PlaylistSourceDeleteBtn.UseVisualStyleBackColor = true;
             PlaylistSourceDeleteBtn.Click += PlaylistSourceDeleteBtn_Click;
+            // 
+            // FileUpBtn
+            // 
+            FileUpBtn.Location = new Point(6, 92);
+            FileUpBtn.Name = "FileUpBtn";
+            FileUpBtn.Size = new Size(75, 23);
+            FileUpBtn.TabIndex = 11;
+            FileUpBtn.Text = "Up";
+            FileUpBtn.UseVisualStyleBackColor = true;
+            FileUpBtn.Click += FileUpBtn_Click;
+            // 
+            // DownFileBtn
+            // 
+            DownFileBtn.Location = new Point(6, 121);
+            DownFileBtn.Name = "DownFileBtn";
+            DownFileBtn.Size = new Size(75, 23);
+            DownFileBtn.TabIndex = 12;
+            DownFileBtn.Text = "Down";
+            DownFileBtn.UseVisualStyleBackColor = true;
+            DownFileBtn.Click += DownFileBtn_Click;
             // 
             // PlaylistTrackOrder
             // 
@@ -355,12 +373,6 @@ namespace MakeMKV_Title_Decoder
             // 
             // panel4
             // 
-            panel4.Controls.Add(DeleteDelayBtn);
-            panel4.Controls.Add(EditDelayBtn);
-            panel4.Controls.Add(AddDelayBtn);
-            panel4.Controls.Add(label3);
-            panel4.Controls.Add(DownTrackBtn);
-            panel4.Controls.Add(TrackUpBtn);
             panel4.Controls.Add(DisableTrackBtn);
             panel4.Controls.Add(EnableTrackBtn);
             panel4.Dock = DockStyle.Right;
@@ -369,68 +381,8 @@ namespace MakeMKV_Title_Decoder
             panel4.Size = new Size(91, 721);
             panel4.TabIndex = 0;
             // 
-            // DeleteDelayBtn
-            // 
-            DeleteDelayBtn.Location = new Point(6, 275);
-            DeleteDelayBtn.Name = "DeleteDelayBtn";
-            DeleteDelayBtn.Size = new Size(75, 23);
-            DeleteDelayBtn.TabIndex = 16;
-            DeleteDelayBtn.Text = "Delete";
-            DeleteDelayBtn.UseVisualStyleBackColor = true;
-            DeleteDelayBtn.Click += DeleteDelayBtn_Click;
-            // 
-            // EditDelayBtn
-            // 
-            EditDelayBtn.Location = new Point(6, 246);
-            EditDelayBtn.Name = "EditDelayBtn";
-            EditDelayBtn.Size = new Size(75, 23);
-            EditDelayBtn.TabIndex = 15;
-            EditDelayBtn.Text = "Edit";
-            EditDelayBtn.UseVisualStyleBackColor = true;
-            EditDelayBtn.Click += EditDelayBtn_Click;
-            // 
-            // AddDelayBtn
-            // 
-            AddDelayBtn.Location = new Point(6, 217);
-            AddDelayBtn.Name = "AddDelayBtn";
-            AddDelayBtn.Size = new Size(75, 23);
-            AddDelayBtn.TabIndex = 14;
-            AddDelayBtn.Text = "Add";
-            AddDelayBtn.UseVisualStyleBackColor = true;
-            AddDelayBtn.Click += AddDelayBtn_Click;
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(6, 199);
-            label3.Name = "label3";
-            label3.Size = new Size(36, 15);
-            label3.TabIndex = 13;
-            label3.Text = "Delay";
-            // 
-            // DownTrackBtn
-            // 
-            DownTrackBtn.Location = new Point(6, 133);
-            DownTrackBtn.Name = "DownTrackBtn";
-            DownTrackBtn.Size = new Size(75, 23);
-            DownTrackBtn.TabIndex = 12;
-            DownTrackBtn.Text = "Down";
-            DownTrackBtn.UseVisualStyleBackColor = true;
-            DownTrackBtn.Click += DownTrackBtn_Click;
-            // 
-            // TrackUpBtn
-            // 
-            TrackUpBtn.Location = new Point(6, 104);
-            TrackUpBtn.Name = "TrackUpBtn";
-            TrackUpBtn.Size = new Size(75, 23);
-            TrackUpBtn.TabIndex = 11;
-            TrackUpBtn.Text = "Up";
-            TrackUpBtn.UseVisualStyleBackColor = true;
-            TrackUpBtn.Click += TrackUpBtn_Click;
-            // 
             // DisableTrackBtn
             // 
-            DisableTrackBtn.Enabled = false;
             DisableTrackBtn.Location = new Point(6, 32);
             DisableTrackBtn.Name = "DisableTrackBtn";
             DisableTrackBtn.Size = new Size(75, 23);
@@ -441,7 +393,6 @@ namespace MakeMKV_Title_Decoder
             // 
             // EnableTrackBtn
             // 
-            EnableTrackBtn.Enabled = false;
             EnableTrackBtn.Location = new Point(6, 3);
             EnableTrackBtn.Name = "EnableTrackBtn";
             EnableTrackBtn.Size = new Size(75, 23);
@@ -509,7 +460,6 @@ namespace MakeMKV_Title_Decoder
             splitContainer3.ResumeLayout(false);
             panel1.ResumeLayout(false);
             panel4.ResumeLayout(false);
-            panel4.PerformLayout();
             SourcePropertiesPanel.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -536,8 +486,8 @@ namespace MakeMKV_Title_Decoder
         private Button NewPlaylistButton;
         private Button DisableTrackBtn;
         private Button EnableTrackBtn;
-        private Button DownTrackBtn;
-        private Button TrackUpBtn;
+        private Button DownFileBtn;
+        private Button FileUpBtn;
         private SplitContainer splitContainer3;
         private PropertiesList PlaylistFilesList;
         private ColumnHeader columnHeader1;
@@ -547,9 +497,5 @@ namespace MakeMKV_Title_Decoder
         private Panel panel1;
         private Button PlaylistSourceDeleteBtn;
         private ImageList imageList1;
-        private Button EditDelayBtn;
-        private Button AddDelayBtn;
-        private Label label3;
-        private Button DeleteDelayBtn;
     }
 }

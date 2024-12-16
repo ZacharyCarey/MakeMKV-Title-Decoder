@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utils;
 using MakeMKV_Title_Decoder.Data.Renames;
+using FFMpeg_Wrapper.Filters.Video;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
@@ -27,11 +28,11 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         public OutputName OutputFile { get; }
 
-        public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress = null);
+        public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
+        public bool ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
     }
 
-    public partial class FileRenamerForm : Form
-    {
+    public partial class FileRenamerForm : Form {
         const string IconError = "dialog-error.png";
         const string IconGood = "dialog-ok-apply.png";
         const string IconWarn = "dialog-warning.png";
@@ -48,8 +49,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         private Dictionary<object, FeatureType> RadioButtonLookup;
         private Dictionary<FeatureType, RadioButton> RadioButtonReverseLookup;
 
-        public FileRenamerForm(LoadedDisc disc)
-        {
+        public FileRenamerForm(LoadedDisc disc) {
             this.Disc = disc;
 
             InitializeComponent();
@@ -94,12 +94,10 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             ExportableListBox1_SelectedIndexChanged(null, null);
         }
 
-        private void FileRenamerForm_Load(object sender, EventArgs e)
-        {
+        private void FileRenamerForm_Load(object sender, EventArgs e) {
         }
 
-        private void ExportableListBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
+        private void ExportableListBox1_SelectedIndexChanged(object sender, EventArgs e) {
             var selected = this.ExportableListBox1.SelectedItem;
             var output = selected?.Export?.OutputFile;
 
@@ -142,21 +140,18 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             MultiVersionTextBox_TextChanged(null, null);
         }
 
-        private void MultiVersionCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
+        private void MultiVersionCheckBox_CheckedChanged(object sender, EventArgs e) {
             this.MultiVersionTextBox.Enabled = MultiVersionCheckBox.Checked;
 
             MultiVersionTextBox_TextChanged(null, null);
         }
 
-        private void FeatureTypeRadioButton_CheckedChanged(object sender, EventArgs e)
-        {
+        private void FeatureTypeRadioButton_CheckedChanged(object sender, EventArgs e) {
             FeatureType type;
             if (sender == null)
             {
                 type = FeatureType.MainFeature;
-            }
-            else
+            } else
             {
                 type = RadioButtonLookup[sender];
             }
@@ -167,15 +162,13 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             ExtraNameTextBox_TextChanged(null, null);
         }
 
-        private TmdbID? ParseID()
-        {
+        private TmdbID? ParseID() {
             ExportableListItem export;
             if (this.ExportableListBox1.SelectedItem == null) return null;
             if (this.ExportableListBox1.SelectedItem is ExportableListItem item)
             {
                 export = item;
-            }
-            else
+            } else
             {
                 return null;
             }
@@ -197,8 +190,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     if (!long.TryParse(this.SeasonTextBox.Text, out temp))
                     {
                         id = null;
-                    }
-                    else
+                    } else
                     {
                         id.Season = temp;
                     }
@@ -208,8 +200,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     if (!long.TryParse(this.EpisodeTextBox.Text, out temp))
                     {
                         id = null;
-                    }
-                    else
+                    } else
                     {
                         id.Episode = temp;
                     }
@@ -219,8 +210,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             return id;
         }
 
-        private bool IsError(Exportable export)
-        {
+        private bool IsError(Exportable export) {
             TmdbID? id = export.OutputFile.GetTmdbID(this.Disc.RenameData);
             if (id == null) return true;
             if (export.OutputFile.Type == null) return true;
@@ -237,9 +227,9 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         if (id.Season == null) return true;
                     }
                 }
-                
+
             }
-            
+
             if (string.IsNullOrWhiteSpace(export.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
             if (export.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(export.OutputFile.MultiVersion)) return true;
             if (export.OutputFile.Type != null && export.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(export.OutputFile.ExtraName)) return true;
@@ -247,20 +237,17 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             return false;
         }
 
-        private void CheckForErrors(ExportableListItem item)
-        {
+        private void CheckForErrors(ExportableListItem item) {
             var export = item.Export;
             if (export.OutputFile.GetShowName(this.Disc.RenameData) == null)
             {
                 item.Icon = IconError;
-            }
-            else
+            } else
             {
                 if (IsError(export))
                 {
                     item.Icon = IconWarn;
-                }
-                else
+                } else
                 {
                     item.Icon = IconGood;
                 }
@@ -269,8 +256,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             ExportableListBox1.Invalidate();
         }
 
-        private void ApplyChangesBtn_Click(object sender, EventArgs e)
-        {
+        private void ApplyChangesBtn_Click(object sender, EventArgs e) {
             var selectedItem = this.ExportableListBox1.SelectedItem;
             if (selectedItem != null)
             {
@@ -287,7 +273,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     {
                         error = Utils.IsValidFileName(this.MultiVersionTextBox.Text);
                     }
-                    
+
                     if (error != null)
                     {
                         MessageBox.Show("Multiversion name invalid: " + error, "Invalid name");
@@ -301,8 +287,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     if (string.IsNullOrEmpty(this.ExtraNameTextBox.Text))
                     {
                         error = "Name can't be empty.";
-                    }
-                    else
+                    } else
                     {
                         error = Utils.IsValidFileName(this.ExtraNameTextBox.Text);
                     }
@@ -323,16 +308,14 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 if (long.TryParse(this.SeasonTextBox.Text, out temp))
                 {
                     export.OutputFile.Season = temp;
-                }
-                else
+                } else
                 {
                     export.OutputFile.Season = -1;
                 }
                 if (long.TryParse(this.EpisodeTextBox.Text, out temp))
                 {
                     export.OutputFile.Episode = temp;
-                }
-                else
+                } else
                 {
                     export.OutputFile.Episode = -1;
                 }
@@ -340,8 +323,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private string? GetFolderName(FeatureType type)
-        {
+        private string? GetFolderName(FeatureType type) {
             switch (type)
             {
                 case FeatureType.Extras: return "extras";
@@ -359,8 +341,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void Export(params Exportable[] exportables)
-        {
+        private void Export(params Exportable[] exportables) {
             string rootFolder;
             using (FolderBrowserDialog browser = new())
             {
@@ -372,8 +353,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 if (browser.ShowDialog() == DialogResult.OK)
                 {
                     rootFolder = browser.SelectedPath;
-                }
-                else
+                } else
                 {
                     return;
                 }
@@ -391,14 +371,12 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     string? bonusFolder = output.GetBonusFolder(showName.Type);
                     string outputFile = output.GetFileName(showName);
                     exports.Add((outputFolder, bonusFolder, outputFile, export));
-                }
-                catch (Exception ex)
+                } catch (Exception ex)
                 {
                     if (MessageBox.Show($"Failed to determine output file for export '{export.Name}'. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                     {
                         return;
-                    }
-                    else
+                    } else
                     {
                         continue;
                     }
@@ -436,8 +414,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     if (bonusFolder == null)
                     {
                         fullPath = Path.Combine(rootFolder, outputFolder);
-                    }
-                    else
+                    } else
                     {
                         fullPath = Path.Combine(rootFolder, outputFolder, bonusFolder);
                     }
@@ -448,8 +425,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         try
                         {
                             Directory.CreateDirectory(fullPath);
-                        }
-                        catch (Exception)
+                        } catch (Exception)
                         {
                             MessageBox.Show("Failed to create output folder.");
                             continue;
@@ -470,8 +446,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                             JsonSerializer.Serialize(stream, this.Disc.RenameData, options);
                             stream.Flush();
                             stream.Close();
-                        }
-                        catch (Exception)
+                        } catch (Exception)
                         {
                             MessageBox.Show("Failed to save file.", "Failed", MessageBoxButtons.OK);
                         }
@@ -484,7 +459,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     }
                 }
 
-                foreach(var error in exportErrors)
+                foreach (var error in exportErrors)
                 {
                     MessageBox.Show(error);
                 }
@@ -494,8 +469,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             });
         }
 
-        private void ExportAllBtn_Click(object sender, EventArgs e)
-        {
+        private void ExportAllBtn_Click(object sender, EventArgs e) {
             List<Exportable> exports = new();
             foreach (var selected in this.ExportableListBox1.AllItems)
             {
@@ -506,8 +480,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         if (MessageBox.Show($"Export '{selected.Export.Name}' has an error and can't be exported. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
                         {
                             return;
-                        }
-                        else
+                        } else
                         {
                             continue;
                         }
@@ -520,18 +493,15 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             Export(exports.ToArray());
         }
 
-        private void SeasonTextBox_TextChanged(object sender, EventArgs e)
-        {
+        private void SeasonTextBox_TextChanged(object sender, EventArgs e) {
 
         }
 
-        private void EpisodeTextBox_TextChanged(object sender, EventArgs e)
-        {
+        private void EpisodeTextBox_TextChanged(object sender, EventArgs e) {
 
         }
 
-        private void ExportSelectedBtn_Click(object sender, EventArgs e)
-        {
+        private void ExportSelectedBtn_Click(object sender, EventArgs e) {
             var selected = ExportableListBox1.SelectedItem;
             if (selected != null)
             {
@@ -545,8 +515,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void CopyToOthersBtn_Click(object sender, EventArgs e)
-        {
+        private void CopyToOthersBtn_Click(object sender, EventArgs e) {
             if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
                 long showIndex = export.Export.OutputFile.ShowIndex;
@@ -561,8 +530,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void SelectShowBtn_Click(object sender, EventArgs e)
-        {
+        private void SelectShowBtn_Click(object sender, EventArgs e) {
             if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
                 var form = new ShowSelector(this.Disc.RenameData);
@@ -579,8 +547,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void TmdbBtn_Click(object sender, EventArgs e)
-        {
+        private void TmdbBtn_Click(object sender, EventArgs e) {
             if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
                 TmdbID? defaultID = export.Export.OutputFile.GetTmdbID(this.Disc.RenameData);
@@ -599,28 +566,28 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void ExtraNameTextBox_TextChanged(object sender, EventArgs e)
-        {
+        private void ExtraNameTextBox_TextChanged(object sender, EventArgs e) {
             if (ExtraNameTextBox.Enabled && (Utils.IsValidFileName(this.ExtraNameTextBox.Text) != null))
             {
                 this.ExtraNameTextBox.BackColor = Color.LightCoral;
-            }
-            else
+            } else
             {
                 this.ExtraNameTextBox.BackColor = SystemColors.Window;
             }
         }
 
-        private void MultiVersionTextBox_TextChanged(object sender, EventArgs e)
-        {
+        private void MultiVersionTextBox_TextChanged(object sender, EventArgs e) {
             if (MultiVersionTextBox.Enabled && (Utils.IsValidFileName(this.MultiVersionTextBox.Text) != null))
             {
                 this.MultiVersionTextBox.BackColor = Color.LightCoral;
-            }
-            else
+            } else
             {
                 this.MultiVersionTextBox.BackColor = SystemColors.Window;
             }
+        }
+
+        private void panel2_Paint(object sender, PaintEventArgs e) {
+
         }
     }
 }

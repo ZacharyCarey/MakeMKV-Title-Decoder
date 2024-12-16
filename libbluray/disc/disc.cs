@@ -22,7 +22,7 @@ namespace libbluray.disc {
 
         private ClpiFile[] ClipFiles = Array.Empty<ClpiFile>();
         private META_ROOT? MetaFiles = null;
-        private PlayList[] PlaylistFiles = Array.Empty<PlayList>();
+        //private PlayList[] PlaylistFiles = Array.Empty<PlayList>();
 
 
         public BD_DISC(string path) {

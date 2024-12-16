@@ -23,8 +23,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FileRenamerForm));
             splitContainer1 = new SplitContainer();
@@ -39,6 +38,7 @@
             CopyToOthersBtn = new Button();
             ApplyChangesBtn = new Button();
             OptionsPanel = new Panel();
+            GalleryRadioButton = new RadioButton();
             ExtraName = new Label();
             ExtraNameTextBox = new TextBox();
             MainFeatureRadioButton = new RadioButton();
@@ -59,7 +59,6 @@
             SeasonTextBox = new TextBox();
             label4 = new Label();
             label3 = new Label();
-            GalleryRadioButton = new RadioButton();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -88,7 +87,7 @@
             splitContainer1.SplitterDistance = 452;
             splitContainer1.TabIndex = 0;
             // 
-            // PlaylistListBox1
+            // ExportableListBox1
             // 
             ExportableListBox1.Dock = DockStyle.Fill;
             ExportableListBox1.DrawMode = DrawMode.OwnerDrawFixed;
@@ -215,6 +214,17 @@
             OptionsPanel.Name = "OptionsPanel";
             OptionsPanel.Size = new Size(892, 411);
             OptionsPanel.TabIndex = 16;
+            // 
+            // GalleryRadioButton
+            // 
+            GalleryRadioButton.AutoSize = true;
+            GalleryRadioButton.Location = new Point(3, 341);
+            GalleryRadioButton.Name = "GalleryRadioButton";
+            GalleryRadioButton.Size = new Size(61, 19);
+            GalleryRadioButton.TabIndex = 16;
+            GalleryRadioButton.Text = "Gallery";
+            GalleryRadioButton.UseVisualStyleBackColor = true;
+            GalleryRadioButton.CheckedChanged += FeatureTypeRadioButton_CheckedChanged;
             // 
             // ExtraName
             // 
@@ -423,17 +433,6 @@
             label3.Size = new Size(47, 15);
             label3.TabIndex = 6;
             label3.Text = "Season:";
-            // 
-            // GalleryRadioButton
-            // 
-            GalleryRadioButton.AutoSize = true;
-            GalleryRadioButton.Location = new Point(3, 341);
-            GalleryRadioButton.Name = "GalleryRadioButton";
-            GalleryRadioButton.Size = new Size(61, 19);
-            GalleryRadioButton.TabIndex = 16;
-            GalleryRadioButton.Text = "Gallery";
-            GalleryRadioButton.UseVisualStyleBackColor = true;
-            GalleryRadioButton.CheckedChanged += FeatureTypeRadioButton_CheckedChanged;
             // 
             // FileRenamerForm
             // 

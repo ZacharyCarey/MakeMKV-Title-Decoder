@@ -8,8 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Utils;
-using MkvToolNix;
-using MkvToolNix.Data;
+using FFMpeg_Wrapper.ffprobe;
+using FFMpeg_Wrapper;
+using CLI_Wrapper;
+using libbluray;
 
 namespace MakeMKV_Title_Decoder.Data.BluRay
 {
@@ -18,7 +20,7 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
         private List<DiscPlaylist> playlists;
 
         public override bool ForceVlcTrackIndex => false;
-        public override bool SupportsDeinterlacing => false;
+        public override bool ForceTranscoding => false;
 
         private BlurayDisc(string root, List<LoadedStream> streams, string? title, long? numSets, long? setNum, List<DiscPlaylist> playlists) : base(root, title, numSets, setNum, streams)
         {
@@ -27,6 +29,10 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
 
         public static BlurayDisc? Open(string root, IProgress<SimpleProgress>? progress = null)
         {
+            string? ffprobeEXE = FileUtils.GetFFProbeExe();
+            if (ffprobeEXE == null) return null;
+            FFProbe ffprobe = new(ffprobeEXE);
+
             string streamDir = Path.Combine("BDMV", "STREAM");
             string playlistDir = Path.Combine("BDMV", "PLAYLIST");
             string[] streamFilePaths = Directory.GetFiles(Path.Combine(root, streamDir));
@@ -35,15 +41,13 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
             currentProgress.TotalMax = (uint)streamFilePaths.Length + (uint)playlistFilePaths.Length;
 
             List<LoadedStream> streams = new();
-
             for (int i = 0; i < streamFilePaths.Length; i++)
             {
                 string fileName = Path.GetFileName(streamFilePaths[i]);
-                MkvMergeID? id = ParseIdentify(root, streamDir, fileName);
-                if (id != null)
-                {
-                    streams.Add(new BlurayStream(root, Path.Combine(streamDir, fileName), id));
-                }
+                MediaAnalysis? id = ParseIdentify(ffprobe, root, streamDir, fileName);
+                if (id == null) return null;
+
+                streams.Add(new BlurayStream(root, Path.Combine(streamDir, fileName), id));
                 currentProgress.Total++;
                 progress?.Report(currentProgress);
             }
@@ -54,16 +58,16 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
             for (int i = 0; i < playlistFilePaths.Length; i++)
             {
                 string fileName = Path.GetFileName(playlistFilePaths[i]);
-                MkvMergeID? id = ParseIdentify(root, playlistDir, fileName);
-                if (id?.Container?.Properties?.PlaylistFiles != null)
+                List<string>? playlistFiles = GetPlaylist(Path.Combine(root, playlistDir, fileName));
+                if (playlistFiles != null)
                 {
                     DiscPlaylist playlist = new();
                     playlist.Name = fileName;
-                    playlist.SourceFiles = id.Container.Properties.PlaylistFiles.Select(x =>
+                    playlist.SourceFiles = playlistFiles.Select(x =>
                     {
                         try
                         {
-                            return Path.GetRelativePath(root, x);
+                            return Path.Combine(streamDir, x);
                         }
                         catch (Exception) {
                             return null;
@@ -179,10 +183,17 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
             return this.playlists.Select(x => x.DeepCopy()).ToList();
         }
 
-        protected override bool GenerateVideo(LoadedStream stream, bool newDeinterlaceSetting, IProgress<SimpleProgress> progress, SimpleProgress baseProgress) {
-            // Bluray does not support deinterlacing features.
-            // If deinterlacing is attempted, this function will fail
-            return !newDeinterlaceSetting;
+        private static List<string>? GetPlaylist(string mplsFile) {
+            List<string> playlist = new();
+            // MplsFile? mpls = MplsFile.Parse(mplsFile);
+            //if (mpls == null) return null;
+            TSPlaylistFile mpls = new(mplsFile);
+            if (!mpls.Scan()) return null;
+            foreach (var streamID in mpls.Streams)
+            {
+                playlist.Add($"{streamID:00000}.m2ts");
+            }
+            return playlist;
         }
     }
 }

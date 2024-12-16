@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FFMpeg_Wrapper" Version="1.0.7" />
+    <PackageReference Include="FFMpeg_Wrapper" Version="1.2.0" />
     <PackageReference Include="Iso639" Version="1.0.0" />
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.0" />
@@ -47,7 +47,6 @@
   <ItemGroup>
     <ProjectReference Include="..\libbluray\libbluray.csproj" />
     <ProjectReference Include="..\MakeMkvInterface\MakeMkvInterface.csproj" />
-    <ProjectReference Include="..\MkvToolNix\MkvToolNix.csproj" />
     <ProjectReference Include="..\PgcDemuxLib\PgcDemuxLib.csproj" />
     <ProjectReference Include="..\Utils\Utils.csproj" />
   </ItemGroup>

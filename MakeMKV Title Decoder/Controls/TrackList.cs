@@ -1,13 +1,12 @@
 ﻿using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
-using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Utils;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using MakeMKV_Title_Decoder.Data.Renames;
 
 namespace MakeMKV_Title_Decoder.Controls
 {
@@ -132,27 +131,6 @@ namespace MakeMKV_Title_Decoder.Controls
             return data;
         }
 
-        public TrackListData Add(TrackDelay delay, Color color, int padding, Color? backColor) {
-            TrackListData data = new();
-            data.Track = null;
-            data.IconColor = color;
-            data.Padding = padding;
-            data.BackColor = BackColor;
-            data.Tag = delay;
-
-            TrackListData[] subItems = new TrackListData[8];
-            for(int i = 0; i < subItems.Length; i++)
-            {
-                subItems[i] = new TrackListData();
-                subItems[i].BackColor = backColor;
-            }
-
-            base.Add(data, subItems);
-
-            Update(delay);
-            return data;
-        }
-
         public void Update(LoadedTrack track)
         {
             foreach(var item in base.Items.Cast<TrackListData>())
@@ -162,17 +140,17 @@ namespace MakeMKV_Title_Decoder.Controls
                     var data = track.RenameData;
 
                     List<string> trackProperties = new();
-                    switch (track.Identity.Type)
+                    switch (track.Identity.TrackType)
                     {
-                        case MkvTrackType.Video:
-                            var size = track.Identity.PixelDimensions;
-                            if (size != null) trackProperties.Add($"{size} pixels");
+                        case TrackType.Video:
+                            var size = new Size(track.Identity.Width ?? 0, track.Identity.Height ?? 0);
+                            trackProperties.Add($"{size} pixels");
                             break;
-                        case MkvTrackType.Audio:
-                            var freq = track.Identity.AudioSamplingFrequency;
+                        case TrackType.Audio:
+                            var freq = track.Identity.SampleRateHz;
                             if (freq != null) trackProperties.Add($"{freq} Hz");
 
-                            var channels = track.Identity.AudioChannels;
+                            var channels = track.Identity.Channels;
                             if (channels != null) trackProperties.Add($"{channels} channels");
                             break;
                     }
@@ -180,50 +158,17 @@ namespace MakeMKV_Title_Decoder.Controls
                     item.Text = track.Identity.Codec;
 
                     item.SubItems[0].Text = track.Identity.Type?.ToString() ?? "";
-                    item.SubItems[0].IconKey = GetTypeIcon(track.Identity.Type);
+                    item.SubItems[0].IconKey = GetTypeIcon(track.Identity.TrackType);
 
-                    item.SubItems[1].Text = data?.Name ?? track.Identity.TrackName ?? ""; // name
+                    item.SubItems[1].Text = data?.Name ?? track.Identity.Title ?? ""; // name
                     item.SubItems[1].IconColor = null;
                     item.SubItems[2].Text = string.Join(", ", trackProperties); // properties
                     item.SubItems[3].Text = (data?.Language ?? track.Identity.Language)?.Part2 ?? ""; // lang
-                    item.SubItems[4].IconKey = GetBoolIcon(item.EnableOverride ?? track.Identity.Enabled); // enabled
-                    item.SubItems[5].IconKey = GetBoolIcon(data?.DefaultFlag ?? track.Identity.Default); // default
-                    item.SubItems[6].IconKey = GetBoolIcon(track.Identity.Forced); // forced
-                    item.SubItems[7].IconKey = GetBoolIcon(data?.CommentaryFlag ?? track.Identity.FlagCommentary); // commentary
+                    item.SubItems[4].IconKey = GetBoolIcon(item.EnableOverride); // enabled
+                    item.SubItems[5].IconKey = GetBoolIcon(data?.DefaultFlag ?? track.Identity.DefaultFlag); // default
+                    item.SubItems[6].IconKey = GetBoolIcon(track.Identity.ForcedFlag); // forced
+                    item.SubItems[7].IconKey = GetBoolIcon(data?.CommentaryFlag ?? track.Identity.CommentFlag); // commentary
                     item.SubItems[8].Text = Path.GetFileName(track.SourceFile.Identity.SourceFile); // Source
-
-                    return;
-                }
-            }
-
-            // TODO throw error
-        }
-
-        public void Update(TrackDelay delay) {
-            foreach(var item in base.Items.Cast<TrackListData>())
-            {
-                if (item.Tag != null && item.Tag is TrackDelay otherDelay && otherDelay == delay)
-                {
-                    item.Text = "Delay";
-                    item.SubItems[0].IconKey = null;
-                    item.SubItems[2].Text = "";
-                    item.SubItems[3].Text = "";
-                    item.SubItems[4].IconKey = null;
-                    item.SubItems[5].IconKey = null;
-                    item.SubItems[6].IconKey = null;
-                    item.SubItems[7].IconKey = null;
-                    item.SubItems[8].Text = "";
-
-                    if (delay.ClipDelay != null)
-                    {
-                        item.SubItems[0].Text = "Clip Sync";
-                        item.SubItems[1].Text = delay.ClipDelay.Source.RenameData.Name ?? "null";
-                        item.SubItems[1].IconColor = delay.ClipDelay.Color;
-                    } else
-                    {
-                        item.SubItems[0].Text = "Manual";
-                        item.SubItems[1].Text = $"{delay.MillisecondDelay} ms";
-                    }
 
                     return;
                 }
@@ -286,14 +231,14 @@ namespace MakeMKV_Title_Decoder.Controls
             return val.Value ? KeepIconKey : DeleteIconKey;
         }
 
-        private string? GetTypeIcon(MkvTrackType? type)
+        private string? GetTypeIcon(TrackType? type)
         {
             switch (type)
             {
-                case MkvTrackType.Audio: return "audio-headphones.png";
-                case MkvTrackType.Video: return "tool-animator.png";
-                case MkvTrackType.Subtitles: return "text.png";
-                case MkvTrackType.Unknown:
+                case TrackType.Audio: return "audio-headphones.png";
+                case TrackType.Video: return "tool-animator.png";
+                case TrackType.Subtitle: return "text.png";
+                //case TrackType.Unknown:
                 default:
                     return "application-octet-stream.png";
             }

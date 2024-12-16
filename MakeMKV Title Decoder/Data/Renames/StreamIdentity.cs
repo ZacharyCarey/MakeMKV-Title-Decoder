@@ -1,4 +1,4 @@
-﻿using MkvToolNix.Data;
+﻿using FFMpeg_Wrapper.ffprobe;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,17 +24,17 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         public readonly DataSize FileSize;
 
 		[JsonInclude]
-        public readonly ContainerType? ContainerType;
+        public readonly string? ContainerType;
 
-		internal StreamIdentity(string relativePath, DataSize fileSize, MkvMergeID info)
+		internal StreamIdentity(string relativePath, DataSize fileSize, MediaAnalysis info)
 		{
             this.SourceFile = relativePath;
             this.FileSize = fileSize;
-            this.ContainerType = info.Container?.Properties?.ContainerType;
+            this.ContainerType = info.Format.FormatName;
         }
 
         [JsonConstructor]
-        private StreamIdentity(string sourceFile, DataSize fileSize, ContainerType? containerType) { 
+        private StreamIdentity(string sourceFile, DataSize fileSize, string? containerType) { 
             this.SourceFile = sourceFile;
             this.FileSize = fileSize;
             this.ContainerType= containerType;

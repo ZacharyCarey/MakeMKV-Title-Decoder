@@ -1,6 +1,7 @@
 ﻿using libbluray.bdnav.Mpls;
 using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms.FileRenamer;
 using MakeMKV_Title_Decoder.Forms.PlaylistCreator;
 using System;
@@ -63,15 +64,8 @@ namespace MakeMKV_Title_Decoder
 
             foreach (var playlist in disc.RenameData.Playlists)
             {
-                var loadedPlaylist = LoadedPlaylist.LoadFromRenames(disc, playlist);
-                if (loadedPlaylist != null)
-                {
-                    this.PlaylistsListBox.Add(loadedPlaylist);
-                    CheckErrors(loadedPlaylist);
-                } else
-                {
-                    // TODO handle error
-                }
+                this.PlaylistsListBox.Add(playlist);
+                CheckErrors(playlist);
             }
             this.PlaylistsListBox.Invalidate();
             PlaylistsListBox_SelectedIndexChanged(null, null);
@@ -106,111 +100,68 @@ namespace MakeMKV_Title_Decoder
         private void SourceApplyButton_Click(object sender, EventArgs e) {
             if (this.PlaylistsListBox.SelectedItem != null)
             {
-                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
+                Playlist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
                 SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItem;
                 if (selectedItem != null)
                 {
-                    AppendedFile? selectedSourceFile = (AppendedFile?)PlaylistFilesList.SelectedItem?.Tag;
-                    if (selectedSourceFile != null)
+                    PlaylistFile file = new PlaylistFile();
+                    file.SourceUID = selectedItem.Clip.RenameData.UID;
+
+                    selectedPlaylist.SourceFiles.Add(file);
+                    if (selectedPlaylist.SourceFiles.Count == 1)
                     {
-                        // Check if source or appended file
-                        AppendedFile? parent = null;
-                        bool isSource = false;
-                        foreach (var file in selectedPlaylist.SourceFiles)
+                        selectedPlaylist.SourceTracks.Clear();
+                        LoadedStream? firstFile = this.Disc[selectedPlaylist.SourceFiles[0].SourceUID];
+                        if (firstFile != null && selectedPlaylist.SourceTracks.Count != firstFile.Tracks.Count)
                         {
-                            if (file == selectedSourceFile)
+                            // Regenerate settings
+                            foreach (var track in firstFile.Tracks)
                             {
-                                isSource = true;
-                                break;
-                            } else
-                            {
-                                foreach (var appendedFile in file.AppendedFiles)
-                                {
-                                    if (appendedFile == selectedSourceFile)
-                                    {
-                                        parent = file;
-                                        break;
-                                    }
-                                }
+                                selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
                             }
                         }
-
-                        if (isSource)
-                        {
-                            selectedPlaylist.AddAppendedFile(selectedSourceFile, selectedItem.Clip);
-                            UpdatePlaylistUI();
-                            UnsavedChangesIcon(selectedPlaylist);
-                            return;
-                        } else if (parent != null)
-                        {
-                            selectedPlaylist.AddAppendedFile(parent, selectedItem.Clip);
-                            UpdatePlaylistUI();
-                            UnsavedChangesIcon(selectedPlaylist);
-                            return;
-                        } else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine("Unknow selected file.");
-                            Console.ResetColor();
-                            return;
-                        }
-                    } else
-                    {
-                        selectedPlaylist.AddSourceFile(selectedItem.Clip);
-                        UpdatePlaylistUI();
-                        UnsavedChangesIcon(selectedPlaylist);
                     }
+
+                    UpdatePlaylistUI();
                 }
             }
         }
 
         private void UpdatePlaylistUI() {
             bool errors = false;
-            LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+            Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
 
             this.PlaylistFilesList.Clear();
             if (selectedPlaylist != null)
             {
                 foreach (var sourceFile in selectedPlaylist.SourceFiles)
                 {
-                    CreateClipEntry(sourceFile, true);
-                    foreach (var appendedFile in sourceFile.AppendedFiles)
-                    {
-                        CreateClipEntry(appendedFile, false);
-                    }
+                    CreateClipEntry(sourceFile);
                 }
             }
 
             this.PlaylistTrackOrder.Clear();
             if (selectedPlaylist != null)
             {
-                foreach (var sourceTrack in selectedPlaylist.SourceTracks)
+                LoadedStream? stream = null;
+                if (selectedPlaylist != null && selectedPlaylist.SourceFiles.Count > 0) stream = this.Disc[selectedPlaylist.SourceFiles[0].SourceUID];
+                if (stream != null)
                 {
-                    TrackListData item = this.PlaylistTrackOrder.Add(
-                        sourceTrack.Track,
-                        sourceTrack.Color
-                    );
-                    item.Tag = sourceTrack;
-                    foreach (var appendedTrack in sourceTrack.AppendedTracks)
+                    foreach ((int index, (var sourceTrack, var loadedTrack)) in selectedPlaylist.SourceTracks.Zip(stream.Tracks).WithIndex())
                     {
-                        bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
-                        if (appendedTrack.Delay == null)
+                        // Check for errors
+                        bool trackErrors = false;
+                        foreach (var otherStream in selectedPlaylist.SourceFiles.Select(x => this.Disc[x.SourceUID]))
                         {
-                            item = this.PlaylistTrackOrder.Add(
-                                appendedTrack.Track,
-                                appendedTrack.Color,
-                                IndentedTrackPadding,
-                                null,
-                                compatible ? null : this.ErrorColor,
-                                null,
-                                appendedTrack.Enabled
-                            );
-                        } else
-                        {
-                            item = this.PlaylistTrackOrder.Add(appendedTrack.Delay, appendedTrack.Color, IndentedTrackPadding, compatible ? null : this.ErrorColor);
+                            if (index >= otherStream.Tracks.Count) continue; //???
+                            trackErrors = !TracksCompatible(loadedTrack.Identity, otherStream.Tracks[index].Identity);
+                            if (trackErrors) break;
                         }
-                        item.Tag = appendedTrack;
-                        errors |= !compatible;
+                        errors |= trackErrors;
+
+                        // Add to GUI
+                        TrackListData item = this.PlaylistTrackOrder.Add(loadedTrack, null, null, null, trackErrors ? this.ErrorColor : null, null, sourceTrack.Copy);
+                        item.Tag = sourceTrack;
                     }
                 }
             }
@@ -222,15 +173,23 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void CheckErrors(LoadedPlaylist playlist) {
+        private void CheckErrors(Playlist playlist) {
             bool errors = false;
 
-            foreach (var sourceTrack in playlist.SourceTracks)
+            IEnumerable<LoadedTrack> sourceTracks;
+            if (playlist.SourceFiles.Count > 0) sourceTracks = this.Disc[playlist.SourceFiles[0].SourceUID].Tracks;
+            else sourceTracks = Enumerable.Empty<LoadedTrack>();
+
+            foreach (var file in playlist.SourceFiles)
             {
-                foreach (var appendedTrack in sourceTrack.AppendedTracks)
+                LoadedStream stream = this.Disc[file.SourceUID];
+                if (stream.Tracks.Count != sourceTracks.Count()) errors = true;
+                if (errors) break;
+                foreach ((var track, LoadedTrack sourceTrack) in stream.Tracks.Zip(sourceTracks))
                 {
-                    bool compatible = appendedTrack.IsCompatableWith(sourceTrack);
+                    bool compatible = TracksCompatible(track.Identity, sourceTrack.Identity);
                     errors |= !compatible;
+                    if (errors) break;
                 }
             }
 
@@ -238,27 +197,48 @@ namespace MakeMKV_Title_Decoder
             else ClearErrorIcon(playlist);
         }
 
-        private void CreateClipEntry(AppendedFile clip, bool isRoot) {
+        private static bool TracksCompatible(TrackIdentity a, TrackIdentity b) {
+            if (a.TrackType != b.TrackType) return false;
+            if (a.TrackType == TrackType.Video)
+            {
+                return true;
+            } else if (a.TrackType == TrackType.Audio)
+            {
+                return true;
+            } else if (a.TrackType == TrackType.Subtitle)
+            {
+                return true;
+            } else
+            {
+                throw new ArgumentException("Unknown enum type");
+            }
+
+            return true;
+        }
+
+        private void CreateClipEntry(PlaylistFile clip) {
+            LoadedStream stream = this.Disc[clip.SourceUID];
+
             // Clip name
             PropertyData item = new();
-            item.Text = clip.Source.RenameData.Name ?? "";
-            item.IconColor = clip.Color;
-            item.IsSubItem = !isRoot;
+            item.Text = stream.RenameData.Name ?? "";
+            item.IconColor = null;
+            item.IsSubItem = false;
             item.Tag = clip;
 
             // Container
             PropertyData sub1 = new();
-            sub1.Text = clip.Source.Identity.ContainerType?.ToString() ?? ""; 
+            sub1.Text = stream.Identity.ContainerType?.ToString() ?? ""; 
             item.SubItems.Add(sub1);
 
             // File size
             PropertyData sub2 = new();
-            sub2.Text = clip.Source.Identity.FileSize.ToString();
+            sub2.Text = stream.Identity.FileSize.ToString();
             item.SubItems.Add(sub2);
 
             // Directory
             PropertyData sub3 = new();
-            sub3.Text = Path.Combine(this.Disc.Root, clip.Source.Identity.SourceFile);
+            sub3.Text = Path.Combine(this.Disc.Root, stream.Identity.SourceFile);
             item.SubItems.Add(sub3);
 
             this.PlaylistFilesList.Add(item, sub1, sub2, sub3);
@@ -280,29 +260,17 @@ namespace MakeMKV_Title_Decoder
                     continue;
                 }
 
-                LoadedPlaylist? loadedPlaylist = LoadedPlaylist.LoadFromRenames(this.Disc, playlist);
-                if (loadedPlaylist == null)
-                {
-                    // TODO error
-                    continue;
-                }
-
                 // If no valid source files (including ignored files) were found,
                 // dont even bother to import the playlist
-                if (loadedPlaylist.SourceFiles.Count != 0)
+                if (playlist.SourceFiles.Count != 0)
                 {
                     this.Disc.RenameData.Playlists.Add(playlist);
-                    this.PlaylistsListBox.Add(loadedPlaylist);
+                    this.PlaylistsListBox.Add(playlist);
+                    string? newName = this.Disc[playlist.SourceFiles[0].SourceUID].RenameData.Name;
+                    if (newName != null) playlist.Name = newName;
+                    playlist.Title = playlist.Name;
 
-                    // If only one file was found, just give it the same name as the source
-                    /*if (loadedPlaylist.AppendedFiles.Any())
-                    {
-                        var rename = Renames.GetClipRename(loadedPlaylist.PrimarySource.Source);
-                        if (rename != null && rename.Name != null) loadedPlaylist.Name = rename.Name;
-                    }*/
-                    loadedPlaylist.Save(this.Disc);
-
-                    CheckErrors(loadedPlaylist);
+                    CheckErrors(playlist);
                 }
             }
 
@@ -312,121 +280,133 @@ namespace MakeMKV_Title_Decoder
         private void NewPlaylistButton_Click(object sender, EventArgs e) {
             var playlist = new Playlist();
             this.Disc.RenameData.Playlists.Add(playlist);
-            this.PlaylistsListBox.Add(new LoadedPlaylist(playlist, "Empty Playlist"));
+            this.PlaylistsListBox.Add(playlist);
         }
 
         private void PlaylistSourceDeleteBtn_Click(object sender, EventArgs e) {
             if (PlaylistFilesList.SelectedItems.Count > 0)
             {
-                AppendedFile? selectedItem = (AppendedFile?)((PropertyData?)PlaylistFilesList.SelectedItems[0].Tag)?.Tag;
-                LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+                PlaylistFile? selectedItem = (PlaylistFile?)((PropertyData?)PlaylistFilesList.SelectedItems[0].Tag)?.Tag;
+                Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
                 if (selectedItem != null && selectedPlaylist != null)
                 {
-                    if (MessageBox.Show("Deleting this file will delete all related tracks. Are you sure?", "Warning", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    if (selectedPlaylist.SourceFiles.IndexOf(selectedItem) == 0)
                     {
-                        selectedPlaylist.DeleteFileAndTracks(selectedItem);
-                        UpdatePlaylistUI();
-                        UnsavedChangesIcon(selectedPlaylist);
+                        selectedPlaylist.SourceTracks.Clear();
                     }
+
+                    selectedPlaylist.SourceFiles.Remove(selectedItem);
+
+                    // Check if tracks need to be refreshed
+                    LoadedStream? firstFile = null;
+                    if (selectedPlaylist.SourceFiles.Count > 0) firstFile = this.Disc[selectedPlaylist.SourceFiles[0].SourceUID];
+                    if (firstFile != null && selectedPlaylist.SourceTracks.Count != firstFile.Tracks.Count)
+                    {
+                        // Regenerate settings
+                        foreach (var track in firstFile.Tracks)
+                        {
+                            selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
+                        }
+                    }
+
+                    UpdatePlaylistUI();
                 }
             }
         }
 
         private void EnableTrackBtn_Click(object sender, EventArgs e) {
-            LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
-            AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+            Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+            PlaylistTrack? selectedTrack = (PlaylistTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+            LoadedTrack? selected = PlaylistTrackOrder.SelectedItem?.Track;
             if (selectedPlaylist != null && selectedTrack != null)
             {
-                selectedTrack.Enabled = true;
+                selectedTrack.Copy = true;
                 UpdatePlaylistUI();
-                this.PlaylistTrackOrder.Select(selectedTrack.Track);
-                UnsavedChangesIcon(selectedPlaylist);
+                this.PlaylistTrackOrder.Select(selected);
             }
         }
 
         private void DisableTrackBtn_Click(object sender, EventArgs e) {
-            LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
-            AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+            Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+            PlaylistTrack? selectedTrack = (PlaylistTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+            LoadedTrack? selected = PlaylistTrackOrder.SelectedItem?.Track;
             if (selectedPlaylist != null && selectedTrack != null)
             {
-
-                selectedTrack.Enabled = false;
+                selectedTrack.Copy = false;
                 UpdatePlaylistUI();
-                this.PlaylistTrackOrder.Select(selectedTrack.Track);
-                UnsavedChangesIcon(selectedPlaylist);
+                this.PlaylistTrackOrder.Select(selected);
             }
         }
 
-        private void TrackUpBtn_Click(object sender, EventArgs e) {
-            LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
-            var selectedIndex = PlaylistTrackOrder.SelectedIndex;
-            AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
-            if (selectedPlaylist != null && selectedTrack != null)
+        private void FileUpBtn_Click(object sender, EventArgs e) {
+            Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+            PlaylistFile? selectedFile = (PlaylistFile?)((PropertyData?)PlaylistFilesList.SelectedItems[0].Tag)?.Tag;
+            if (selectedPlaylist != null && selectedFile != null)
             {
-                var moved = selectedPlaylist.MoveTrackUp(selectedTrack);
-                if (moved)
+                int index = selectedPlaylist.SourceFiles.IndexOf(selectedFile);
+                if (index > 0)
                 {
-                    UpdatePlaylistUI();
-                    foreach (var pair in this.PlaylistTrackOrder.Items.WithIndex())
+                    // Move file up
+                    PlaylistFile temp = selectedPlaylist.SourceFiles[index - 1];
+                    selectedPlaylist.SourceFiles[index - 1] = selectedFile;
+                    selectedPlaylist.SourceFiles[index] = temp;
+
+                    if (index == 1)
                     {
-                        var track = (AppendedTrack?)pair.Value.Tag;
-                        if (track == selectedTrack)
+                        // We moved into the source file position, check stream count
+                        LoadedStream stream = this.Disc[selectedFile.SourceUID];
+                        if (selectedPlaylist.SourceTracks.Count != stream.Tracks.Count)
                         {
-                            this.PlaylistTrackOrder.SelectedIndex = pair.Index;
-                            break;
+                            selectedPlaylist.SourceTracks.Clear();
+                            foreach(var track in stream.Tracks)
+                            {
+                                selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
+                            }
                         }
                     }
-                    UnsavedChangesIcon(selectedPlaylist);
+
+                    // Update UI
+                    UpdatePlaylistUI();
+                    this.PlaylistFilesList.SelectedIndex = index - 1;
                 }
             }
         }
 
-        private void DownTrackBtn_Click(object sender, EventArgs e) {
-            LoadedPlaylist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
-            var selectedIndex = PlaylistTrackOrder.SelectedIndex;
-            AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
-            if (selectedPlaylist != null && selectedTrack != null)
+        private void DownFileBtn_Click(object sender, EventArgs e) {
+            Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+            PlaylistFile? selectedFile = (PlaylistFile?)((PropertyData?)PlaylistFilesList.SelectedItems[0].Tag)?.Tag;
+            if (selectedPlaylist != null && selectedFile != null)
             {
-                var moved = selectedPlaylist.MoveTrackDown(selectedTrack);
-                if (moved)
+                int index = selectedPlaylist.SourceFiles.IndexOf(selectedFile);
+                if (index < (selectedPlaylist.SourceFiles.Count - 1))
                 {
-                    UpdatePlaylistUI();
-                    foreach (var pair in this.PlaylistTrackOrder.Items.WithIndex())
+                    // Move file down
+                    PlaylistFile temp = selectedPlaylist.SourceFiles[index + 1];
+                    selectedPlaylist.SourceFiles[index + 1] = selectedFile;
+                    selectedPlaylist.SourceFiles[index] = temp;
+
+                    if (index + 1 == (selectedPlaylist.SourceFiles.Count - 1))
                     {
-                        var track = (AppendedTrack?)pair.Value.Tag;
-                        if (track == selectedTrack)
+                        // We moved into the source file position, check stream count
+                        LoadedStream stream = this.Disc[selectedFile.SourceUID];
+                        if (selectedPlaylist.SourceTracks.Count != stream.Tracks.Count)
                         {
-                            this.PlaylistTrackOrder.SelectedIndex = pair.Index;
-                            break;
+                            selectedPlaylist.SourceTracks.Clear();
+                            foreach (var track in stream.Tracks)
+                            {
+                                selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
+                            }
                         }
                     }
-                    UnsavedChangesIcon(selectedPlaylist);
+
+                    // Update UI
+                    UpdatePlaylistUI();
+                    this.PlaylistFilesList.SelectedIndex = index + 1;
                 }
             }
         }
 
-        private void UnsavedChangesIcon(LoadedPlaylist playlist) {
-            LoadedPlaylistListItem? item = PlaylistsListBox.FindItem(playlist);
-            if (item != null)
-            {
-                if (!item.Icons.Contains(UnsavedIconKey))
-                {
-                    item.Icons.Add(UnsavedIconKey);
-                    this.PlaylistsListBox.Invalidate();
-                }
-            }
-        }
-
-        private void ClearUnsavedChangesIcon(LoadedPlaylist playlist) {
-            LoadedPlaylistListItem? item = PlaylistsListBox.FindItem(playlist);
-            if (item != null)
-            {
-                item.Icons.Remove(UnsavedIconKey);
-                this.PlaylistsListBox.Invalidate();
-            }
-        }
-
-        private void ErrorIcon(LoadedPlaylist playlist) {
+        private void ErrorIcon(Playlist playlist) {
             LoadedPlaylistListItem? item = PlaylistsListBox.FindItem(playlist);
             if (item != null)
             {
@@ -440,7 +420,7 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private void ClearErrorIcon(LoadedPlaylist playlist) {
+        private void ClearErrorIcon(Playlist playlist) {
             LoadedPlaylistListItem? item = PlaylistsListBox.FindItem(playlist);
             if (item != null)
             {
@@ -449,7 +429,7 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private bool HasErrors(LoadedPlaylist playlist) {
+        private bool HasErrors(Playlist playlist) {
             LoadedPlaylistListItem? item = PlaylistsListBox.FindItem(playlist);
             return item?.Icons?.Contains(WarningIconKey) ?? false;
         }
@@ -458,15 +438,7 @@ namespace MakeMKV_Title_Decoder
             LoadedPlaylistListItem? selectedItem = PlaylistsListBox.SelectedItem;
             if (selectedItem != null)
             {
-                if (HasErrors(selectedItem.Playlist))
-                {
-                    MessageBox.Show("Please resolve errors to save.", "Errors", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
                 selectedItem.Playlist.Name = this.PlaylistNameTextBox.Text;
-                selectedItem.Playlist.Save(this.Disc);
-                ClearUnsavedChangesIcon(selectedItem.Playlist);
                 this.PlaylistsListBox.Invalidate();
             }
         }
@@ -478,92 +450,7 @@ namespace MakeMKV_Title_Decoder
                 if (MessageBox.Show("Can not be undone. Are you sure?", "Delete?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
                 {
                     this.PlaylistsListBox.Remove(selectedItem);
-                    this.Disc.RenameData.Playlists.Remove(selectedItem.Playlist.RenameData);
-                }
-            }
-        }
-
-        private void AddDelayBtn_Click(object sender, EventArgs e) {
-            if (this.PlaylistsListBox.SelectedItem != null)
-            {
-                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
-                AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
-                if (selectedTrack != null) {
-                    AppendedTrack? rootTrack = null;
-                    foreach (var sourceTrack in selectedPlaylist.SourceTracks)
-                    {
-                        if (sourceTrack == selectedTrack)
-                        {
-                            rootTrack = sourceTrack;
-                            break;
-                        } else
-                        {
-                            foreach (var appendedTrack in sourceTrack.AppendedTracks)
-                            {
-                                if (appendedTrack == selectedTrack)
-                                {
-                                    rootTrack = sourceTrack;
-                                    break;
-                                }
-                            }
-                            if (rootTrack != null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (rootTrack != null)
-                    {
-                        var delay = new TrackDelay();
-                        DelayEditorForm form = new(selectedPlaylist, delay);
-                        if (form.ShowDialog() == DialogResult.OK)
-                        {
-                            delay = form.DelayInfo;
-                            selectedPlaylist.AddDelay(rootTrack, delay);
-                            UpdatePlaylistUI();
-                            UnsavedChangesIcon(selectedPlaylist);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void EditDelayBtn_Click(object sender, EventArgs e) {
-            if (this.PlaylistsListBox.SelectedItem != null)
-            {
-                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
-                AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
-                if (selectedTrack != null && selectedTrack.Delay != null)
-                {
-                    DelayEditorForm form = new(selectedPlaylist, selectedTrack.Delay);
-                    if (form.ShowDialog() == DialogResult.OK)
-                    {
-                        selectedTrack.Delay = form.DelayInfo;
-                        UpdatePlaylistUI();
-                        UnsavedChangesIcon(selectedPlaylist);
-                    }
-                }
-            }
-        }
-
-        private void DeleteDelayBtn_Click(object sender, EventArgs e) {
-            if (this.PlaylistsListBox.SelectedItem != null)
-            {
-                LoadedPlaylist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
-                AppendedTrack? selectedTrack = (AppendedTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
-                if (selectedTrack != null)
-                {
-                    if (selectedTrack.Delay != null)
-                    {
-                        foreach(var sourceTrack in selectedPlaylist.SourceTracks)
-                        {
-                            sourceTrack.AppendedTracks.Remove(selectedTrack);
-                        }
-
-                        UpdatePlaylistUI();
-                        UnsavedChangesIcon(selectedPlaylist);
-                    }
+                    this.Disc.RenameData.Playlists.Remove(selectedItem.Playlist);
                 }
             }
         }

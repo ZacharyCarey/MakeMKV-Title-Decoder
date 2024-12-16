@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MakeMKV_Title_Decoder.Data;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -9,10 +10,10 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
 
     public class LoadedPlaylistListItem {
-        public LoadedPlaylist Playlist;
+        public Playlist Playlist;
         public List<string> Icons = new();
 
-        public LoadedPlaylistListItem(LoadedPlaylist playlist) {
+        public LoadedPlaylistListItem(Playlist playlist) {
             this.Playlist = playlist;
         }
 
@@ -49,7 +50,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             this.Items.Add(item);
         }
 
-        public void Add(LoadedPlaylist playlist) {
+        public void Add(Playlist playlist) {
             this.Items.Add(new LoadedPlaylistListItem(playlist));
         }
 
@@ -61,7 +62,7 @@ namespace MakeMKV_Title_Decoder.Forms.PlaylistCreator {
             this.Items.Clear();
         }
 
-        public LoadedPlaylistListItem? FindItem(LoadedPlaylist playlist) {
+        public LoadedPlaylistListItem? FindItem(Playlist playlist) {
             foreach(var obj in this.Items)
             {
                 LoadedPlaylistListItem item = (LoadedPlaylistListItem)obj;

@@ -3,7 +3,7 @@ using libbluray.bdnav.Clpi;
 using libbluray.disc;
 using libbluray.file;
 using MakeMKV_Title_Decoder.Data;
-using MkvToolNix.Data;
+using MakeMKV_Title_Decoder.Data.Renames;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -107,17 +107,17 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
-        private string? GetTypeIcon(MkvTrackType? type) {
+        private string? GetTypeIcon(TrackType? type) {
             if (type == null)
             {
                 return null;
             }
             switch (type)
             {
-                case MkvTrackType.Audio: return "audio-headphones.png";
-                case MkvTrackType.Subtitles: return "text.png";
-                case MkvTrackType.Video: return "tool-animator.png";
-                case MkvTrackType.Unknown:
+                case TrackType.Audio: return "audio-headphones.png";
+                case TrackType.Subtitle: return "text.png";
+                case TrackType.Video: return "tool-animator.png";
+                //case TrackType.Unknown:
                 default:
                     return null;
             }
@@ -134,20 +134,18 @@ namespace MakeMKV_Title_Decoder
 
         private string GetPropertiesString(LoadedTrack track) {
             List<string> props = new();
-            switch (track.Identity.Type)
+            switch (track.Identity.TrackType)
             {
-                case MkvTrackType.Audio:
-                    if (track.Identity.AudioSamplingFrequency != null)
-                        props.Add(track.Identity.AudioSamplingFrequency.ToString() + " Hz");
-                    if (track.Identity.AudioChannels != null)
-                        props.Add(track.Identity.AudioChannels.ToString() + " channels");
+                case TrackType.Audio:
+                    if (track.Identity.SampleRateHz != null)
+                        props.Add(track.Identity.SampleRateHz.ToString() + " Hz");
+                    if (track.Identity.Channels != null)
+                        props.Add(track.Identity.Channels.ToString() + " channels");
                     break;
-                case MkvTrackType.Video:
-                    if (track.Identity.PixelDimensions != null)
-                        props.Add(track.Identity.PixelDimensions + " pixels");
+                case TrackType.Video:
+                    props.Add(new Size(track.Identity.Width ?? 0, track.Identity.Height ?? 0).ToString() + " pixels");
                     break;
-                case MkvTrackType.Subtitles:
-
+                case TrackType.Subtitle:
                     break;
                 default:
                     return "";
@@ -174,22 +172,18 @@ namespace MakeMKV_Title_Decoder
                     CodecItem.Tag = track;
                     TrackList.Items.Add(CodecItem);
 
-                    MkvTrackType? type = track.Identity.Type;
-                    if (type == MkvTrackType.Unknown)
-                    {
-                        type = null;
-                    }
-                    ListViewItem.ListViewSubItem TypeItem = new(CodecItem, type?.ToString() ?? "");
+                    TrackType type = track.Identity.TrackType;
+                    ListViewItem.ListViewSubItem TypeItem = new(CodecItem, type.ToString() ?? "");
                     TypeItem.Tag = GetTypeIcon(type);
                     CodecItem.SubItems.Add(TypeItem);
 
                     ListViewItem.ListViewSubItem LanguageItem = new(CodecItem, track.Identity.Language?.Part2 ?? "");
                     CodecItem.SubItems.Add(LanguageItem);
 
-                    ListViewItem.ListViewSubItem NameItem = new(CodecItem, track.Identity.TrackName ?? "");
+                    ListViewItem.ListViewSubItem NameItem = new(CodecItem, track.Identity.Title ?? "");
                     CodecItem.SubItems.Add(NameItem);
 
-                    ListViewItem.ListViewSubItem IdItem = new(CodecItem, track.MkvToolNixID.ToString() ?? "");
+                    ListViewItem.ListViewSubItem IdItem = new(CodecItem, track.Identity.Index.ToString() ?? "");
                     CodecItem.SubItems.Add(IdItem);
 
                     bool? isDefault = track.RenameData.DefaultFlag;
@@ -214,7 +208,7 @@ namespace MakeMKV_Title_Decoder
                     ListViewItem.ListViewSubItem SourceDirItem = new(CodecItem, Path.GetDirectoryName(stream.Identity.SourceFile));
                     CodecItem.SubItems.Add(SourceDirItem);
 
-                    ListViewItem.ListViewSubItem ProgramItem = new(CodecItem, track.Identity.Number?.ToString() ?? "");
+                    ListViewItem.ListViewSubItem ProgramItem = new(CodecItem, /*track.Identity.Number?.ToString() ??*/ "");
                     CodecItem.SubItems.Add(ProgramItem);
 
                     ListViewItem.ListViewSubItem DelayItem = new(CodecItem, "N/A"); // Codec delay
@@ -282,32 +276,30 @@ namespace MakeMKV_Title_Decoder
             if (TrackList.SelectedItems.Count == 1)
             {
                 ListViewItem selectedItem = TrackList.SelectedItems[0];
-                if (selectedItem.Tag != null)
+                if (selectedItem.Tag != null && selectedItem.Tag is LoadedTrack track)
                 {
-                    MkvTrack track = (MkvTrack)selectedItem.Tag;
-
                     AppendTrackTextLine("General", FontStyle.Bold);
-                    AppendTrackTextLine($"Track name:\t\t{track.Properties?.TrackName ?? ""}");
-                    AppendTrackTextLine($"Language:\t\t{track.Properties?.Language?.Part2 ?? ""}");
-                    AppendTrackTextLine($"\"Default track\" flag:\t{track.Properties?.DefaultTrack?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Track enabled\" flag:\t{track.Properties?.EnabledTrack?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Forced display\" flag:\t{track.Properties?.ForcedTrack?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Hearing impaired\" flag:\t{track.Properties?.FlagHearingImpaired?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Visual impaired\" flag:\t{track.Properties?.FlagVisualImpaired?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Text descriptions\" flag:\t{track.Properties?.FlagTextDescriptions?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Original language\" flag:\t{track.Properties?.FlagOriginal?.ToString() ?? ""}");
-                    AppendTrackTextLine($"\"Commentary\" flag:\t\t{track.Properties?.FlagCommentary?.ToString() ?? ""}");
+                    AppendTrackTextLine($"Track name:\t\t{track.Identity.Title ?? ""}");
+                    AppendTrackTextLine($"Language:\t\t{track.Identity.Language?.Part2 ?? ""}");
+                    AppendTrackTextLine($"\"Default track\" flag:\t{track.Identity.DefaultFlag?.ToString() ?? ""}");
+                    //AppendTrackTextLine($"\"Track enabled\" flag:\t{track.Identity.EnabledTrack?.ToString() ?? ""}");
+                    AppendTrackTextLine($"\"Forced display\" flag:\t{track.Identity.ForcedFlag?.ToString() ?? ""}");
+                    AppendTrackTextLine($"\"Hearing impaired\" flag:\t{track.Identity.HearingImpairedFlag?.ToString() ?? ""}");
+                    AppendTrackTextLine($"\"Visual impaired\" flag:\t{track.Identity.VisualImpairedFlag?.ToString() ?? ""}");
+                    AppendTrackTextLine($"\"Text descriptions\" flag:\t{track.Identity.DescriptionsFlag?.ToString() ?? ""}");
+                    AppendTrackTextLine($"\"Original language\" flag:\t{track.Identity.OriginalFlag?.ToString() ?? ""}");
+                    AppendTrackTextLine($"\"Commentary\" flag:\t\t{track.Identity.CommentFlag?.ToString() ?? ""}");
 
                     AppendTrackTextLine();
 
                     AppendTrackTextLine("Timestamps", FontStyle.Bold);
-                    AppendTrackTextLine($"Delay:\t\t{track.Properties?.CodecDelay?.ToString() ?? ""}");
-                    AppendTrackTextLine($"Default duration:\t{track.Properties?.DefaultDuration?.ToString() ?? ""}");
+                    //AppendTrackTextLine($"Delay:\t\t{track.Identity.CodecDelay?.ToString() ?? ""}");
+                    AppendTrackTextLine($"Default duration:\t{track.Identity.Duration.ToString() ?? ""}");
 
                     AppendTrackTextLine();
 
                     AppendTrackTextLine("Video", FontStyle.Bold);
-                    AppendTrackTextLine($"Display size: {track.Properties?.DisplayDimensions ?? ""} {track.Properties?.DisplayUnit?.ToString() ?? ""}");
+                    AppendTrackTextLine($"Display size: {new Size(track.Identity.Width ?? 0, track.Identity.Height ?? 0)} {track.Identity.PixelFormat?.ToString() ?? ""}");
                 }
             }
         }

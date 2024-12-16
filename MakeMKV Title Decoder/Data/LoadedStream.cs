@@ -1,6 +1,6 @@
-﻿using libbluray.bdnav.Clpi;
+﻿using FFMpeg_Wrapper.ffprobe;
+using libbluray.bdnav.Clpi;
 using MakeMKV_Title_Decoder.Data.Renames;
-using MkvToolNix.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,30 +18,30 @@ namespace MakeMKV_Title_Decoder.Data
 	{
 		public StreamIdentity Identity { get => RenameData.Identity; }
         public ClipRename RenameData { get; private set; }
+        public readonly MediaAnalysis FFProbeInfo;
 
 		public List<LoadedTrack> Tracks { get; }
 
         Dictionary<LoadedTrack, TrackRename>? TrackMatches = null;
 
         /// <summary>
-        /// Retrieves the path to the source file on the disc. Takes into account
-        /// if the file is supposed to be deinterlaced or not.
+        /// Retrieves the path to the source file on the disc.
         /// </summary>
         public string GetFullPath(LoadedDisc disc) {
-            return Path.Combine(
-                disc.Root,
-                Path.GetDirectoryName(this.Identity.SourceFile),
-                $"{Path.GetFileNameWithoutExtension(this.Identity.SourceFile)}{(this.RenameData.Deinterlaced ? ".dint" : "")}{Path.GetExtension(this.Identity.SourceFile)}"
-            );
+            return Path.Combine(disc.Root, this.Identity.SourceFile);
         }
 
         public TimeSpan Duration { get; protected set; }
 
-        protected LoadedStream(string root, string filePath, MkvMergeID mergeInfo) {
+        protected LoadedStream(string root, string filePath, MediaAnalysis info) {
 			var fileSize = DataSize.FromFile(Path.Combine(root, filePath)) ?? new DataSize();
-			var ID = new StreamIdentity(filePath, fileSize, mergeInfo);
+			var ID = new StreamIdentity(filePath, fileSize, info);
+            this.FFProbeInfo = info;
             this.RenameData = new ClipRename(ID);
-            this.Tracks = mergeInfo.Tracks.Select(x => new LoadedTrack(x, this)).ToList();
+            this.Tracks = info.VideoStreams.Select(x => new LoadedTrack(x, this))
+                    .Concat(info.AudioStreams.Select(x => new LoadedTrack(x, this)))
+                    .Concat(info.SubtitleStreams.Select(x => new LoadedTrack(x, this)))
+                    .ToList();
             int trackUID = 0;
             foreach(var track in this.Tracks)
             {

@@ -1,5 +1,5 @@
-﻿using Iso639;
-using MkvToolNix.Data;
+﻿using FFMpeg_Wrapper.ffprobe;
+using Iso639;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,119 +12,218 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 {
     public class TrackIdentity
     {
+        #region Common
+        [JsonInclude, JsonConverter(typeof(JsonStringEnumConverter))]
+        public readonly TrackType TrackType;
+
+        /// <summary>
+        /// The stream index as reported my ffprobe
+        /// </summary>
+        [JsonInclude]
+        public readonly int Index;
+
         [JsonInclude]
         public readonly string Codec;
 
         [JsonInclude]
-        public readonly MkvTrackType? Type;
-
-        // Track -> Properties ->
-        [JsonInclude]
-        public readonly long? AudioBitsPerSample;
+        public readonly string Type;
 
         [JsonInclude]
-        public readonly long? AudioChannels;
+        public readonly long BitRate;
 
         [JsonInclude]
-        public readonly long? AudioSamplingFrequency;
+        public readonly TimeSpan Duration;
 
         [JsonInclude]
-        public readonly string? CodecID;
-
-        [JsonInclude]
-        public readonly string? DisplayDimensions;
-
-        [JsonInclude]
-        public readonly long? DisplayUnit;
-
-        [JsonInclude]
-        public readonly bool? FlagHearingImpaired;
-
-        [JsonInclude]
-        public readonly bool? FlagVisualImpaired;
-
-        [JsonInclude]
-        public readonly bool? FlagTextDescriptions;
-
-        [JsonInclude]
-        public readonly bool? FlagOriginal;
-
-        [JsonInclude]
-        public readonly bool? FlagCommentary;
+        public readonly string? Title = null;
 
         /// <summary>
         /// The track's language as an ISO 639-2 language code
         /// </summary>
         [JsonInclude, JsonConverter(typeof(LanguageJsonConverter))]
-        public readonly Language? Language;
+        public Language? Language;
 
         [JsonInclude]
-        public readonly long? Number;
+        public readonly int? BitDepth;
 
         [JsonInclude]
-        public readonly string? PixelDimensions;
+        public readonly bool? DefaultFlag;
 
         [JsonInclude]
-        public readonly string? TrackName;
+        public readonly bool? ForcedFlag;
 
         [JsonInclude]
-        public readonly bool? Enabled;
+        public readonly bool? DubFlag;
 
         [JsonInclude]
-        public readonly bool? Forced;
+        public readonly bool? OriginalFlag;
 
         [JsonInclude]
-        public readonly bool? Default;
+        public readonly bool? CommentFlag;
 
-        internal TrackIdentity(MkvTrack info)
+        [JsonInclude]
+        public readonly bool? LyricsFlag;
+
+        [JsonInclude]
+        public readonly bool? KaraokeFlag;
+
+        [JsonInclude]
+        public readonly bool? HearingImpairedFlag;
+
+        [JsonInclude]
+        public readonly bool? VisualImpairedFlag;
+
+        [JsonInclude]
+        public readonly bool? CaptionsFlag;
+
+        [JsonInclude]
+        public readonly bool? DescriptionsFlag;
+        #endregion
+
+        #region Video
+        [JsonInclude]
+        public readonly int? Width = null;
+
+        [JsonInclude]
+        public readonly int? Height = null;
+
+        [JsonInclude]
+        public readonly string? PixelFormat = null;
+
+        [JsonInclude]
+        public readonly string? ColorRange = null;
+
+        [JsonInclude]
+        public readonly string? ColorSpace = null;
+
+        [JsonInclude]
+        public readonly bool Interlaced = false;
+        #endregion
+
+        #region Audio
+        [JsonInclude]
+        public readonly int? Channels = null;
+
+        [JsonInclude]
+        public readonly string? ChannelLayout = null;
+
+        [JsonInclude]
+        public readonly int? SampleRateHz = null;
+        #endregion
+
+        private TrackIdentity(MediaStream info, TrackType type) {
+            this.TrackType = type;
+            this.Index = info.Index;
+            this.Codec = info.CodecName;
+            this.BitRate = info.BitRate;
+            this.Duration = info.Duration;
+            this.Language = info.Language;
+            this.BitDepth = info.BitDepth;
+
+            // Disposition flags
+            DefaultFlag = TryGetDispositionFlag(info.Disposition, "default");
+            ForcedFlag = TryGetDispositionFlag(info.Disposition, "forced");
+            DubFlag = TryGetDispositionFlag(info.Disposition, "dub");
+            OriginalFlag = TryGetDispositionFlag(info.Disposition, "original");
+            CommentFlag = TryGetDispositionFlag(info.Disposition, "comment");
+            LyricsFlag = TryGetDispositionFlag(info.Disposition, "lyrics");
+            KaraokeFlag = TryGetDispositionFlag(info.Disposition, "karaoke");
+            HearingImpairedFlag = TryGetDispositionFlag(info.Disposition, "hearing_impaired");
+            VisualImpairedFlag = TryGetDispositionFlag(info.Disposition, "visual_impaired");
+            CaptionsFlag = TryGetDispositionFlag(info.Disposition, "captions");
+            DescriptionsFlag = TryGetDispositionFlag(info.Disposition, "descriptions");
+
+            // Tags
+            this.Language = info.Language;
+            if (info.Tags != null)
+            {
+                if (!info.Tags.TryGetValue("title", out this.Title))
+                {
+                    this.Title = null;
+                }
+            }
+        }
+
+        internal TrackIdentity(AudioStream info) : this(info, TrackType.Audio) {
+            this.Channels = info.Channels;
+            this.ChannelLayout = info.ChannelLayout;
+            this.SampleRateHz = info.SampleRateHz;
+        }
+
+        internal TrackIdentity(VideoStream info) : this(info, TrackType.Video)
         {
-            this.Codec = info.Codec;
-            this.Type = info.Type;
-            this.AudioBitsPerSample = info.Properties?.AudioBitsPerSample;
-            this.AudioChannels = info.Properties?.AudioChannels;
-            this.AudioSamplingFrequency = info.Properties?.AudioSamplingFrequency;
-            this.CodecID = info.Properties?.CodecID;
-            this.DisplayDimensions = info.Properties?.DisplayDimensions;
-            this.DisplayUnit = info.Properties?.DisplayUnit;
-            this.FlagHearingImpaired = info.Properties?.FlagHearingImpaired;
-            this.FlagVisualImpaired = info.Properties?.FlagVisualImpaired;
-            this.FlagTextDescriptions = info.Properties?.FlagTextDescriptions;
-            this.FlagOriginal = info.Properties?.FlagOriginal;
-            this.FlagCommentary = info.Properties?.FlagCommentary;
-            this.Language = info.Properties?.Language;
-            this.Number = info.Properties?.Number;
-            this.PixelDimensions = info.Properties?.PixelDimensions;
-            this.TrackName = info.Properties?.TrackName;
-            this.Enabled = info.Properties?.EnabledTrack;
-            this.Forced = info.Properties?.ForcedTrack;
-            this.Default = info.Properties?.DefaultTrack;
+            this.Width = info.Width;
+            this.Height = info.Height;
+            this.PixelFormat = info.PixelFormat;
+            this.ColorRange = info.ColorRange;
+            this.ColorSpace = info.ColorSpace;
+
+            // Auto-check for interlacing
+            if (!string.IsNullOrWhiteSpace(info.FieldOrder))
+            {
+                switch(info.FieldOrder)
+                {
+                    case "tt":
+                    case "bb":
+                    case "tb":
+                    case "bt":
+                        this.Interlaced = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        internal TrackIdentity(SubtitleStream info) : this(info, TrackType.Subtitle)
+        {
+
+        }
+
+        private bool? TryGetDispositionFlag(Dictionary<string, bool>? disposition, string key) {
+            if (disposition == null) return null;
+            if (disposition.TryGetValue(key, out bool value))
+            {
+                return value;
+            }
+
+            return null;
         }
 
         [JsonConstructor]
-        private TrackIdentity(string codec, MkvTrackType? type, long? audioBitsPerSample, long? audioChannels, long? audioSamplingFrequency, string? codecID,
-            string? displayDimensions, long? displayUnit, bool? flagHearingImpaired, bool? flagVisualImpaired, bool? flagTextDescriptions, bool? flagOriginal,
-            bool? flagCommentary, Language? language, long? number, string? pixelDimensions, string? trackName, bool? enabled, bool? forced, bool? Default) 
-        { 
-            this.Codec = codec;
-            this.Type = type;
-            this.AudioBitsPerSample = audioBitsPerSample;
-            this.AudioChannels = audioChannels;
-            this.AudioSamplingFrequency = audioSamplingFrequency;
-            this.CodecID = codecID;
-            this.DisplayDimensions = displayDimensions;
-            this.DisplayUnit = displayUnit;
-            this.FlagHearingImpaired = flagHearingImpaired;
-            this.FlagVisualImpaired = flagVisualImpaired;
-            this.FlagTextDescriptions = flagTextDescriptions;
-            this.FlagOriginal = flagOriginal;
-            this.FlagCommentary = flagCommentary;
-            this.Language = language;
-            this.Number = number;
-            this.PixelDimensions = pixelDimensions;
-            this.TrackName = trackName;
-            this.Enabled = enabled;
-            this.Forced = forced;
-            this.Default = Default;
+        private TrackIdentity(TrackType trackType, int index, string codec, string type, long bitRate, TimeSpan duration, Language? language,
+            int? bitDepth, bool? defaultFlag, bool? forcedFlag, bool? dubFlag, bool? originalFlag, bool? commentFlag,
+            bool? lyricsFlag, bool? karaokeFlag, bool? hearingImpairedFlag, bool? visualImpairedFlag, bool? captionsFlag,
+            bool? descriptionsFlag, int? width, int? height, string? pixelFormat, string? colorRange, string? colorSpace,
+            int? channels, string? channelLayout, int? sampleRateHz) 
+        {
+            this.TrackType = trackType;
+            Index = index;
+            Codec = codec;
+            Type = type;
+            BitRate = bitRate;
+            Duration = duration;
+            Language = language;
+            BitDepth = bitDepth;
+            DefaultFlag = defaultFlag;
+            ForcedFlag = forcedFlag;
+            DubFlag = dubFlag;
+            OriginalFlag = originalFlag;
+            CommentFlag = commentFlag;
+            LyricsFlag = lyricsFlag;
+            KaraokeFlag = karaokeFlag;
+            HearingImpairedFlag = hearingImpairedFlag;
+            VisualImpairedFlag = visualImpairedFlag;
+            CaptionsFlag = captionsFlag;
+            DescriptionsFlag = descriptionsFlag;
+            Width = width;
+            Height = height;
+            PixelFormat = pixelFormat;
+            ColorRange = colorRange;
+            ColorSpace = colorSpace;
+            Channels = channels;    
+            ChannelLayout = channelLayout;
+            SampleRateHz = sampleRateHz;
         }
 
         /// <summary>
@@ -134,28 +233,40 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         /// <returns></returns>
         public string? Match(TrackIdentity other)
         {
+            if (this.TrackType != other.TrackType) return "Track type did not match.";
+            if (this.Index != other.Index) return "Index did not match.";
             if (this.Codec != other.Codec) return "Codec did not match.";
             if (this.Type != other.Type) return "Track type did not match.";
-            if (this.AudioBitsPerSample != other.AudioBitsPerSample) return "Audio bits per sample did not match.";
-            if (this.AudioChannels != other.AudioChannels) return "Audio channels did not match.";
-            if (this.AudioSamplingFrequency != other.AudioSamplingFrequency) return "Audio sampling frequency did not match.";
-            if (this.CodecID != other.CodecID) return "Codec ID did not match.";
-            if (this.DisplayDimensions != other.DisplayDimensions) return "Display dimensions did not match.";
-            if (this.DisplayUnit != other.DisplayUnit) return "Display unit did not match.";
-            if (this.FlagHearingImpaired != other.FlagHearingImpaired) return "Hearing impaired flag did not match.";
-            if (this.FlagVisualImpaired != other.FlagVisualImpaired) return "Visual impaired flag did not match.";
-            if (this.FlagTextDescriptions != other.FlagTextDescriptions) return "Text descriptions flag did not match.";
-            if (this.FlagOriginal != other.FlagOriginal) return "Original flag did not match.";
-            if (this.FlagCommentary != other.FlagCommentary) return "Commentary flag did not match.";
+            //if (this.BitRate != other.BitRate) return "BitRate did not match.";
+            //if (this.Duration != other.Duration) return "Duration did not match.";
             if (this.Language != other.Language) return "Language did not match.";
-            if (this.Number != other.Number) return "Number did not match.";
-            if (this.PixelDimensions != other.PixelDimensions) return "Pixel dimensions did not match.";
-            if (this.TrackName != other.TrackName) return "Track name did not match.";
-            if (this.Enabled != other.Enabled) return "Track enabled did not match.";
-            if (this.Forced != other.Forced) return "Track forced did not match";
+            //if (this.BitDepth != other.BitDepth) return "Bit depth did not match";
+            if (this.DefaultFlag != other.DefaultFlag) return "Default flag did not match.";
+            if (this.ForcedFlag != other.ForcedFlag) return "Forced flag did not match.";
+            if (this.DubFlag != other.DubFlag) return "Dub flag did not match.";
+            if (this.OriginalFlag != other.OriginalFlag) return "Original flag did not match.";
+            if (this.CommentFlag != other.CommentFlag) return "Comment flag did not match.";
+            if (this.LyricsFlag != other.LyricsFlag) return "Lyrics flag did not match.";
+            if (this.KaraokeFlag != other.KaraokeFlag) return "Karaoke flag did not match.";
+            if (this.HearingImpairedFlag != other.HearingImpairedFlag) return "Hearing impaired flag did not match.";
+            if (this.VisualImpairedFlag != other.VisualImpairedFlag) return "Visual impaired flag did not match.";
+            if (this.CaptionsFlag != other.CaptionsFlag) return "Captions flag did not match.";
+            if (this.DescriptionsFlag != other.DescriptionsFlag) return "Descriptions flag did not match.";
+            if (this.Width != other.Width || this.Height != other.Height) return "Video size did not match.";
+            if (this.PixelFormat != other.PixelFormat) return "Pixel format did not match.";
+            if (this.ColorRange != other.ColorRange) return "Color range did not match.";
+            if (this.ColorSpace != other.ColorSpace) return "Color space did not match.";
+            if (this.ChannelLayout != other.ChannelLayout) return "Channel layout did not match.";
+            if (this.SampleRateHz != other.SampleRateHz) return "Sample rate hz did not match.";
 
             return null;
         }
 
+    }
+
+    public enum TrackType {
+        Video,
+        Audio,
+        Subtitle
     }
 }

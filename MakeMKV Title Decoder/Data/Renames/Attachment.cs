@@ -1,4 +1,5 @@
 ﻿using FFMpeg_Wrapper;
+using FFMpeg_Wrapper.ffmpeg;
 using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
 using System;
 using System.Collections.Generic;
@@ -110,9 +111,16 @@ namespace MakeMKV_Title_Decoder.Data.Renames
                 return true;
             }
 
-            FFMpeg ffmpeg = new(FileUtils.GetFFMpegExe());
-            bool result = ffmpeg.Snapshot(inputFile, this.FrameIndex, outputFile).Run();
-            return result && File.Exists(outputFile);
+            string? ffmpegPath = FileUtils.GetFFMpegExe();
+            if (ffmpegPath == null) return false;
+            FFMpeg ffmpeg = new(ffmpegPath);
+            string? result = ffmpeg.Snapshot(inputFile, this.FrameIndex, outputFile).Run();
+            if (result != null)
+            {
+                Log.Error($"FFMpeg snapshot: {result}");
+                return false;
+            }
+            return File.Exists(outputFile);
         }
 
         /// <summary>
