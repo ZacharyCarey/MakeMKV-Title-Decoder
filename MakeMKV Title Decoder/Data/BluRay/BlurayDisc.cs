@@ -19,7 +19,6 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
     {
         private List<DiscPlaylist> playlists;
 
-        public override bool ForceVlcTrackIndex => false;
         public override bool ForceTranscoding => false;
 
         private BlurayDisc(string root, List<LoadedStream> streams, string? title, long? numSets, long? setNum, List<DiscPlaylist> playlists) : base(root, title, numSets, setNum, streams)

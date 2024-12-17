@@ -86,7 +86,7 @@ namespace MakeMKV_Title_Decoder {
         }
 
         public void LoadVLC() {
-            this.VLC = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet");
+            this.VLC = new LibVLC(enableDebugLogs: false, "--aout=directsound", "--quiet", "--deinterlace=0");
         }
 
         public void LoadVideo(string? path) {

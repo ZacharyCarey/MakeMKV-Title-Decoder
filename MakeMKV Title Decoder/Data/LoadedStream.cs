@@ -50,6 +50,8 @@ namespace MakeMKV_Title_Decoder.Data
             }
 		}
 
+        public abstract int GetVlcID(LoadedTrack track);
+
 		public LoadedTrack? GetTrack(long index)
 		{
 			if (index < 0 || index >= Tracks.Count) return null;

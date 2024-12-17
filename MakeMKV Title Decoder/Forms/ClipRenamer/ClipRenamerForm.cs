@@ -155,17 +155,11 @@ namespace MakeMKV_Title_Decoder
             defaultCheckBox.Checked = (rename?.DefaultFlag ?? false);
             propertiesPanel.Enabled = (track != null);
 
-            long selectedIndex = (track?.Identity?.Index ?? -1);
+            long selectedIndex = -1;
             var selectedClip = this.SelectedClip;
-            if (this.Disc.ForceVlcTrackIndex && track != null && selectedClip != null)
+            if (track != null && selectedClip != null)
             {
-                try
-                {
-                    selectedIndex = selectedClip.Tracks.WithIndex().First(x => x.Value == track).Index;
-                } catch (Exception)
-                {
-                    selectedIndex = -1;
-                }
+                selectedIndex = selectedClip.GetVlcID(track);
             }
 
             switch (type)

@@ -103,12 +103,6 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public long Episode = -1;
 
-        /// <summary>
-        /// For multiple versions of the same episode, which version is this one?
-        /// </summary>
-        [JsonInclude]
-        public string? MultiVersion;
-
         [JsonInclude]
         public FeatureType? Type;
 
@@ -127,31 +121,25 @@ namespace MakeMKV_Title_Decoder.Data
         }
 
         public string GetFileName(ShowOutputName ShowID) {
-            string versionString = "";
-            if (MultiVersion != null)
-            {
-                versionString = $" - {MultiVersion}";
-            }
-
             if (ShowID.Type == ShowType.Movie)
             {
                 string? bonusFolder = GetFolderName(this.Type ?? FeatureType.MainFeature);
                 if (bonusFolder != null)
                 {
-                    return $"{ExtraName ?? ""}{versionString}.mkv";
+                    return $"{ExtraName ?? ""}.mkv";
                 } else
                 {
-                    return $"{ShowID.Name ?? ""} [{ShowOutputName.TmdbPrefix}{ShowID.TmdbID.ToString() ?? ""}]{versionString}.mkv";
+                    return $"{ShowID.Name ?? ""} [{ShowOutputName.TmdbPrefix}{ShowID.TmdbID.ToString() ?? ""}].mkv";
                 }
             } else if (ShowID.Type == ShowType.TV)
             {
                 string? bonusFolder = GetFolderName(this.Type ?? FeatureType.MainFeature);
                 if (bonusFolder != null)
                 {
-                    return $"{ExtraName ?? ""}{versionString}.mkv";
+                    return $"{ExtraName ?? ""}.mkv";
                 } else
                 {
-                    return $"{ShowID.Name ?? ""} S{Season}E{Episode}{versionString}.mkv";
+                    return $"{ShowID.Name ?? ""} S{Season}E{Episode}.mkv";
                 }
             } else
             {

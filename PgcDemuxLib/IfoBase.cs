@@ -237,7 +237,7 @@ namespace PgcDemuxLib
             options.CustomVOB.WriteVideoPacks = true;
 
             PgcDemux demux = new PgcDemux(this, options, outputFolder);
-            bool result = demux.Demux(outputFolder, progress, maxProgress); ;
+            bool result = demux.Demux(outputFolder, progress, maxProgress);
             demux.Close();
             return result ? new DemuxResult(options.CombinedVobName, demux.StreamOrder) : new DemuxResult();
         }

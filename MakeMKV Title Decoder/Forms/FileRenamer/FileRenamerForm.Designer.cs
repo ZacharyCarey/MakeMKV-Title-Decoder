@@ -51,8 +51,6 @@
             ShortsRadioButton = new RadioButton();
             SpecialsRadioButton = new RadioButton();
             ExtrasRadioButton = new RadioButton();
-            MultiVersionTextBox = new TextBox();
-            MultiVersionCheckBox = new CheckBox();
             panel3 = new Panel();
             TmdbBtn = new Button();
             EpisodeTextBox = new TextBox();
@@ -208,8 +206,6 @@
             OptionsPanel.Controls.Add(ShortsRadioButton);
             OptionsPanel.Controls.Add(SpecialsRadioButton);
             OptionsPanel.Controls.Add(ExtrasRadioButton);
-            OptionsPanel.Controls.Add(MultiVersionTextBox);
-            OptionsPanel.Controls.Add(MultiVersionCheckBox);
             OptionsPanel.Location = new Point(6, 305);
             OptionsPanel.Name = "OptionsPanel";
             OptionsPanel.Size = new Size(892, 411);
@@ -358,26 +354,6 @@
             ExtrasRadioButton.UseVisualStyleBackColor = true;
             ExtrasRadioButton.CheckedChanged += FeatureTypeRadioButton_CheckedChanged;
             // 
-            // MultiVersionTextBox
-            // 
-            MultiVersionTextBox.Enabled = false;
-            MultiVersionTextBox.Location = new Point(3, 28);
-            MultiVersionTextBox.Name = "MultiVersionTextBox";
-            MultiVersionTextBox.Size = new Size(272, 23);
-            MultiVersionTextBox.TabIndex = 1;
-            MultiVersionTextBox.TextChanged += MultiVersionTextBox_TextChanged;
-            // 
-            // MultiVersionCheckBox
-            // 
-            MultiVersionCheckBox.AutoSize = true;
-            MultiVersionCheckBox.Location = new Point(3, 3);
-            MultiVersionCheckBox.Name = "MultiVersionCheckBox";
-            MultiVersionCheckBox.Size = new Size(97, 19);
-            MultiVersionCheckBox.TabIndex = 0;
-            MultiVersionCheckBox.Text = "Mutli-Version";
-            MultiVersionCheckBox.UseVisualStyleBackColor = true;
-            MultiVersionCheckBox.CheckedChanged += MultiVersionCheckBox_CheckedChanged;
-            // 
             // panel3
             // 
             panel3.Controls.Add(TmdbBtn);
@@ -471,8 +447,6 @@
         private Button ExportAllBtn;
         private Panel panel3;
         private Panel OptionsPanel;
-        private TextBox MultiVersionTextBox;
-        private CheckBox MultiVersionCheckBox;
         private RadioButton InterviewsRadioButton;
         private RadioButton DeletedScenesRadioButton;
         private RadioButton BehindTheScenesRadioButton;

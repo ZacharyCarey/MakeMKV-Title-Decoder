@@ -52,6 +52,9 @@ namespace MakeMKV_Title_Decoder.Data
 		[JsonIgnore]
         string Exportable.Name => this.Name ?? "N/A";
 
+		[JsonIgnore]
+		bool Exportable.IsTranscodable => true;
+
         public static Playlist? Import(LoadedDisc disc, DiscPlaylist importPlaylist)
 		{
 			Playlist playlist = new();
@@ -94,7 +97,6 @@ namespace MakeMKV_Title_Decoder.Data
 					.AddFiles(this.SourceFiles.Select(file => disc[file.SourceUID].FFProbeInfo))
 			);
 
-			FilterArguments? filter = null;
 			int nextFilterName = 0;
 
 			// Add all the streams in the correct order, applying relevent options
@@ -106,15 +108,15 @@ namespace MakeMKV_Title_Decoder.Data
                     if (loadedTrack.FFProbeInfo is VideoStream videoStream)
 					{
 						VideoStreamOptions options;
+						FilterArguments? filter = null;
 
                         if (sourceFile.RenameData.Deinterlaced || resolution != null)
                         {
-                            if (filter == null)
-                            {
-                                filter = new();
-                                if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
-								if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
-                            }
+                            filter = new();
+							args.AddInputFilter(filter);
+                            if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
+							if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
+
                             filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
                             filter.AddOutput($"video{nextFilterName}");
 
@@ -128,7 +130,10 @@ namespace MakeMKV_Title_Decoder.Data
                         }
 
                         ApplyStreamOptions(options, disc, sourceFile, rename);
-                        if (disc.ForceTranscoding) options.SetCodec(Codecs.LibSvtAV1.SetPreset(5).SetCRF(20));
+						if (disc.ForceTranscoding || filter != null)
+						{
+							options.SetCodec(Codecs.LibSvtAV1.SetPreset(5).SetCRF(20));
+						}
 						args.AddStream(options);
 					} else 
 					{
@@ -138,12 +143,6 @@ namespace MakeMKV_Title_Decoder.Data
 						args.AddStream(options);
 					}
 				}
-			}
-			
-			// Only apply an input/deinterlace filter if it is required
-			if (filter != null)
-			{
-				args.SetInputFilter(filter);
 			}
 
 			return args;
@@ -183,7 +182,7 @@ namespace MakeMKV_Title_Decoder.Data
             FFMpeg ffmpeg = new FFMpeg();
             OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
             FFMpegCliArgs args = this.GetMergeData(ffmpeg, disc, file);
-            return Export(disc, args, Path.Combine(outputFolder, outputFile), 0, progress, totalProgress);
+            return Export(disc, args, Path.Combine(outputFolder, outputFile), 0, false, progress, totalProgress);
         }
 
 		bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
@@ -193,26 +192,33 @@ namespace MakeMKV_Title_Decoder.Data
 			FFMpeg ffmpeg = new FFMpeg();
 			OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
 			FFMpegCliArgs args = this.GetMergeData(ffmpeg, disc, file, resolution);
-			return Export(disc, args, Path.Combine(outputFolder, outputFile), GetVerticalResolution(resolution), progress, totalProgress);
+			return Export(disc, args, Path.Combine(outputFolder, outputFile), GetVerticalResolution(resolution), true, progress, totalProgress);
 		}
 
-		private bool Export(LoadedDisc disc, FFMpegCliArgs args, string outputFilePath, int outputResolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+		private bool Export(LoadedDisc disc, FFMpegCliArgs args, string outputFilePath, int outputResolution, bool isTranscoded, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
             SimpleProgress currentProgress;
 			if (totalProgress.HasValue) currentProgress = totalProgress.Value;
 			else currentProgress = new();
             currentProgress.CurrentMax = 100;
 
+			string? logPath = Log.GetLogDirectory("ffmpeg");
+			if (logPath != null)
+			{
+				logPath = Path.Combine(logPath, $"ffmpeg_{Path.GetFileNameWithoutExtension(outputFilePath)}.txt");
+				args.SetLogPath(logPath);
+			}
+
 			Stopwatch timer = new();
 			timer.Start();
-			string? error = /*args
+			string? error = args
 				.NotifyOnProgress((double percent) =>
 				{
 					currentProgress.Current = (uint)percent;
 					progress?.Report(currentProgress);
 				})
-				//TODO .SetLogPath()
+				//.SetLogPath()
 				.SetOverwrite(true)
-				.Run();*/null;
+				.Run();
 			timer.Stop();
 
 			if (error != null)
@@ -221,7 +227,7 @@ namespace MakeMKV_Title_Decoder.Data
 				return false;
 			}
 
-			PrintDevStats(disc, outputFilePath, timer.Elapsed, outputResolution);
+			PrintDevStats(disc, outputFilePath, timer.Elapsed, outputResolution, isTranscoded);
 			return true;
 		}
 
@@ -237,7 +243,7 @@ namespace MakeMKV_Title_Decoder.Data
 			}
 		}
 
-		private void PrintDevStats(LoadedDisc disc, string outputFilePath, TimeSpan transcodeTime, int outputResolution = 0) {
+		private void PrintDevStats(LoadedDisc disc, string outputFilePath, TimeSpan transcodeTime, int outputResolution, bool isTranscoded) {
 			TimeSpan totalInputDuration = new();
 			DataSize totalInputSize = new();
 			int inputResolution = 0;
@@ -263,7 +269,7 @@ namespace MakeMKV_Title_Decoder.Data
 			DataSize outputFileSize = DataSize.FromFile(outputFilePath) ?? new DataSize();
 
             Console.ForegroundColor = ConsoleColor.Cyan;
-			Console.WriteLine($"{Path.GetFileName(outputFilePath)}: \t[{inputResolution}p\t{outputResolution}p\t{totalInputDuration.TotalMinutes}\t{transcodeTime.TotalMinutes}\t{totalInputSize.AsGB()}\t{outputFileSize.AsGB()}]");
+			Console.WriteLine($"{Path.GetFileName(outputFilePath)} {(isTranscoded ? "" : "(Copy)")}: [{inputResolution}p {outputResolution}p {totalInputDuration.TotalMinutes} {transcodeTime.TotalMinutes} {totalInputSize.AsGB()} {outputFileSize.AsGB()}]");
 			Console.ResetColor();
 		}
     }

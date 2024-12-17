@@ -13,12 +13,11 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
 {
     public class BlurayStream : LoadedStream
     {
-
         internal BlurayStream(string root, string filePath, MediaAnalysis data) : base(root, filePath, data)
         {
             TimeSpan? duration;
-            Language?[] languages;
-            GetDataFromCLPI(root, filePath, out duration, out languages);
+            (Language? Language, int PID)[] trackData;
+            GetDataFromCLPI(root, filePath, out duration, out trackData);
 
             // First try to directly load the length as indicated on the disc
             if (duration == null)
@@ -47,30 +46,38 @@ namespace MakeMKV_Title_Decoder.Data.BluRay
                 this.Duration = duration.Value;
             }
 
-
-            if (languages.Length > 0)
+            foreach ((Language? lang, int pid) in trackData)
             {
-                foreach ((var track, Language? lang) in this.Tracks.Zip(languages))
+                LoadedTrack? track = this.Tracks.Where(x => x.Identity.ID == pid).FirstOrDefault();
+                if (track == null)
                 {
-                    track.Identity.Language = lang;
+                    Log.Warn($"Failed to find track with PID={pid}");
+                    continue;
                 }
+
+                track.Identity.Language = lang;
+                track.RenameData.Language = lang;
             }
         }
 
-        private static void GetDataFromCLPI(string root, string filePath, out TimeSpan? duration, out Language?[] languages)
+        public override int GetVlcID(LoadedTrack track) {
+            return track.Identity.ID ?? -1;
+        }
+
+        private static void GetDataFromCLPI(string root, string filePath, out TimeSpan? duration, out (Language? language, int PID)[] trackData)
         {
             ClpiFile? clpiFile = ClpiFile.Parse(Path.Combine(root, "BDMV", "CLIPINF", $"{Path.GetFileNameWithoutExtension(filePath)}.clpi"));
             if (clpiFile == null)
             {
                 duration = null;
-                languages = Array.Empty<Language>();
+                trackData = Array.Empty<(Language?, int)>();
                 return;
             }
 
             duration = clpiFile.sequence.atc_seq.SelectMany(x => x.stc_seq.Select(y => y.Length)).Aggregate((a, b) => a + b);
 
             if (clpiFile.program.progs.Length > 1) throw new Exception("More than one program is not supported.");
-            languages = clpiFile.program.progs[0].streams.Select(stream => stream.attributes.lang).Select(TryParseLang).ToArray();
+            trackData = clpiFile.program.progs[0].streams.OrderBy(x => x.pid).Select(stream => (TryParseLang(stream.attributes.lang), (int)stream.pid)).ToArray();
         }
 
         private static Language? TryParseLang(string lang) {

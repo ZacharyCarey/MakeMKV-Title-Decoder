@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Data.DVD
 {
@@ -15,5 +16,8 @@ namespace MakeMKV_Title_Decoder.Data.DVD
             this.Duration = duration;
         }
 
+        public override int GetVlcID(LoadedTrack track) {
+            return this.Tracks.WithIndex().First(x => x.Value == track).Index;
+        }
     }
 }

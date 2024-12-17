@@ -23,7 +23,6 @@ namespace MakeMKV_Title_Decoder.Data.DVD
         private List<DiscPlaylist> playlists;
         private Dvd dvd;
 
-        public override bool ForceVlcTrackIndex => true;
         public override bool ForceTranscoding => true;
 
         private DvdDisc(Dvd dvd, string root, List<LoadedStream> streams, string? title, long? numSets, long? setNum, List<DiscPlaylist> playlists) : base(root, title, numSets, setNum, streams)
@@ -39,13 +38,14 @@ namespace MakeMKV_Title_Decoder.Data.DVD
             FFProbe ffprobe = new(ffprobeEXE);
 
             //string streamDir = "VIDEO_TS";
-            string demuxDir = Path.Combine(root, "demux");
+            string demuxDir = Path.Combine("demux");
+            string fullDemuxDir = Path.Combine(root, demuxDir);
             //SimpleProgress currentProgress = new();
 
             Dvd? dvd = Dvd.ParseFolder(root);
             if (dvd == null) return null;
 
-            if (!Directory.Exists(demuxDir))
+            if (!Directory.Exists(fullDemuxDir))
             {
                 if (MessageBox.Show("The stream files must be extracted from the DVD. This will create large temporary files. Continue?", "Extract files?", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
                 {
@@ -63,12 +63,12 @@ namespace MakeMKV_Title_Decoder.Data.DVD
 
                 if (!success)
                 {
-                    Directory.Delete(demuxDir, true);
+                    Directory.Delete(fullDemuxDir, true);
                     return null;
                 }
             }
 
-            string[] streamFilePaths = Directory.GetFiles(demuxDir);
+            string[] streamFilePaths = Directory.GetFiles(fullDemuxDir);
             SimpleProgress currentProgress = new();
             currentProgress.TotalMax = (uint)streamFilePaths.Length;
             progress?.Report(currentProgress);

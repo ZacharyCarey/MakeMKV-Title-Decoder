@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using Utils;
 using MakeMKV_Title_Decoder.Data.Renames;
 using FFMpeg_Wrapper.Filters.Video;
+using MakeMKV_Title_Decoder.Util;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
@@ -27,6 +28,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         public string Name { get; }
 
         public OutputName OutputFile { get; }
+
+        public bool IsTranscodable { get; }
 
         public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
         public bool ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
@@ -102,8 +105,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             var output = selected?.Export?.OutputFile;
 
             this.OptionsPanel.Enabled = (selected != null);
-            this.MultiVersionCheckBox.Checked = (output?.MultiVersion != null);
-            this.MultiVersionTextBox.Text = (output?.MultiVersion ?? "");
 
             ShowOutputName? showName = null;
             if (output != null && output.ShowIndex >= 0) showName = this.Disc.RenameData.ShowOutputNames[(int)output.ShowIndex];
@@ -137,13 +138,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.ExtraNameTextBox.Text = (output?.ExtraName ?? "");
 
             ExtraNameTextBox_TextChanged(null, null);
-            MultiVersionTextBox_TextChanged(null, null);
-        }
-
-        private void MultiVersionCheckBox_CheckedChanged(object sender, EventArgs e) {
-            this.MultiVersionTextBox.Enabled = MultiVersionCheckBox.Checked;
-
-            MultiVersionTextBox_TextChanged(null, null);
         }
 
         private void FeatureTypeRadioButton_CheckedChanged(object sender, EventArgs e) {
@@ -231,7 +225,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             if (string.IsNullOrWhiteSpace(export.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
-            if (export.OutputFile.MultiVersion != null && string.IsNullOrWhiteSpace(export.OutputFile.MultiVersion)) return true;
             if (export.OutputFile.Type != null && export.OutputFile.Type != FeatureType.MainFeature && string.IsNullOrEmpty(export.OutputFile.ExtraName)) return true;
 
             return false;
@@ -263,24 +256,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 Exportable export = selectedItem.Export;
 
                 // Verify names before saving
-                if (this.MultiVersionCheckBox.Checked)
-                {
-                    string? error;
-                    if (string.IsNullOrEmpty(this.MultiVersionTextBox.Text))
-                    {
-                        error = "Name can't be empty.";
-                    } else
-                    {
-                        error = Utils.IsValidFileName(this.MultiVersionTextBox.Text);
-                    }
-
-                    if (error != null)
-                    {
-                        MessageBox.Show("Multiversion name invalid: " + error, "Invalid name");
-                        return;
-                    }
-                }
-
                 if (this.SelectedType != FeatureType.MainFeature)
                 {
                     string? error;
@@ -299,8 +274,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     }
                 }
 
-
-                export.OutputFile.MultiVersion = (this.MultiVersionCheckBox.Checked ? this.MultiVersionTextBox.Text : null);
                 export.OutputFile.Type = SelectedType;
                 export.OutputFile.ExtraName = (this.SelectedType == FeatureType.MainFeature) ? null : this.ExtraNameTextBox.Text;
 
@@ -383,6 +356,12 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 }
             }
 
+            var exporterForm = new ExporterForm(this.Disc, exports.Select(x => x.Export));
+            if (exporterForm.ShowDialog() != DialogResult.OK)
+            {
+                return;
+            }
+
             // Save metadata to output if desired
             bool saveMeta = false;
             if (MessageBox.Show("Save rename metadata?", "Save data?", MessageBoxButtons.YesNo) == DialogResult.Yes)
@@ -391,6 +370,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             List<string> metaFolders = new();
+            List<string> exportErrors = new();
 
             // Export files
             TaskProgressViewerForm.Run((IProgress<SimpleProgress> progress) =>
@@ -399,7 +379,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 currentProgress.TotalMax = (uint)exports.Count * 100;
                 progress?.Report(currentProgress);
 
-                List<string> exportErrors = new();
                 for (int i = 0; i < exports.Count; i++)
                 {
                     currentProgress.Total = (uint)i * 100;
@@ -452,21 +431,72 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         }
                     }
 
-                    bool result = export.Export(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
-                    if (!result)
+                    Action<bool, string> checkExportError = (success, name) =>
                     {
-                        exportErrors.Add($"Failed to export \"{export.Name}\"");
-                    }
-                }
+                        if (!success)
+                        {
+                            exportErrors.Add($"Failed to export \"{name}\"");
+                        }
+                    };
 
-                foreach (var error in exportErrors)
-                {
-                    MessageBox.Show(error);
+                    if (export.IsTranscodable)
+                    {
+                        IEnumerable<ScaleResolution?> selectedResolutions;
+                        bool rename;
+                        if (bonusFolder == null)
+                        {
+                            // Main feature
+                            selectedResolutions = exporterForm.SelectedMainFeatureResolutions;
+                            rename = true;
+                        } else
+                        {
+                            // Extras
+                            selectedResolutions = [exporterForm.SelectedExtrasResolutions];
+                            rename = false;
+                        }
+
+                        foreach(ScaleResolution? scale in selectedResolutions)
+                        {
+                            string multiversionName = outputFile;
+                            if (rename)
+                            {
+                                multiversionName = GetMultiversionFileName(outputFile, scale);
+                            }
+
+                            bool result;
+                            if (scale == null)
+                            {
+                                // Original quality
+                                result = export.Export(this.Disc, fullPath, multiversionName, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                            } else
+                            {
+                                // Transcode
+                                result = export.ExportTranscoding(this.Disc, fullPath, multiversionName, scale.Value, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                            }
+                            checkExportError(result, export.Name);
+                        }
+                    } else
+                    {
+                        bool result = export.Export(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                        checkExportError(result, export.Name);
+                    }
                 }
 
                 currentProgress.Total = currentProgress.TotalMax;
                 progress?.Report(currentProgress);
             });
+
+            if (exportErrors.Count == 0)
+            {
+                SoundPlayer.Play(SoundPlayer.HappySound);
+            } else
+            {
+                SoundPlayer.Play(SoundPlayer.SadSound);
+                foreach (var error in exportErrors)
+                {
+                    MessageBox.Show(error);
+                }
+            }
         }
 
         private void ExportAllBtn_Click(object sender, EventArgs e) {
@@ -576,18 +606,22 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void MultiVersionTextBox_TextChanged(object sender, EventArgs e) {
-            if (MultiVersionTextBox.Enabled && (Utils.IsValidFileName(this.MultiVersionTextBox.Text) != null))
-            {
-                this.MultiVersionTextBox.BackColor = Color.LightCoral;
-            } else
-            {
-                this.MultiVersionTextBox.BackColor = SystemColors.Window;
-            }
+        private static string GetMultiversionFileName(string fileName, ScaleResolution? resolution) {
+            return $"{Path.GetFileNameWithoutExtension(fileName)} - {GetMultiversionString(resolution)}{Path.GetExtension(fileName)}";
         }
 
-        private void panel2_Paint(object sender, PaintEventArgs e) {
-
+        private static string GetMultiversionString(ScaleResolution? resolution) {
+            switch(resolution)
+            {
+                case null: return "Original";
+                case ScaleResolution.UHD_7680x4320: return "8k";
+                case ScaleResolution.UHD_3840x2160: return "4k";
+                case ScaleResolution.HD_1920x1080: return "1080p";
+                case ScaleResolution.HD_1280x720: return "720p";
+                case ScaleResolution.SD_720x480: return "480p";
+                default:
+                    throw new ArgumentException("Unknown resolution enum.");
+            }
         }
     }
 }

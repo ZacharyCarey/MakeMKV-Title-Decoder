@@ -28,6 +28,7 @@ namespace MakeMKV_Title_Decoder
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            Log.ClearLogs();
             ConsoleLog.CreateLogger("Log.txt");
         }
 

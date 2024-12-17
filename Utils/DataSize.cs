@@ -28,12 +28,12 @@ namespace Utils {
         public DataSize(double value, Unit unit) {
             bool isNeg = (value < 0);
             value = Math.Abs(value);
-            while (value > 0.0 && value < 1.0)
+            while (value >= 0.0 && value < 1.0 && (int)unit > (int)Unit.None)
             {
                 value *= 1000;
                 unit = (Unit)((int)unit - 1);
             }
-            while (value >= 1000.0)
+            while (value >= 1000.0 && (int)unit < (int)Unit.Giga)
             {
                 value /= 1000;
                 unit = (Unit)((int)unit + 1);

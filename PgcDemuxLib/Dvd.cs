@@ -296,12 +296,15 @@ namespace PgcDemuxLib
                 }
 
                 // Remux into an mp4 with the streams in the correct order
-                string remuxFile = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(vobFileName)}.mp4");
-                var args = ffmpeg.Transcode(remuxFile)
-                    .AddVideoStreams(info, null, null);
+                string remuxFilePath = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(vobFileName)}.mp4");
+                OutputFile remuxFile = new OutputFile(remuxFilePath);
+                remuxFile.Title = Path.GetFileNameWithoutExtension(vobFileName);
+                var args = ffmpeg.Transcode(remuxFile);
+                args.AddInput(new FileInput(info));
+                args.AddStreams(info.VideoStreams.Select(x => new StreamOptions(0, x.Index)));
 
                 // Audio streams must be added in a particular order
-                foreach ((int index, int audioStreamID) in demuxResult.AudioStreamIDs.Order().WithIndex())
+                foreach ((int audioStreamID, int index) in demuxResult.AudioStreamIDs.Order().WithIndex())
                 {
                     var audioAttrib = audioAttribs[index];
                     Language? lang = null;
@@ -310,15 +313,14 @@ namespace PgcDemuxLib
                         lang = Language.FromPart1(audioAttrib.LanguageCode);
                     }
 
-                    args.AddAudioStream(
-                        info.AudioStreams[demuxResult.AudioStreamIDs.IndexOf(audioStreamID)],
-                        new AudioStreamOptions()
-                            .SetLanguage(lang),
-                        null);
+                    int trackIndex = info.AudioStreams[demuxResult.AudioStreamIDs.IndexOf(audioStreamID)].Index;
+                    args.AddStream(
+                        new StreamOptions(0, trackIndex)
+                            .SetLanguage(lang));
                 }
 
                 // Add any remaining streams we want to copy
-                args.AddSubtitleStreams(info.SubtitleStreams, null, null);
+                args.AddStreams(info.SubtitleStreams.Select(x => new StreamOptions(0, x.Index)));
 
                 // Run ffmpeg command
                 var cmd = args
@@ -342,7 +344,7 @@ namespace PgcDemuxLib
 
                 if (error != null) throw new Exception(error);
 
-                return remuxFile;
+                return remuxFilePath;
             }catch(Exception e)
             {
                 Log.Error(e.Message);

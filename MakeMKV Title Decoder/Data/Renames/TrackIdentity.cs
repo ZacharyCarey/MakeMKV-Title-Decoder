@@ -78,6 +78,9 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 
         [JsonInclude]
         public readonly bool? DescriptionsFlag;
+
+        [JsonInclude]
+        public readonly int? ID;
         #endregion
 
         #region Video
@@ -119,6 +122,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
             this.Duration = info.Duration;
             this.Language = info.Language;
             this.BitDepth = info.BitDepth;
+            this.ID = info.ID;
 
             // Disposition flags
             DefaultFlag = TryGetDispositionFlag(info.Disposition, "default");
@@ -194,7 +198,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         private TrackIdentity(TrackType trackType, int index, string codec, string type, long bitRate, TimeSpan duration, Language? language,
             int? bitDepth, bool? defaultFlag, bool? forcedFlag, bool? dubFlag, bool? originalFlag, bool? commentFlag,
             bool? lyricsFlag, bool? karaokeFlag, bool? hearingImpairedFlag, bool? visualImpairedFlag, bool? captionsFlag,
-            bool? descriptionsFlag, int? width, int? height, string? pixelFormat, string? colorRange, string? colorSpace,
+            bool? descriptionsFlag, int? id, int? width, int? height, string? pixelFormat, string? colorRange, string? colorSpace,
             int? channels, string? channelLayout, int? sampleRateHz) 
         {
             this.TrackType = trackType;
@@ -216,6 +220,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
             VisualImpairedFlag = visualImpairedFlag;
             CaptionsFlag = captionsFlag;
             DescriptionsFlag = descriptionsFlag;
+            ID = id;
             Width = width;
             Height = height;
             PixelFormat = pixelFormat;
@@ -258,6 +263,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
             if (this.ColorSpace != other.ColorSpace) return "Color space did not match.";
             if (this.ChannelLayout != other.ChannelLayout) return "Channel layout did not match.";
             if (this.SampleRateHz != other.SampleRateHz) return "Sample rate hz did not match.";
+            if (this.ID != other.ID) return "Track ID did not match";
 
             return null;
         }

@@ -25,9 +25,8 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public OutputName OutputFile { get; private set; } = new();
 
-        string Exportable.Name => throw new NotImplementedException();
-
-        OutputName Exportable.OutputFile => throw new NotImplementedException();
+        [JsonIgnore]
+        public bool IsTranscodable => false;
 
         public override string ToString()
         {

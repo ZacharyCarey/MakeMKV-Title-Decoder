@@ -24,7 +24,6 @@ namespace MakeMKV_Title_Decoder.Data
         public string? Title { get => Identity.Title; }
         public long? NumberOfSets { get => Identity.NumberOfSets; }
         public long? SetNumber { get => Identity.SetNumber; }
-		public abstract bool ForceVlcTrackIndex { get; }
 
 		/// <summary>
 		/// Used mostly for DVD's where devices have issues playing
