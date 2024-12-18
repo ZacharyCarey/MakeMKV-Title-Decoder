@@ -1,4 +1,6 @@
-﻿using Iso639;
+﻿using FFMpeg_Wrapper.ffmpeg;
+using FFMpeg_Wrapper.ffprobe;
+using Iso639;
 using MakeMKV_Title_Decoder.Controls;
 using MakeMKV_Title_Decoder.Data;
 using MakeMKV_Title_Decoder.Data.Renames;
@@ -29,6 +31,18 @@ namespace MakeMKV_Title_Decoder
         private LoadedTrack? SelectedVideoTrack = null;
         private LoadedTrack? SelectedAudioTrack = null;
         private LoadedTrack? SelectedOtherTrack = null;
+
+        private int NumSelectedClips => this.ClipsList.SelectedItems.Count;
+        private IEnumerable<(ListViewItem Item, LoadedStream Stream)> AllSelectedClips {
+            get
+            {
+                for (int i = 0; i < this.ClipsList.SelectedItems.Count; i++)
+                {
+                    LoadedStream? stream = (LoadedStream?)ClipsList.SelectedItems[i].Tag;
+                    if (stream != null) yield return (ClipsList.SelectedItems[i], stream);
+                }
+            }
+        }
 
         public ClipRenamerForm(LoadedDisc disc) {
             this.Disc = disc;
@@ -106,6 +120,7 @@ namespace MakeMKV_Title_Decoder
 
             row.ImageKey = (string.IsNullOrWhiteSpace(name) ? DeleteIconKey : KeepIconKey);
             row.SubItems[2].Text = name;
+            this.ClipsList.Invalidate();
         }
 
 
@@ -127,8 +142,7 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void ApplyBtn_Click(object sender, EventArgs e) {
-            LoadedStream? selection = this.SelectedClip;
-            if (selection != null)
+            if (this.NumSelectedClips > 1)
             {
                 string? name = this.NameTextBox.Text;
                 if (string.IsNullOrWhiteSpace(this.NameTextBox.Text))
@@ -136,8 +150,30 @@ namespace MakeMKV_Title_Decoder
                     name = null;
                 }
 
-                selection.RenameData.Name = name;
-                RefreshClipListItem(ClipsList.SelectedItems[0], selection);
+                foreach ((int index, (var item, var clip)) in this.AllSelectedClips.WithIndex())
+                {
+                    string? n = name;
+                    if (n != null)
+                    {
+                        n = n + $" {(index + 1)}";
+                    }
+                    clip.RenameData.Name = n;
+                    RefreshClipListItem(item, clip);
+                }
+            } else
+            {
+                LoadedStream? selection = this.SelectedClip;
+                if (selection != null)
+                {
+                    string? name = this.NameTextBox.Text;
+                    if (string.IsNullOrWhiteSpace(this.NameTextBox.Text))
+                    {
+                        name = null;
+                    }
+
+                    selection.RenameData.Name = name;
+                    RefreshClipListItem(ClipsList.SelectedItems[0], selection);
+                }
             }
         }
 
@@ -334,6 +370,72 @@ namespace MakeMKV_Title_Decoder
             }
         }
 
+        private void exportAllSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
+            string? ffprobePath = FileUtils.GetFFProbeExe();
+            string? ffmpegPath = FileUtils.GetFFMpegExe();
+            if (ffprobePath == null || ffmpegPath == null)
+            {
+                MessageBox.Show("Failed to find ffprobe/ffmpeg.");
+                this.Close();
+                return;
+            }
+
+            FFProbe ffprobe = new FFProbe(ffprobePath);
+            //FFMpeg ffmpeg = new FFMpeg(ffmpegPath);
+
+            bool success = true;
+            foreach ((var item, var stream) in this.AllSelectedClips)
+            {
+                string filePath = stream.GetFullPath(this.Disc);
+                DataSize? fileSize = DataSize.FromFile(filePath);
+                if (fileSize == null)
+                {
+                    MessageBox.Show("Failed to find file.");
+                    this.Close();
+                    return;
+                }
+                if (fileSize >= new DataSize(10, Unit.Mega))
+                {
+                    var user = MessageBox.Show($"The file size is {fileSize}, this may take a while to process. Continue?", "Continue?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                    if (user != DialogResult.Yes)
+                    {
+                        this.Close();
+                        return;
+                    }
+                }
+            }
+
+            foreach((var item, var stream) in this.AllSelectedClips)
+            {
+                uint nFrames = 0;
+                uint? frames = ffprobe.GetNumberOfFrames(stream.GetFullPath(Disc), true);
+                if (frames == null || frames < 0)
+                {
+                    nFrames = 0;
+                } else
+                {
+                    nFrames = frames.Value;
+                }
+                Console.WriteLine($"Detected {nFrames} frames in {stream.Identity.SourceFile}");
+                if (nFrames > 0)
+                {
+                    Attachment? attachment = SingleFrameExtracted.Extract(this.Disc, stream, 1);
+                    if (attachment == null)
+                    {
+                        success = false;
+                    } else
+                    {
+                        this.Disc.RenameData.Attachments.Add(attachment);
+                    }
+                }
+            }
+
+            if (!success)
+            {
+                MessageBox.Show("At least one attachment already exists or failed to extract image.");
+            }
+        }
+
         private void DeinterlaceCheckBox_CheckedChanged(object sender, EventArgs e) {
             bool state = this.DeinterlaceCheckBox.Checked;
 
@@ -342,6 +444,10 @@ namespace MakeMKV_Title_Decoder
             {
                 selection.RenameData.Deinterlaced = state;
             }
+        }
+
+        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e) {
+
         }
     }
 }

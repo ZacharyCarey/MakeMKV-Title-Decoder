@@ -97,32 +97,50 @@ namespace MakeMKV_Title_Decoder
             this.SourcePropertiesPanel.Enabled = (selectedItem != null);
         }
 
+        private void AddPlaylistSourceFile(Playlist selectedPlaylist, LoadedStream clip) {
+            PlaylistFile file = new PlaylistFile();
+            file.SourceUID = clip.RenameData.UID;
+
+            selectedPlaylist.SourceFiles.Add(file);
+            if (selectedPlaylist.SourceFiles.Count == 1)
+            {
+                selectedPlaylist.SourceTracks.Clear();
+                LoadedStream? firstFile = this.Disc[selectedPlaylist.SourceFiles[0].SourceUID];
+                if (firstFile != null && selectedPlaylist.SourceTracks.Count != firstFile.Tracks.Count)
+                {
+                    // Regenerate settings
+                    foreach (var track in firstFile.Tracks)
+                    {
+                        selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
+                    }
+                }
+            }
+        }
+
         private void SourceApplyButton_Click(object sender, EventArgs e) {
             if (this.PlaylistsListBox.SelectedItem != null)
             {
-                Playlist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
-                SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItem;
-                if (selectedItem != null)
+                if (this.SourceList.SelectedItems.Count > 1)
                 {
-                    PlaylistFile file = new PlaylistFile();
-                    file.SourceUID = selectedItem.Clip.RenameData.UID;
-
-                    selectedPlaylist.SourceFiles.Add(file);
-                    if (selectedPlaylist.SourceFiles.Count == 1)
+                    Playlist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
+                    for (int i = 0; i < this.SourceList.SelectedItems.Count; i++)
                     {
-                        selectedPlaylist.SourceTracks.Clear();
-                        LoadedStream? firstFile = this.Disc[selectedPlaylist.SourceFiles[0].SourceUID];
-                        if (firstFile != null && selectedPlaylist.SourceTracks.Count != firstFile.Tracks.Count)
+                        SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItems[i];
+                        if (selectedItem != null)
                         {
-                            // Regenerate settings
-                            foreach (var track in firstFile.Tracks)
-                            {
-                                selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
-                            }
+                            AddPlaylistSourceFile(selectedPlaylist, selectedItem.Clip);
                         }
                     }
-
                     UpdatePlaylistUI();
+                } else
+                {
+                    Playlist selectedPlaylist = this.PlaylistsListBox.SelectedItem.Playlist;
+                    SourceListItem? selectedItem = (SourceListItem?)this.SourceList.SelectedItem;
+                    if (selectedItem != null)
+                    {
+                        AddPlaylistSourceFile(selectedPlaylist, selectedItem.Clip);
+                        UpdatePlaylistUI();
+                    }
                 }
             }
         }
@@ -444,10 +462,27 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void DeletePlaylistButton_Click(object sender, EventArgs e) {
-            LoadedPlaylistListItem? selectedItem = PlaylistsListBox.SelectedItem;
-            if (selectedItem != null)
+            if (PlaylistsListBox.SelectedItems.Count > 0)
             {
-                if (MessageBox.Show("Can not be undone. Are you sure?", "Delete?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == DialogResult.Yes)
+                if (MessageBox.Show("Can not be undone. Are you sure?", "Delete?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
+            if (PlaylistsListBox.SelectedItems.Count > 1)
+            {
+                foreach(var obj in PlaylistsListBox.SelectedItems)
+                {
+                    if (obj != null && obj is LoadedPlaylistListItem item)
+                    {
+                        this.PlaylistsListBox.Remove(item);
+                        this.Disc.RenameData.Playlists.Remove(item.Playlist);
+                    }
+                }
+            }else { 
+                LoadedPlaylistListItem? selectedItem = PlaylistsListBox.SelectedItem;
+                if (selectedItem != null)
                 {
                     this.PlaylistsListBox.Remove(selectedItem);
                     this.Disc.RenameData.Playlists.Remove(selectedItem.Playlist);

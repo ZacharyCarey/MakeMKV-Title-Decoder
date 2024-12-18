@@ -26,8 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             splitContainer1 = new SplitContainer();
             CollectionsListBox = new ListBox();
             panel2 = new Panel();
@@ -230,6 +229,7 @@
             SourceList.Items.AddRange(new object[] { "Test1", "Test2" });
             SourceList.Location = new Point(0, 0);
             SourceList.Name = "SourceList";
+            SourceList.SelectionMode = SelectionMode.MultiExtended;
             SourceList.Size = new Size(220, 879);
             SourceList.TabIndex = 2;
             SourceList.SelectedIndexChanged += SourceList_SelectedIndexChanged;

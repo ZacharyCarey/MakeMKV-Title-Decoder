@@ -18,7 +18,7 @@ namespace Utils {
         public static void Error(string msg) {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(msg);
-            Console.WriteLine(msg);
+            Console.ResetColor();
         }
 
         public static void ClearLogs() {

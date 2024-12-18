@@ -99,20 +99,46 @@ namespace MakeMKV_Title_Decoder.Forms
         {
             if (this.SelectedCollection == null) return;
 
-            if (this.SourceList.SelectedItem != null && this.SourceList.SelectedItem is Attachment source)
+            if (this.SourceList.SelectedItems.Count > 1)
             {
-                foreach (var attachment in this.SelectedCollection.Attachments)
+                for(int i = 0; i < this.SourceList.SelectedItems.Count; i++)
                 {
-                    if (attachment == source.FilePath)
+                    if (this.SourceList.SelectedItems[i] != null && this.SourceList.SelectedItems[i] is Attachment source)
                     {
-                        MessageBox.Show("Attachment is already in the collection.");
-                        return;
+                        bool inList = false;
+                        foreach(var attachment in this.SelectedCollection.Attachments)
+                        {
+                            if (attachment == source.FilePath)
+                            {
+                                inList = true;
+                                break;
+                            }
+                        }
+                        if (!inList)
+                        {
+                            // Attachment is not in the collection, add it
+                            this.SelectedCollection.Attachments.Add(source.FilePath);
+                            this.AttachmentsListBox.Items.Add(source);
+                        }
                     }
                 }
+            } else
+            {
+                if (this.SourceList.SelectedItem != null && this.SourceList.SelectedItem is Attachment source)
+                {
+                    foreach (var attachment in this.SelectedCollection.Attachments)
+                    {
+                        if (attachment == source.FilePath)
+                        {
+                            MessageBox.Show("Attachment is already in the collection.");
+                            return;
+                        }
+                    }
 
-                // Attachment is not in the collection, add it
-                this.SelectedCollection.Attachments.Add(source.FilePath);
-                this.AttachmentsListBox.Items.Add(source);
+                    // Attachment is not in the collection, add it
+                    this.SelectedCollection.Attachments.Add(source.FilePath);
+                    this.AttachmentsListBox.Items.Add(source);
+                }
             }
         }
 

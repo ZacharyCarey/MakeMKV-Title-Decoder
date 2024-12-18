@@ -26,8 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             components = new System.ComponentModel.Container();
             ListViewItem listViewItem1 = new ListViewItem(new string[] { "", "003339.m2ts", "Hello" }, "dialog-ok-apply.png");
             ListViewItem listViewItem2 = new ListViewItem("test2");
@@ -81,7 +80,6 @@
             AttachmentsList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             AttachmentsList.Items.AddRange(new ListViewItem[] { listViewItem1, listViewItem2, listViewItem3 });
             AttachmentsList.Location = new Point(0, 0);
-            AttachmentsList.MultiSelect = false;
             AttachmentsList.Name = "AttachmentsList";
             AttachmentsList.Size = new Size(550, 868);
             AttachmentsList.SmallImageList = ImageList1;

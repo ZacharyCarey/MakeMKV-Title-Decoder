@@ -110,6 +110,7 @@ namespace MakeMKV_Title_Decoder
             PlaylistsListBox.Location = new Point(0, 31);
             PlaylistsListBox.Name = "PlaylistsListBox";
             PlaylistsListBox.SelectedItem = null;
+            PlaylistsListBox.SelectionMode = SelectionMode.MultiExtended;
             PlaylistsListBox.Size = new Size(310, 911);
             PlaylistsListBox.SmallIconList = imageList1;
             PlaylistsListBox.TabIndex = 3;
@@ -409,6 +410,7 @@ namespace MakeMKV_Title_Decoder
             SourceList.Items.AddRange(new object[] { "Test1", "Test2" });
             SourceList.Location = new Point(0, 0);
             SourceList.Name = "SourceList";
+            SourceList.SelectionMode = SelectionMode.MultiExtended;
             SourceList.Size = new Size(392, 951);
             SourceList.TabIndex = 2;
             SourceList.SelectedIndexChanged += SourceList_SelectedIndexChanged;

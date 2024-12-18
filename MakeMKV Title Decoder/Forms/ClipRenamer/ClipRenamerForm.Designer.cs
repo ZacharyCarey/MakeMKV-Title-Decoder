@@ -80,6 +80,9 @@ namespace MakeMKV_Title_Decoder
             menuStrip1 = new MenuStrip();
             compareToolStripMenuItem = new ToolStripMenuItem();
             viewFramesToolStripMenuItem = new ToolStripMenuItem();
+            toolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripMenuItem2 = new ToolStripMenuItem();
+            AllSelectedStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -112,7 +115,6 @@ namespace MakeMKV_Title_Decoder
             ClipsList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             ClipsList.Items.AddRange(new ListViewItem[] { listViewItem1, listViewItem2, listViewItem3 });
             ClipsList.Location = new Point(0, 0);
-            ClipsList.MultiSelect = false;
             ClipsList.Name = "ClipsList";
             ClipsList.Size = new Size(370, 959);
             ClipsList.SmallImageList = ImageList1;
@@ -629,12 +631,13 @@ namespace MakeMKV_Title_Decoder
             // 
             // menuStrip1
             // 
-            menuStrip1.Items.AddRange(new ToolStripItem[] { compareToolStripMenuItem, viewFramesToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { compareToolStripMenuItem, viewFramesToolStripMenuItem, toolStripMenuItem1 });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Size = new Size(1901, 24);
             menuStrip1.TabIndex = 4;
             menuStrip1.Text = "menuStrip1";
+            menuStrip1.ItemClicked += menuStrip1_ItemClicked;
             // 
             // compareToolStripMenuItem
             // 
@@ -649,6 +652,27 @@ namespace MakeMKV_Title_Decoder
             viewFramesToolStripMenuItem.Size = new Size(85, 20);
             viewFramesToolStripMenuItem.Text = "View Frames";
             viewFramesToolStripMenuItem.Click += viewFramesToolStripMenuItem_Click;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItem2 });
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(57, 20);
+            toolStripMenuItem1.Text = "Frames";
+            // 
+            // toolStripMenuItem2
+            // 
+            toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { AllSelectedStripMenuItem });
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            toolStripMenuItem2.Size = new Size(180, 22);
+            toolStripMenuItem2.Text = "Export";
+            // 
+            // AllSelectedStripMenuItem
+            // 
+            AllSelectedStripMenuItem.Name = "AllSelectedStripMenuItem";
+            AllSelectedStripMenuItem.Size = new Size(187, 22);
+            AllSelectedStripMenuItem.Text = "AllSelectedMenuItem";
+            AllSelectedStripMenuItem.Click += exportAllSelectedToolStripMenuItem_Click;
             // 
             // ClipRenamerForm
             // 
@@ -742,5 +766,8 @@ namespace MakeMKV_Title_Decoder
         private Label label7;
         private ToolStripMenuItem viewFramesToolStripMenuItem;
         private CheckBox DeinterlaceCheckBox;
+        private ToolStripMenuItem toolStripMenuItem1;
+        private ToolStripMenuItem toolStripMenuItem2;
+        private ToolStripMenuItem AllSelectedStripMenuItem;
     }
 }

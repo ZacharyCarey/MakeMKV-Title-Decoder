@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Utils;
 
 namespace MakeMKV_Title_Decoder.Forms
 {
@@ -19,6 +20,18 @@ namespace MakeMKV_Title_Decoder.Forms
 
         public readonly LoadedDisc Disc;
         Attachment? SelectedAttachment = null;
+
+        private int NumSelectedAttachments => this.AttachmentsList.SelectedItems.Count;
+        private IEnumerable<(ListViewItem Item, Attachment Stream)> AllSelectedAttachments {
+            get
+            {
+                for (int i = 0; i < this.AttachmentsList.SelectedItems.Count; i++)
+                {
+                    Attachment? stream = (Attachment?)AttachmentsList.SelectedItems[i].Tag;
+                    if (stream != null) yield return (AttachmentsList.SelectedItems[i], stream);
+                }
+            }
+        }
 
         public AttachmentsForm(LoadedDisc disc)
         {
@@ -93,25 +106,48 @@ namespace MakeMKV_Title_Decoder.Forms
 
         private void ApplyBtn_Click(object sender, EventArgs e)
         {
-            Attachment? selection = this.SelectedAttachment;
-            if (selection != null)
+            if (this.NumSelectedAttachments > 1)
             {
                 string? name = this.NameTextBox.Text;
-                if (string.IsNullOrWhiteSpace(this.NameTextBox.Text))
+                if (string.IsNullOrWhiteSpace(name))
                 {
                     name = null;
                 }
 
-                if (name != null) {
-                    string? err = Utils.IsValidFileName(name);
-                    if (err != null) {
-                        MessageBox.Show("Invalid file name: " + name);
-                        return;
+                foreach((int index, (var item, var att)) in this.AllSelectedAttachments.WithIndex())
+                {
+                    string? n = name;
+                    if (n != null)
+                    {
+                        n = n + $" {(index + 1)}";
                     }
+                    att.Name = n;
+                    RefreshAttachmentsListItem(item, att);
                 }
+            } else
+            {
+                Attachment? selection = this.SelectedAttachment;
+                if (selection != null)
+                {
+                    string? name = this.NameTextBox.Text;
+                    if (string.IsNullOrWhiteSpace(this.NameTextBox.Text))
+                    {
+                        name = null;
+                    }
 
-                selection.Name = name;
-                RefreshAttachmentsListItem(AttachmentsList.SelectedItems[0], selection);
+                    if (name != null)
+                    {
+                        string? err = Utils.IsValidFileName(name);
+                        if (err != null)
+                        {
+                            MessageBox.Show("Invalid file name: " + name);
+                            return;
+                        }
+                    }
+
+                    selection.Name = name;
+                    RefreshAttachmentsListItem(AttachmentsList.SelectedItems[0], selection);
+                }
             }
         }
 
