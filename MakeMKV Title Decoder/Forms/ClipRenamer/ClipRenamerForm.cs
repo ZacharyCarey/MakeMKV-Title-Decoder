@@ -99,7 +99,7 @@ namespace MakeMKV_Title_Decoder
             AudioTrackList_OnSelectionChanged(null);
             if (clip != null)
             {
-                foreach (var track in clip.Tracks)
+                foreach (LoadedTrack track in clip.Tracks)
                 {
                     if (track.Identity.TrackType == TrackType.Video)
                     {

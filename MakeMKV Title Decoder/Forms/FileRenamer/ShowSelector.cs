@@ -16,10 +16,12 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
     {
         private RenameData Renames;
         public ShowOutputName? Result = null;
+        LoadedDisc Disc;
 
-        public ShowSelector(RenameData renameData)
+        public ShowSelector(RenameData renameData, LoadedDisc disc)
         {
             this.Renames = renameData;
+            this.Disc = disc;
             InitializeComponent();
 
             this.DialogResult = DialogResult.None;
@@ -33,7 +35,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         private void AddBtn_Click(object sender, EventArgs e)
         {
-            var showEditorForm = new ShowEditor(null);
+            var showEditorForm = new ShowEditor(null, this.Disc);
             var result = showEditorForm.ShowDialog();
             if (result == DialogResult.OK && showEditorForm.Result != null)
             {
@@ -46,7 +48,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         {
             if (this.ShowsList.SelectedItem != null && this.ShowsList.SelectedItem is ShowOutputName selectedShow)
             {
-                var showEditorForm = new ShowEditor(selectedShow);
+                var showEditorForm = new ShowEditor(selectedShow, this.Disc);
                 var result = showEditorForm.ShowDialog();
                 if (result == DialogResult.OK && showEditorForm.Result != null)
                 {

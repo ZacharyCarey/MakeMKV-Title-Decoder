@@ -333,7 +333,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             // Get a list of all exported items
-            List<(string OutputFolder, string? BonusFolder, string OutputFile, Exportable Export)> exports = new();
+            List<(string OutputFolder, string? BonusFolder, string OutputFile, Exportable Export, string Metadata)> exports = new();
             foreach (var export in exportables)
             {
                 OutputName output = export.OutputFile;
@@ -343,7 +343,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     string outputFolder = showName.GetFolderPath(output.Season);
                     string? bonusFolder = output.GetBonusFolder(showName.Type);
                     string outputFile = output.GetFileName(showName);
-                    exports.Add((outputFolder, bonusFolder, outputFile, export));
+                    string metadataName = showName.MetadataFileName;
+                    exports.Add((outputFolder, bonusFolder, outputFile, export, metadataName));
                 } catch (Exception ex)
                 {
                     if (MessageBox.Show($"Failed to determine output file for export '{export.Name}'. Continue anyways?", "Error", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
@@ -388,6 +389,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     string? bonusFolder = exports[i].BonusFolder;
                     string outputFile = exports[i].OutputFile;
                     var export = exports[i].Export;
+                    string metadataFileName = exports[i].Metadata;
 
                     string fullPath;
                     if (bonusFolder == null)
@@ -417,7 +419,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
                         try
                         {
-                            string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{Disc.Identity.GetSafeDiscName()}.json");
+                            string file = Path.Combine(rootFolder, outputFolder, ".metadata", $"{metadataFileName}.json");
                             Directory.CreateDirectory(Path.Combine(rootFolder, outputFolder, ".metadata"));
 
                             var options = new JsonSerializerOptions { WriteIndented = false, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
@@ -563,7 +565,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         private void SelectShowBtn_Click(object sender, EventArgs e) {
             if (this.ExportableListBox1.SelectedItem != null && this.ExportableListBox1.SelectedItem is ExportableListItem export)
             {
-                var form = new ShowSelector(this.Disc.RenameData);
+                var form = new ShowSelector(this.Disc.RenameData, this.Disc);
                 var result = form.ShowDialog();
                 if (result == DialogResult.OK && form.Result != null)
                 {

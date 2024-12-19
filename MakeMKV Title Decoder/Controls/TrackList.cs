@@ -14,6 +14,7 @@ namespace MakeMKV_Title_Decoder.Controls
     {
         public LoadedTrack? Track = null;
         public bool? EnableOverride = null;
+        public bool? PiPOverride = null;
     }
 
     public class TrackList : PropertiesList
@@ -98,16 +99,22 @@ namespace MakeMKV_Title_Decoder.Controls
             col6.DisplayIndex = 8;
             Columns.Add(col6);
 
+            ColumnHeader col11 = new();
+            col11.Text = "PiP";
+            col11.Width = 50;
+            col11.DisplayIndex = 9;
+            Columns.Add(col11);
+
             ColumnHeader col10 = new();
             col10.Text = "Source";
             col10.Width = 320;
-            col10.DisplayIndex = 9;
+            col10.DisplayIndex = 10;
             Columns.Add(col10);
 
             SelectedIndexChanged += Event_SelectedIndexChanged;
         }
 
-        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null, object? Tag = null, bool? enableOverride = null)
+        public TrackListData Add(LoadedTrack track, Color? color = null, int? padding = null, string? Icon = null, Color? backColor = null, object? Tag = null, bool? enableOverride = null, bool? pipOverride = null)
         {
             TrackListData data = new();
             data.Track = track;
@@ -117,8 +124,9 @@ namespace MakeMKV_Title_Decoder.Controls
             data.BackColor = backColor;
             data.Tag = null;
             data.EnableOverride = enableOverride;
+            data.PiPOverride = pipOverride;
 
-            TrackListData[] subItems = new TrackListData[9];
+            TrackListData[] subItems = new TrackListData[10];
             for (int i = 0; i < subItems.Length; i++)
             {
                 subItems[i] = new TrackListData();
@@ -168,7 +176,8 @@ namespace MakeMKV_Title_Decoder.Controls
                     item.SubItems[5].IconKey = GetBoolIcon(data?.DefaultFlag ?? track.Identity.DefaultFlag); // default
                     item.SubItems[6].IconKey = GetBoolIcon(track.Identity.ForcedFlag); // forced
                     item.SubItems[7].IconKey = GetBoolIcon(data?.CommentaryFlag ?? track.Identity.CommentFlag); // commentary
-                    item.SubItems[8].Text = Path.GetFileName(track.SourceFile.Identity.SourceFile); // Source
+                    item.SubItems[8].IconKey = GetBoolIcon(item.PiPOverride); // Picture in Picture
+                    item.SubItems[9].Text = Path.GetFileName(track.SourceFile.Identity.SourceFile); // Source
 
                     return;
                 }

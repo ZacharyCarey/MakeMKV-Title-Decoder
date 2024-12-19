@@ -178,7 +178,7 @@ namespace MakeMKV_Title_Decoder
                         errors |= trackErrors;
 
                         // Add to GUI
-                        TrackListData item = this.PlaylistTrackOrder.Add(loadedTrack, null, null, null, trackErrors ? this.ErrorColor : null, null, sourceTrack.Copy);
+                        TrackListData item = this.PlaylistTrackOrder.Add(loadedTrack, null, null, null, trackErrors ? this.ErrorColor : null, null, sourceTrack.Copy, sourceTrack.PictureInPicture);
                         item.Tag = sourceTrack;
                     }
                 }
@@ -246,7 +246,7 @@ namespace MakeMKV_Title_Decoder
 
             // Container
             PropertyData sub1 = new();
-            sub1.Text = stream.Identity.ContainerType?.ToString() ?? ""; 
+            sub1.Text = stream.Identity.ContainerType?.ToString() ?? "";
             item.SubItems.Add(sub1);
 
             // File size
@@ -376,7 +376,7 @@ namespace MakeMKV_Title_Decoder
                         if (selectedPlaylist.SourceTracks.Count != stream.Tracks.Count)
                         {
                             selectedPlaylist.SourceTracks.Clear();
-                            foreach(var track in stream.Tracks)
+                            foreach (var track in stream.Tracks)
                             {
                                 selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
                             }
@@ -472,21 +472,39 @@ namespace MakeMKV_Title_Decoder
 
             if (PlaylistsListBox.SelectedItems.Count > 1)
             {
-                foreach(var obj in PlaylistsListBox.SelectedItems)
+                List<LoadedPlaylistListItem> itemsToDelete = new();
+                foreach (var obj in PlaylistsListBox.SelectedItems)
                 {
                     if (obj != null && obj is LoadedPlaylistListItem item)
                     {
-                        this.PlaylistsListBox.Remove(item);
-                        this.Disc.RenameData.Playlists.Remove(item.Playlist);
+                        itemsToDelete.Add(item);
                     }
                 }
-            }else { 
+                foreach(var item in itemsToDelete)
+                {
+                    this.PlaylistsListBox.Remove(item);
+                    this.Disc.RenameData.Playlists.Remove(item.Playlist);
+                }
+            } else
+            {
                 LoadedPlaylistListItem? selectedItem = PlaylistsListBox.SelectedItem;
                 if (selectedItem != null)
                 {
                     this.PlaylistsListBox.Remove(selectedItem);
                     this.Disc.RenameData.Playlists.Remove(selectedItem.Playlist);
                 }
+            }
+        }
+
+        private void PiPBtn_Click(object sender, EventArgs e) {
+            Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+            PlaylistTrack? selectedTrack = (PlaylistTrack?)PlaylistTrackOrder.SelectedItem?.Tag;
+            LoadedTrack? selected = PlaylistTrackOrder.SelectedItem?.Track;
+            if (selectedPlaylist != null && selectedTrack != null)
+            {
+                selectedTrack.PictureInPicture = !selectedTrack.PictureInPicture;
+                UpdatePlaylistUI();
+                this.PlaylistTrackOrder.Select(selected);
             }
         }
     }

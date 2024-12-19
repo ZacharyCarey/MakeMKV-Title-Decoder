@@ -1,5 +1,7 @@
-﻿using MakeMKV_Title_Decoder.Data.Renames;
+﻿using MakeMKV_Title_Decoder.Data;
+using MakeMKV_Title_Decoder.Data.Renames;
 using MakeMKV_Title_Decoder.Forms.TmdbBrowser;
+using MakeMKV_Title_Decoder.libs.MakeMKV.Data;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,12 +14,10 @@ using System.Windows.Forms;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
-    public partial class ShowEditor : Form
-    {
+    public partial class ShowEditor : Form {
         public ShowOutputName? Result = null;
 
-        public ShowEditor(ShowOutputName? initialValues)
-        {
+        public ShowEditor(ShowOutputName? initialValues, LoadedDisc disc) {
             InitializeComponent();
 
             TypeComboBox.Items.Clear();
@@ -31,17 +31,19 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.TypeComboBox.SelectedItem = initialValues?.Type;
             this.IdTextBox.Text = initialValues?.TmdbID.ToString() ?? "";
             this.ShowNameTextBox.Text = initialValues?.Name ?? "";
+            this.MetadataTextBox.Text = initialValues?.MetadataFileName ?? disc.Identity.GetSafeDiscName();
+
+            ShowNameTextBox_TextChanged(null, null);
+            MetadataTextBox_TextChanged(null, null);
         }
 
-        private void ShowNameTextBox_TextChanged(object sender, EventArgs e)
-        {
+        private void ShowNameTextBox_TextChanged(object sender, EventArgs e) {
             string? nameError = Utils.IsValidFileName(this.ShowNameTextBox.Text);
             this.ErrorText.Text = nameError ?? "";
             this.ErrorText.Visible = (nameError != null);
         }
 
-        private bool TrySaveData()
-        {
+        private bool TrySaveData() {
             if (TypeComboBox.SelectedItem == null || !(TypeComboBox.SelectedItem is ShowType))
             {
                 MessageBox.Show("Please select a show type or select the TMDB page.");
@@ -68,13 +70,19 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 return false;
             }
 
-            this.Result = new ShowOutputName((ShowType)TypeComboBox.SelectedItem, id, this.ShowNameTextBox.Text);
+            string? metadataNameError = Utils.IsValidFileName(this.MetadataTextBox.Text);
+            if (metadataNameError != null || string.IsNullOrWhiteSpace(this.MetadataTextBox.Text))
+            {
+                MessageBox.Show("Invalid metadata file name: " + (metadataNameError ?? "Name can't be empty."));
+                return false;
+            }
+
+            this.Result = new ShowOutputName((ShowType)TypeComboBox.SelectedItem, id, this.ShowNameTextBox.Text, this.MetadataTextBox.Text);
 
             return true;
         }
 
-        private void SaveBtn_Click(object sender, EventArgs e)
-        {
+        private void SaveBtn_Click(object sender, EventArgs e) {
             if (TrySaveData())
             {
                 this.DialogResult = DialogResult.OK;
@@ -82,14 +90,12 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void CancelBtn_Click(object sender, EventArgs e)
-        {
+        private void CancelBtn_Click(object sender, EventArgs e) {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
 
-        private void ShowEditor_FormClosing(object sender, FormClosingEventArgs e)
-        {
+        private void ShowEditor_FormClosing(object sender, FormClosingEventArgs e) {
             if (this.DialogResult == DialogResult.None)
             {
                 var result = MessageBox.Show("Would you like to save your changes?", "Save changes?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
@@ -101,14 +107,12 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         this.Result = null;
                         return;
                     }
-                }
-                else if (result == DialogResult.No)
+                } else if (result == DialogResult.No)
                 {
                     this.DialogResult = DialogResult.Cancel;
                     this.Result = null;
                     return;
-                }
-                else
+                } else
                 {
                     e.Cancel = true;
                     return;
@@ -116,8 +120,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private void TmdbBtn_Click(object sender, EventArgs e)
-        {
+        private void TmdbBtn_Click(object sender, EventArgs e) {
             TmdbID? defaultID = null;
             long temp;
             if (this.TypeComboBox.SelectedItem != null && this.TypeComboBox.SelectedItem is ShowType type && long.TryParse(this.IdTextBox.Text, out temp))
@@ -136,6 +139,15 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     this.IdTextBox.Text = ID.ID.ToString();
                 }
             }
+        }
+
+        private void MetadataTextBox_TextChanged(object sender, EventArgs e) {
+            string? nameError = Utils.IsValidFileName(this.MetadataTextBox.Text);
+            if (nameError == null && string.IsNullOrWhiteSpace(this.MetadataTextBox.Text))
+            {
+                nameError = "Name can't be null";
+            }
+            this.MetadataTextBox.BackColor = ((nameError != null) ? Color.Red : SystemColors.Window);
         }
     }
 }

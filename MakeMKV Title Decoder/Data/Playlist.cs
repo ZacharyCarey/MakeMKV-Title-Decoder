@@ -98,9 +98,33 @@ namespace MakeMKV_Title_Decoder.Data
 			);
 
 			int nextFilterName = 0;
+			LoadedStream sourceFile = disc[this.SourceFiles[0].SourceUID];
+
+			// Find the "main" video in case there is a PiP track
+			// We only look for disabled tracks since the overly will copy the stream in the transcoding process
+			LoadedTrack? pipMainVideo = null;
+			foreach((PlaylistTrack track, LoadedTrack loadedTrack) in this.SourceTracks.Zip(sourceFile.Tracks))
+			{
+				if ((track.Copy == false) && (track.PictureInPicture == false) && (loadedTrack.Identity.TrackType == Renames.TrackType.Video) && (loadedTrack.RenameData.DefaultFlag == true))
+				{
+					pipMainVideo = loadedTrack;
+					break;
+				}
+			}
+
+			if (pipMainVideo == null) {
+				// Failed to find a default video track, fallback to any non-default video track that is being copied
+				foreach ((PlaylistTrack track, LoadedTrack loadedTrack) in this.SourceTracks.Zip(sourceFile.Tracks))
+				{
+					if ((track.Copy == false) && (track.PictureInPicture == false) && (loadedTrack.Identity.TrackType == Renames.TrackType.Video))
+					{
+						pipMainVideo = loadedTrack;
+						break;
+					}
+				}
+			}
 
 			// Add all the streams in the correct order, applying relevent options
-			LoadedStream sourceFile = disc[this.SourceFiles[0].SourceUID];
             foreach ((PlaylistTrack track, LoadedTrack loadedTrack) in this.SourceTracks.Zip(sourceFile.Tracks))
 			{
 				if (track.Copy) {
@@ -109,25 +133,109 @@ namespace MakeMKV_Title_Decoder.Data
 					{
 						VideoStreamOptions options;
 						FilterArguments? filter = null;
+						string? namedVideoInput = null;
 
-                        if (sourceFile.RenameData.Deinterlaced || resolution != null)
-                        {
-                            filter = new();
-							args.AddInputFilter(filter);
-                            if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
-							if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
+						bool failedPIP = false;
+						if (track.PictureInPicture && pipMainVideo == null) {
+							failedPIP = true;
+							Log.Warn("Picture in Picture was selected, but no valid 'main video' was found. Stream will be copied as normal.");
+						}
 
-                            filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
-                            filter.AddOutput($"video{nextFilterName}");
 
-                            // Add stream using the named stream
-                            options = new($"video{nextFilterName}");
+						if (track.PictureInPicture == false || failedPIP) {
+							if (sourceFile.RenameData.Deinterlaced || (resolution != null))
+							{
+								filter = new();
+								args.AddInputFilter(filter);
+								if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
+								if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
+
+								filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
+								filter.AddOutput($"video{nextFilterName}");
+
+								namedVideoInput = $"video{nextFilterName}";
+								nextFilterName++;
+							}
+						} else if(track.PictureInPicture == true && pipMainVideo != null) {
+							int? mainVideoSize = pipMainVideo.Identity.Height;
+							if (resolution != null)
+							{
+								mainVideoSize = (int)resolution; // Gets the vertical resolution
+							}
+
+							// Create a filter for the main video
+							string? mainVideoName = null;
+							if (sourceFile.RenameData.Deinterlaced || (resolution != null))
+							{
+								mainVideoName = $"video{nextFilterName}";
+								nextFilterName++;
+
+								filter = new();
+								args.AddInputFilter(filter);
+								if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
+								if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
+
+								filter.AddInput(concatInputIndex, pipMainVideo.Identity.Index);
+								filter.AddOutput(mainVideoName);
+							}
+
+
+							// Create a filter for deinterlacing/scaling the overlay video
+							string? overlayVideoName = null;
+							if (sourceFile.RenameData.Deinterlaced || mainVideoSize != null)
+							{
+								overlayVideoName = $"video{nextFilterName}";
+								nextFilterName++;
+
+								filter = new();
+								args.AddInputFilter(filter);
+								if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
+								if (mainVideoSize != null) filter.AddFilter(Filters.Scale(-1, mainVideoSize.Value / 3)); // Scale overlay to desired height, keeping the original aspect ratio
+
+								filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
+								filter.AddOutput(overlayVideoName);
+							}
+
+
+							// Create a filter for overlaying the video
+							namedVideoInput = $"video{nextFilterName}";
 							nextFilterName++;
-                        } else
-                        {
-                            // Add stream directly from the input file
-                            options = new(concatInputIndex, loadedTrack.Identity.Index);
-                        }
+
+							filter = new();
+							args.AddInputFilter(filter);
+							filter.AddFilter(Filters.Overlay);
+							
+							// Main video input
+							if (mainVideoName == null)
+							{
+								filter.AddInput(concatInputIndex, pipMainVideo.Identity.Index);
+							} else
+							{
+								filter.AddInput(mainVideoName);
+							}
+
+							// Scaled overlay input
+							if (overlayVideoName == null)
+							{
+								filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
+							} else
+							{
+								filter.AddInput(overlayVideoName);
+							}
+
+							// Finished output
+							filter.AddOutput(namedVideoInput);
+						}
+
+						if (namedVideoInput == null)
+						{
+							// Add stream directly from the input file
+							options = new(concatInputIndex, loadedTrack.Identity.Index);
+						} else
+						{
+							// Add stream using the named stream
+                            options = new(namedVideoInput);
+						}
 
                         ApplyStreamOptions(options, disc, sourceFile, rename);
 						if (disc.ForceTranscoding || filter != null)

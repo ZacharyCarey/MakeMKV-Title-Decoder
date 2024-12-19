@@ -21,11 +21,15 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         [JsonInclude]
         public string Name;
 
-        public ShowOutputName(ShowType type, long tmdbId, string name)
+        [JsonInclude]
+        public string MetadataFileName;
+
+        public ShowOutputName(ShowType type, long tmdbId, string name, string metadataFileName)
         {
             this.Type = type;
             this.TmdbID = tmdbId;
             this.Name = name;
+            this.MetadataFileName = metadataFileName;
         }
 
         public string GetFolderPath(long season)
@@ -55,6 +59,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
             this.Type = other.Type;
             this.Name = other.Name;
             this.TmdbID = other.TmdbID;
+            this.MetadataFileName = other.MetadataFileName;
         }
 
         public override string ToString()

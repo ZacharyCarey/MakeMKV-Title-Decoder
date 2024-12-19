@@ -26,8 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             TmdbIdLabel = new Label();
             TmdbBtn = new Button();
             label1 = new Label();
@@ -39,6 +38,8 @@
             SaveBtn = new Button();
             ErrorText = new Label();
             CancelBtn = new Button();
+            label3 = new Label();
+            MetadataTextBox = new TextBox();
             SuspendLayout();
             // 
             // TmdbIdLabel
@@ -115,7 +116,7 @@
             // SaveBtn
             // 
             SaveBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            SaveBtn.Location = new Point(12, 167);
+            SaveBtn.Location = new Point(12, 175);
             SaveBtn.Name = "SaveBtn";
             SaveBtn.Size = new Size(75, 23);
             SaveBtn.TabIndex = 24;
@@ -137,7 +138,7 @@
             // CancelBtn
             // 
             CancelBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            CancelBtn.Location = new Point(156, 167);
+            CancelBtn.Location = new Point(156, 175);
             CancelBtn.Name = "CancelBtn";
             CancelBtn.Size = new Size(75, 23);
             CancelBtn.TabIndex = 26;
@@ -145,11 +146,31 @@
             CancelBtn.UseVisualStyleBackColor = true;
             CancelBtn.Click += CancelBtn_Click;
             // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(12, 149);
+            label3.Name = "label3";
+            label3.Size = new Size(116, 15);
+            label3.TabIndex = 27;
+            label3.Text = "Metadata File Name:";
+            // 
+            // MetadataTextBox
+            // 
+            MetadataTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            MetadataTextBox.Location = new Point(134, 146);
+            MetadataTextBox.Name = "MetadataTextBox";
+            MetadataTextBox.Size = new Size(359, 23);
+            MetadataTextBox.TabIndex = 28;
+            MetadataTextBox.TextChanged += MetadataTextBox_TextChanged;
+            // 
             // ShowEditor
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(505, 202);
+            ClientSize = new Size(505, 210);
+            Controls.Add(MetadataTextBox);
+            Controls.Add(label3);
             Controls.Add(CancelBtn);
             Controls.Add(ErrorText);
             Controls.Add(SaveBtn);
@@ -181,5 +202,7 @@
         private Button SaveBtn;
         private Label ErrorText;
         private Button CancelBtn;
+        private Label label3;
+        private TextBox MetadataTextBox;
     }
 }

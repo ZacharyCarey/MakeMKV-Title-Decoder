@@ -39,6 +39,9 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public bool Copy = true;
 
+        [JsonInclude]
+        public bool PictureInPicture = false;
+
         //[JsonInclude]
         //public DelayInfo? Delay = null;
     }

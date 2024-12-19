@@ -61,6 +61,7 @@ namespace MakeMKV_Title_Decoder
             SourceList = new ListBox();
             SourcePropertiesPanel = new Panel();
             SourceApplyButton = new Button();
+            PiPBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -374,6 +375,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // panel4
             // 
+            panel4.Controls.Add(PiPBtn);
             panel4.Controls.Add(DisableTrackBtn);
             panel4.Controls.Add(EnableTrackBtn);
             panel4.Dock = DockStyle.Right;
@@ -433,6 +435,16 @@ namespace MakeMKV_Title_Decoder
             SourceApplyButton.Text = "Add";
             SourceApplyButton.UseVisualStyleBackColor = true;
             SourceApplyButton.Click += SourceApplyButton_Click;
+            // 
+            // PiPBtn
+            // 
+            PiPBtn.Location = new Point(6, 76);
+            PiPBtn.Name = "PiPBtn";
+            PiPBtn.Size = new Size(75, 63);
+            PiPBtn.TabIndex = 10;
+            PiPBtn.Text = "Picture\r\nIn\r\nPicture\r\n";
+            PiPBtn.UseVisualStyleBackColor = true;
+            PiPBtn.Click += PiPBtn_Click;
             // 
             // PlaylistCreatorForm
             // 
@@ -499,5 +511,6 @@ namespace MakeMKV_Title_Decoder
         private Panel panel1;
         private Button PlaylistSourceDeleteBtn;
         private ImageList imageList1;
+        private Button PiPBtn;
     }
 }
