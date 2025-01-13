@@ -453,11 +453,39 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void ApplyPlaylistButton_Click(object sender, EventArgs e) {
-            LoadedPlaylistListItem? selectedItem = PlaylistsListBox.SelectedItem;
-            if (selectedItem != null)
+            if (PlaylistsListBox.SelectedItems.Count > 0)
             {
-                selectedItem.Playlist.Name = this.PlaylistNameTextBox.Text;
+                if (MessageBox.Show("Can not be undone. Are you sure?", "Rename?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
+            if (PlaylistsListBox.SelectedItems.Count > 1)
+            {
+                List<LoadedPlaylistListItem> itemsToRename = new();
+                foreach (var obj in PlaylistsListBox.SelectedItems)
+                {
+                    if (obj != null && obj is LoadedPlaylistListItem item)
+                    {
+                        itemsToRename.Add(item);
+                    }
+                }
+
+                string baseName = this.PlaylistNameTextBox.Text.TrimEnd();
+                for (int i = 0; i < itemsToRename.Count; i++) {
+                    var item = itemsToRename[i];
+                    item.Playlist.Name = $"{baseName} {(i + 1)}";
+                }
                 this.PlaylistsListBox.Invalidate();
+            } else
+            {
+                LoadedPlaylistListItem? selectedItem = PlaylistsListBox.SelectedItem;
+                if (selectedItem != null)
+                {
+                    selectedItem.Playlist.Name = this.PlaylistNameTextBox.Text;
+                    this.PlaylistsListBox.Invalidate();
+                }
             }
         }
 
