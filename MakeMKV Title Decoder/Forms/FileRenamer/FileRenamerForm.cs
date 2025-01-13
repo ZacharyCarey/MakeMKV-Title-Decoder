@@ -95,6 +95,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
 
             ExportableListBox1_SelectedIndexChanged(null, null);
+            EpisodeRangeCheckBox_CheckedChanged(null, null);
         }
 
         private void FileRenamerForm_Load(object sender, EventArgs e) {
@@ -138,6 +139,9 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             this.ExtraNameTextBox.Text = (output?.ExtraName ?? "");
 
             ExtraNameTextBox_TextChanged(null, null);
+
+            EpisodeRangeCheckBox.Checked = (output?.MultipleEpisodesRange != null);
+            EpisodeRangeTextBox.Text = (output?.MultipleEpisodesRange?.ToString() ?? "");
         }
 
         private void FeatureTypeRadioButton_CheckedChanged(object sender, EventArgs e) {
@@ -222,6 +226,10 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                     }
                 }
 
+                if (id.Episode == null && export.OutputFile.MultipleEpisodesRange != null)
+                {
+                    return true;
+                }
             }
 
             if (string.IsNullOrWhiteSpace(export.OutputFile.GetShowName(this.Disc.RenameData)?.Name)) return true;
@@ -291,6 +299,13 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 } else
                 {
                     export.OutputFile.Episode = -1;
+                }
+                if (this.EpisodeRangeCheckBox.Checked && long.TryParse(this.EpisodeRangeTextBox.Text, out temp))
+                {
+                    export.OutputFile.MultipleEpisodesRange = temp;
+                } else
+                {
+                    export.OutputFile.MultipleEpisodesRange = null;
                 }
                 CheckForErrors(selectedItem);
             }
@@ -457,7 +472,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                             rename = false;
                         }
 
-                        foreach(ScaleResolution? scale in selectedResolutions)
+                        foreach (ScaleResolution? scale in selectedResolutions)
                         {
                             string multiversionName = outputFile;
                             if (rename)
@@ -613,7 +628,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
         }
 
         private static string GetMultiversionString(ScaleResolution? resolution) {
-            switch(resolution)
+            switch (resolution)
             {
                 case null: return "Original";
                 case ScaleResolution.UHD_7680x4320: return "8k";
@@ -624,6 +639,11 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                 default:
                     throw new ArgumentException("Unknown resolution enum.");
             }
+        }
+
+        private void EpisodeRangeCheckBox_CheckedChanged(object sender, EventArgs e) {
+            EpisodeRangeTextBox.Enabled = EpisodeRangeCheckBox.Checked;
+            EpisodeRangeLabel.Enabled = EpisodeRangeCheckBox.Checked;
         }
     }
 }

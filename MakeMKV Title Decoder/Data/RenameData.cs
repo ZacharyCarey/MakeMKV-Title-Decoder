@@ -109,6 +109,9 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public string? ExtraName;
 
+        [JsonInclude]
+        public long? MultipleEpisodesRange = null;
+
         public string? GetBonusFolder(ShowType showType) {
             switch (showType)
             {
@@ -139,7 +142,13 @@ namespace MakeMKV_Title_Decoder.Data
                     return $"{ExtraName ?? ""}.mkv";
                 } else
                 {
-                    return $"{ShowID.Name ?? ""} S{Season}E{Episode}.mkv";
+                    if (this.MultipleEpisodesRange == null)
+                    {
+                        return $"{ShowID.Name ?? ""} S{Season}E{Episode}.mkv";
+                    } else
+                    {
+                        return $"{ShowID.Name ?? ""} S{Season}E{Episode}-E{MultipleEpisodesRange}.mkv";
+                    }
                 }
             } else
             {

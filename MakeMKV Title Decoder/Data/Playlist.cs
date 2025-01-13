@@ -377,7 +377,7 @@ namespace MakeMKV_Title_Decoder.Data
 			DataSize outputFileSize = DataSize.FromFile(outputFilePath) ?? new DataSize();
 
             Console.ForegroundColor = ConsoleColor.Cyan;
-			Console.WriteLine($"{Path.GetFileName(outputFilePath)} {(isTranscoded ? "" : "(Copy)")}: [{inputResolution}p {outputResolution}p {totalInputDuration.TotalMinutes} {transcodeTime.TotalMinutes} {totalInputSize.AsGB()} {outputFileSize.AsGB()}]");
+			Console.WriteLine($"{Path.GetFileName(outputFilePath)}{(isTranscoded ? "" : " (Copy)")}: [{inputResolution}p {outputResolution}p {totalInputDuration.TotalMinutes} {transcodeTime.TotalMinutes} {totalInputSize.AsGB()} {outputFileSize.AsGB()}]");
 			Console.ResetColor();
 		}
     }

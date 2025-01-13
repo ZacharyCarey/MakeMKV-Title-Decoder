@@ -57,6 +57,9 @@
             SeasonTextBox = new TextBox();
             label4 = new Label();
             label3 = new Label();
+            EpisodeRangeTextBox = new TextBox();
+            EpisodeRangeLabel = new Label();
+            EpisodeRangeCheckBox = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -356,6 +359,9 @@
             // 
             // panel3
             // 
+            panel3.Controls.Add(EpisodeRangeCheckBox);
+            panel3.Controls.Add(EpisodeRangeTextBox);
+            panel3.Controls.Add(EpisodeRangeLabel);
             panel3.Controls.Add(TmdbBtn);
             panel3.Controls.Add(EpisodeTextBox);
             panel3.Controls.Add(SeasonTextBox);
@@ -363,7 +369,7 @@
             panel3.Controls.Add(label3);
             panel3.Location = new Point(9, 146);
             panel3.Name = "panel3";
-            panel3.Size = new Size(236, 84);
+            panel3.Size = new Size(501, 84);
             panel3.TabIndex = 10;
             // 
             // TmdbBtn
@@ -409,6 +415,33 @@
             label3.Size = new Size(47, 15);
             label3.TabIndex = 6;
             label3.Text = "Season:";
+            // 
+            // EpisodeRangeTextBox
+            // 
+            EpisodeRangeTextBox.Location = new Point(324, 32);
+            EpisodeRangeTextBox.Name = "EpisodeRangeTextBox";
+            EpisodeRangeTextBox.Size = new Size(153, 23);
+            EpisodeRangeTextBox.TabIndex = 21;
+            // 
+            // EpisodeRangeLabel
+            // 
+            EpisodeRangeLabel.AutoSize = true;
+            EpisodeRangeLabel.Location = new Point(267, 35);
+            EpisodeRangeLabel.Name = "EpisodeRangeLabel";
+            EpisodeRangeLabel.Size = new Size(51, 15);
+            EpisodeRangeLabel.TabIndex = 20;
+            EpisodeRangeLabel.Text = "Episode:";
+            // 
+            // EpisodeRangeCheckBox
+            // 
+            EpisodeRangeCheckBox.AutoSize = true;
+            EpisodeRangeCheckBox.Location = new Point(267, 5);
+            EpisodeRangeCheckBox.Name = "EpisodeRangeCheckBox";
+            EpisodeRangeCheckBox.Size = new Size(119, 19);
+            EpisodeRangeCheckBox.TabIndex = 22;
+            EpisodeRangeCheckBox.Text = "Multiple Episodes";
+            EpisodeRangeCheckBox.UseVisualStyleBackColor = true;
+            EpisodeRangeCheckBox.CheckedChanged += EpisodeRangeCheckBox_CheckedChanged;
             // 
             // FileRenamerForm
             // 
@@ -466,5 +499,8 @@
         private Button ApplyChangesBtn;
         private Button TmdbBtn;
         private RadioButton GalleryRadioButton;
+        private CheckBox EpisodeRangeCheckBox;
+        private TextBox EpisodeRangeTextBox;
+        private Label EpisodeRangeLabel;
     }
 }
