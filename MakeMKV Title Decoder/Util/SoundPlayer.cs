@@ -9,17 +9,17 @@ using System.Xml.Linq;
 namespace MakeMKV_Title_Decoder.Util {
     internal static class SoundPlayer {
 
-        public const string HappySound = "Success.wav";
-        public const string SadSound = "Error.wav";
+        public const string HappySound = "Sounds.Success.wav";
+        public const string SadSound = "Sounds.Error.wav";
 
 
         public static void Play(string name) {
             var assembly = Assembly.GetExecutingAssembly();
 
-            /*foreach(string str in assembly.GetManifestResourceNames())
+            foreach(string str in assembly.GetManifestResourceNames())
             {
                 Console.WriteLine(str);
-            }*/
+            }
             string file = "MakeMKV_Title_Decoder." + name;
             using (Stream stream = assembly.GetManifestResourceStream(file))
             {
