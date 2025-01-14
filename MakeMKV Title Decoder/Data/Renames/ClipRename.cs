@@ -27,6 +27,9 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 		[JsonInclude]
 		public int UID = -1;
 
+		[JsonInclude]
+		public RemuxCommand? Remux = null;
+
 		public ClipRename(StreamIdentity identification) { 
 			//try
 			//{

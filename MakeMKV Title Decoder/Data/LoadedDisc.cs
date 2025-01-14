@@ -95,7 +95,7 @@ namespace MakeMKV_Title_Decoder.Data
 				{
 					var stream = this.Streams[i];
 					var clipRename = renameData.Clips[i];
-					error = stream.TryMatchRenameData(clipRename);
+					error = stream.TryMatchRenameData(clipRename, this.Root);
 					if (error != null) throw new Exception(error);
 					streamMatches[stream] = clipRename;
 				}
