@@ -16,10 +16,10 @@ namespace MakeMKV_Title_Decoder.Util {
         public static void Play(string name) {
             var assembly = Assembly.GetExecutingAssembly();
 
-            foreach(string str in assembly.GetManifestResourceNames())
+            /*foreach(string str in assembly.GetManifestResourceNames())
             {
                 Console.WriteLine(str);
-            }
+            }*/
             string file = "MakeMKV_Title_Decoder." + name;
             using (Stream stream = assembly.GetManifestResourceStream(file))
             {
