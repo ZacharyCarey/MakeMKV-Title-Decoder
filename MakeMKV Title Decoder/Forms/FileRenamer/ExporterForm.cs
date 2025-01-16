@@ -33,8 +33,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
 
         Dictionary<CheckBox, (DataSize FileSize, TimeSpan ProcessTime)> Estimates = new();
 
-        public IEnumerable<ScaleResolution?> SelectedMainFeatureResolutions => MainFeatureGUI.Where(x => x.IsSelected).Select(x => x.Scale);
-        public ScaleResolution? SelectedExtrasResolutions => ExtrasGUI.Where(x => x.IsSelected).Select(x => x.Scale).FirstOrDefault();
+        public IEnumerable<ScaleResolution?> SelectedMainFeatureResolutions => MainFeatureGUI.Where(x => x.IsSelected).Select(x => x.Scale).Where(x => x != null);
+        public ScaleResolution? SelectedExtrasResolutions => ExtrasGUI.Where(x => x.IsSelected).Select(x => x.Scale).Where(x => x != null).FirstOrDefault();
 
         GuiCheckBox[] MainFeatureGUI;
         GuiRadioButton[] ExtrasGUI;

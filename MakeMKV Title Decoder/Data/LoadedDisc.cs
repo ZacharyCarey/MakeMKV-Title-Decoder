@@ -179,11 +179,20 @@ namespace MakeMKV_Title_Decoder.Data
 			get => this[ID.StreamUID, ID.TrackUID];
 		}
 
-		public LoadedStream? TryGetStreamFromPath(string path)
+		public LoadedStream? TryGetStreamFromPath(string path, bool ignoreExtension = false)
 		{
 			foreach (var stream in this.Streams)
 			{
-				if (stream.Identity.SourceFile == path)
+				bool sameFile;
+				if (ignoreExtension)
+				{
+					sameFile = (Path.GetFileNameWithoutExtension(stream.Identity.SourceFile) == Path.GetFileNameWithoutExtension(path));
+				} else
+				{
+					sameFile = (stream.Identity.SourceFile == path);
+				}
+
+				if (sameFile)
 				{
 					return stream;
 				}

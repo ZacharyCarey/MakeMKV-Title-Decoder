@@ -63,7 +63,7 @@ namespace MakeMKV_Title_Decoder.Data
 
 			foreach(var streamPath in importPlaylist.SourceFiles)
 			{
-				LoadedStream? stream = disc.TryGetStreamFromPath(streamPath);
+				LoadedStream? stream = disc.TryGetStreamFromPath(streamPath, true);
 				if (stream == null) return null;
 				if (string.IsNullOrWhiteSpace(stream.RenameData.Name)) continue; // Dont import clips that haven't been renamed. This helps skip clips that are blank or not wanted.
 
