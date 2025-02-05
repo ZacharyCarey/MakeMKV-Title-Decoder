@@ -63,7 +63,8 @@ namespace MakeMKV_Title_Decoder.Data.DVD
 
                 if (!success)
                 {
-                    Directory.Delete(fullDemuxDir, true);
+                    //Directory.Delete(fullDemuxDir, true);
+                    MessageBox.Show("Please resolve errors, then try loading the disc again.");
                     return null;
                 }
             }

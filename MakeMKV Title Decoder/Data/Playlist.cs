@@ -16,6 +16,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Utils;
+using static System.Windows.Forms.Design.AxImporter;
 
 namespace MakeMKV_Title_Decoder.Data
 {
@@ -86,7 +87,7 @@ namespace MakeMKV_Title_Decoder.Data
 			return playlist;
 		} 
 
-		private FFMpegCliArgs GetMergeData(FFMpeg ffmpeg, LoadedDisc disc, OutputFile outputFile, ScaleResolution? resolution = null)
+		private FFMpegArgs GetMergeData(FFMpeg ffmpeg, LoadedDisc disc, OutputFile outputFile, TranscodeArgs? transcodeArgs, ScaleResolution? sourceResolution)
 		{
 			if (this.Title != null) outputFile.Title = this.Title;
 			var args = ffmpeg.Transcode(outputFile);
@@ -124,31 +125,61 @@ namespace MakeMKV_Title_Decoder.Data
 				}
 			}
 
+			ScaleResolution? scaling = null;
+			if (transcodeArgs != null && transcodeArgs.ScaleDownToResolution != null)
+			{
+				if ((int)sourceResolution > (int)transcodeArgs.ScaleDownToResolution.Value)
+				{
+					scaling = transcodeArgs.ScaleDownToResolution;
+				}
+			}
+
+			bool hasPIP = this.SourceTracks.Zip(sourceFile.Tracks).Where(x => x.First.Copy && x.Second.Identity.TrackType == Renames.TrackType.Video && x.First.PictureInPicture).Any();
+			LoadedTrack? ForcedVideo = null;
+			if (!hasPIP && (disc.ForceTranscoding || transcodeArgs != null || scaling != null))
+			{
+				// If there is no PIP, and we are transcoding, then force only one video to the output.
+				// This prevents optional streams like Dolby Vision tracks from being transcoded, and unnecessarily kept
+				ForcedVideo = this.SourceTracks.Zip(sourceFile.Tracks)
+					.Where(x => x.First.Copy && x.Second.Identity.TrackType == Renames.TrackType.Video && !x.First.PictureInPicture)
+					.Select(x => x.Second)
+					.OrderByDescending(x =>  (x.RenameData.DefaultFlag == true) ? 1 : 0) // Prefer streams that are marked as "default", but otherwise just pick the first one
+                    .FirstOrDefault();
+			}
+
 			// Add all the streams in the correct order, applying relevent options
             foreach ((PlaylistTrack track, LoadedTrack loadedTrack) in this.SourceTracks.Zip(sourceFile.Tracks))
 			{
+				if ((ForcedVideo != null) && (loadedTrack.Identity.TrackType == Renames.TrackType.Video) && (loadedTrack != ForcedVideo))
+				{
+					// Only transcode the first/primary video track
+					continue;
+				}
+
 				if (track.Copy) {
 					TrackRename rename = loadedTrack.RenameData;
-                    if (loadedTrack.FFProbeInfo is VideoStream videoStream)
+					if (loadedTrack.FFProbeInfo is VideoStream videoStream)
 					{
 						VideoStreamOptions options;
 						FilterArguments? filter = null;
 						string? namedVideoInput = null;
 
 						bool failedPIP = false;
-						if (track.PictureInPicture && pipMainVideo == null) {
+						if (track.PictureInPicture && pipMainVideo == null)
+						{
 							failedPIP = true;
 							Log.Warn("Picture in Picture was selected, but no valid 'main video' was found. Stream will be copied as normal.");
 						}
 
 
-						if (track.PictureInPicture == false || failedPIP) {
-							if (sourceFile.RenameData.Deinterlaced || (resolution != null))
+						if (track.PictureInPicture == false || failedPIP)
+						{
+							if (sourceFile.RenameData.Deinterlaced || (scaling != null))
 							{
 								filter = new();
 								args.AddInputFilter(filter);
 								if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
-								if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
+								if (scaling != null) filter.AddFilter(Filters.Scale(scaling.Value));
 
 								filter.AddInput(concatInputIndex, loadedTrack.Identity.Index);
 								filter.AddOutput($"video{nextFilterName}");
@@ -156,16 +187,17 @@ namespace MakeMKV_Title_Decoder.Data
 								namedVideoInput = $"video{nextFilterName}";
 								nextFilterName++;
 							}
-						} else if(track.PictureInPicture == true && pipMainVideo != null) {
+						} else if (track.PictureInPicture == true && pipMainVideo != null)
+						{
 							int? mainVideoSize = pipMainVideo.Identity.Height;
-							if (resolution != null)
+							if (scaling != null)
 							{
-								mainVideoSize = (int)resolution; // Gets the vertical resolution
+								mainVideoSize = (int)scaling; // Gets the vertical resolution
 							}
 
 							// Create a filter for the main video
 							string? mainVideoName = null;
-							if (sourceFile.RenameData.Deinterlaced || (resolution != null))
+							if (sourceFile.RenameData.Deinterlaced || (scaling != null))
 							{
 								mainVideoName = $"video{nextFilterName}";
 								nextFilterName++;
@@ -173,7 +205,7 @@ namespace MakeMKV_Title_Decoder.Data
 								filter = new();
 								args.AddInputFilter(filter);
 								if (sourceFile.RenameData.Deinterlaced) filter.AddFilter(Filters.Bwdif);
-								if (resolution != null) filter.AddFilter(Filters.Scale(resolution.Value));
+								if (scaling != null) filter.AddFilter(Filters.Scale(scaling.Value));
 
 								filter.AddInput(concatInputIndex, pipMainVideo.Identity.Index);
 								filter.AddOutput(mainVideoName);
@@ -204,7 +236,7 @@ namespace MakeMKV_Title_Decoder.Data
 							filter = new();
 							args.AddInputFilter(filter);
 							filter.AddFilter(Filters.Overlay);
-							
+
 							// Main video input
 							if (mainVideoName == null)
 							{
@@ -234,15 +266,24 @@ namespace MakeMKV_Title_Decoder.Data
 						} else
 						{
 							// Add stream using the named stream
-                            options = new(namedVideoInput);
+							options = new(namedVideoInput);
 						}
 
-                        ApplyStreamOptions(options, disc, sourceFile, rename);
-						if (disc.ForceTranscoding || filter != null)
+						ApplyStreamOptions(options, disc, sourceFile, rename);
+						if (disc.ForceTranscoding || (transcodeArgs != null) || (scaling != null) || (filter != null))
 						{
-							options.SetCodec(Codecs.LibSvtAV1.SetPreset(5).SetCRF(20));
+							transcodeArgs.GetVideoOptions(options);
 						}
 						args.AddStream(options);
+					} else if (loadedTrack.FFProbeInfo is AudioStream)
+					{
+						AudioStreamOptions options = new AudioStreamOptions(concatInputIndex, loadedTrack.Identity.Index);
+						ApplyStreamOptions(options, disc, sourceFile, rename);
+						if (transcodeArgs != null)
+						{
+							transcodeArgs.GetAudioOptions(options);
+						}
+                        args.AddStream(options);
 					} else 
 					{
 						// Simply copy other streams
@@ -278,32 +319,37 @@ namespace MakeMKV_Title_Decoder.Data
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Failed to parse delay!");
                 Console.ResetColor();
-				return 0;
+                return 0;
             }
         }
 
-        bool Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress)
-        {
-            string? ffmpegPath = FileUtils.GetFFMpegExe();
-            if (ffmpegPath == null) return false;
-
-            FFMpeg ffmpeg = new FFMpeg();
-            OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
-            FFMpegCliArgs args = this.GetMergeData(ffmpeg, disc, file);
-            return Export(disc, args, Path.Combine(outputFolder, outputFile), 0, false, progress, totalProgress);
-        }
-
-		bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+        bool Exportable.ExportOriginal(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
 			string? ffmpegPath = FileUtils.GetFFMpegExe();
 			if (ffmpegPath == null) return false;
 
 			FFMpeg ffmpeg = new FFMpeg();
 			OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
-			FFMpegCliArgs args = this.GetMergeData(ffmpeg, disc, file, resolution);
-			return Export(disc, args, Path.Combine(outputFolder, outputFile), GetVerticalResolution(resolution), true, progress, totalProgress);
-		}
+			FFMpegArgs args = this.GetMergeData(ffmpeg, disc, file, null, null);
+			return Export(disc, args, Path.Combine(outputFolder, outputFile), -1, false, progress, totalProgress);
+        }
 
-		private bool Export(LoadedDisc disc, FFMpegCliArgs args, string outputFilePath, int outputResolution, bool isTranscoded, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+        bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, TranscodeArgs transcodeArgs, ScaleResolution sourceResolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+            string? ffmpegPath = FileUtils.GetFFMpegExe();
+            if (ffmpegPath == null) return false;
+
+            FFMpeg ffmpeg = new FFMpeg();
+            OutputFile file = new OutputFile(Path.Combine(outputFolder, outputFile));
+            FFMpegArgs args = this.GetMergeData(ffmpeg, disc, file, transcodeArgs, sourceResolution);
+
+			int resolution = (int)sourceResolution;
+			if (transcodeArgs.ScaleDownToResolution != null && (int)transcodeArgs.ScaleDownToResolution < resolution)
+			{
+				resolution = (int)transcodeArgs.ScaleDownToResolution;
+			}
+            return Export(disc, args, Path.Combine(outputFolder, outputFile), resolution, true, progress, totalProgress);
+        }
+
+        private bool Export(LoadedDisc disc, FFMpegCliArgs args, string outputFilePath, int outputResolution, bool isTranscoded, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
             SimpleProgress currentProgress;
 			if (totalProgress.HasValue) currentProgress = totalProgress.Value;
 			else currentProgress = new();
@@ -337,18 +383,6 @@ namespace MakeMKV_Title_Decoder.Data
 
 			PrintDevStats(disc, outputFilePath, timer.Elapsed, outputResolution, isTranscoded);
 			return true;
-		}
-
-		private static int GetVerticalResolution(ScaleResolution resolution) {
-			switch(resolution)
-			{
-				case ScaleResolution.UHD_7680x4320: return 4320;
-				case ScaleResolution.UHD_3840x2160: return 2160;
-				case ScaleResolution.HD_1920x1080: return 1080;
-				case ScaleResolution.HD_1280x720: return 720;
-				case ScaleResolution.SD_720x480: return 480;
-				default: return 0;
-			}
 		}
 
 		private void PrintDevStats(LoadedDisc disc, string outputFilePath, TimeSpan transcodeTime, int outputResolution, bool isTranscoded) {

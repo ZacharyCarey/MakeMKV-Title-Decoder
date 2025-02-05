@@ -419,7 +419,7 @@ namespace MakeMKV_Title_Decoder
                 Console.WriteLine($"Detected {nFrames} frames in {stream.Identity.SourceFile}");
                 if (nFrames > 0)
                 {
-                    Attachment? attachment = SingleFrameExtracted.Extract(this.Disc, stream, 1);
+                    Attachment? attachment = SingleFrameExtracted.Extract(this.Disc, stream, 0);
                     if (attachment == null)
                     {
                         success = false;

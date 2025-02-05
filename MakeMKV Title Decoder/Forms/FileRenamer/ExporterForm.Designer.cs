@@ -24,29 +24,19 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            Export1080pFileSizeLabel = new Label();
-            Export4kFileSizeLabel = new Label();
-            ExportOriginalFileSizeLabel = new Label();
-            Export1080pCheckBox = new CheckBox();
-            Export4kCheckBox = new CheckBox();
             ExportOriginalCheckBox = new CheckBox();
             DVDWarningLabel = new Label();
-            Export4kEstimatedTimeLabel = new Label();
-            Export1080pEstimatedTimeLabel = new Label();
-            Export720pCheckBox = new CheckBox();
-            Export720pEstimatedTimeLabel = new Label();
-            Export720pFileSizeLabel = new Label();
-            Export480pEstimatedTimeLabel = new Label();
-            Export480pFileSizeLabel = new Label();
-            Export480pCheckBox = new CheckBox();
             ExportBtn = new Button();
-            TotalTimeLabel = new Label();
-            TotalFileSizeLabel = new Label();
-            label1 = new Label();
-            ExportOriginalTimeLabel = new Label();
             label2 = new Label();
             MainFeatureLabel = new Label();
             panel1 = new Panel();
+            TvEncoding480pCheckBox = new RadioButton();
+            TvEncoding720pCheckBox = new RadioButton();
+            TvEncoding1080pCheckBox = new RadioButton();
+            TvEncodingCheckBox = new RadioButton();
+            MobileEncoding480pCheckBox = new RadioButton();
+            MobileEncoding720pCheckBox = new RadioButton();
+            MobileEncodingCheckBox = new RadioButton();
             panel2 = new Panel();
             radioButton1 = new RadioButton();
             Export480pRadioButton = new RadioButton();
@@ -55,66 +45,13 @@
             Export4kRadioButton = new RadioButton();
             ExportOriginalRadioButton = new RadioButton();
             ExtrasLabel = new Label();
-            ExtrasOriginalTimeLabel = new Label();
-            ExtrasOriginalSizeLabel = new Label();
-            Extras4kSizeLabel = new Label();
-            Extras1080pSizeLabel = new Label();
-            Extras4kTimeLabel = new Label();
-            Extras480pTimeLabel = new Label();
-            Extras1080pTimeLabel = new Label();
-            Extras480pSizeLabel = new Label();
-            Extras720pSizeLabel = new Label();
-            Extras720pTimeLabel = new Label();
+            panel3 = new Panel();
+            radioButton2 = new RadioButton();
+            radioButton3 = new RadioButton();
             panel1.SuspendLayout();
             panel2.SuspendLayout();
+            panel3.SuspendLayout();
             SuspendLayout();
-            // 
-            // Export1080pFileSizeLabel
-            // 
-            Export1080pFileSizeLabel.AutoSize = true;
-            Export1080pFileSizeLabel.Location = new Point(114, 69);
-            Export1080pFileSizeLabel.Name = "Export1080pFileSizeLabel";
-            Export1080pFileSizeLabel.Size = new Size(83, 15);
-            Export1080pFileSizeLabel.TabIndex = 28;
-            Export1080pFileSizeLabel.Text = "Estimated 2GB";
-            // 
-            // Export4kFileSizeLabel
-            // 
-            Export4kFileSizeLabel.AutoSize = true;
-            Export4kFileSizeLabel.Location = new Point(114, 44);
-            Export4kFileSizeLabel.Name = "Export4kFileSizeLabel";
-            Export4kFileSizeLabel.Size = new Size(83, 15);
-            Export4kFileSizeLabel.TabIndex = 27;
-            Export4kFileSizeLabel.Text = "Estimated 3GB";
-            // 
-            // ExportOriginalFileSizeLabel
-            // 
-            ExportOriginalFileSizeLabel.AutoSize = true;
-            ExportOriginalFileSizeLabel.Location = new Point(114, 19);
-            ExportOriginalFileSizeLabel.Name = "ExportOriginalFileSizeLabel";
-            ExportOriginalFileSizeLabel.Size = new Size(34, 15);
-            ExportOriginalFileSizeLabel.TabIndex = 26;
-            ExportOriginalFileSizeLabel.Text = "10GB";
-            // 
-            // Export1080pCheckBox
-            // 
-            Export1080pCheckBox.AutoSize = true;
-            Export1080pCheckBox.Location = new Point(3, 68);
-            Export1080pCheckBox.Name = "Export1080pCheckBox";
-            Export1080pCheckBox.Size = new Size(94, 19);
-            Export1080pCheckBox.TabIndex = 25;
-            Export1080pCheckBox.Text = "Export 1080p";
-            Export1080pCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // Export4kCheckBox
-            // 
-            Export4kCheckBox.AutoSize = true;
-            Export4kCheckBox.Location = new Point(3, 43);
-            Export4kCheckBox.Name = "Export4kCheckBox";
-            Export4kCheckBox.Size = new Size(75, 19);
-            Export4kCheckBox.TabIndex = 24;
-            Export4kCheckBox.Text = "Export 4k";
-            Export4kCheckBox.UseVisualStyleBackColor = true;
             // 
             // ExportOriginalCheckBox
             // 
@@ -135,125 +72,15 @@
             DVDWarningLabel.TabIndex = 29;
             DVDWarningLabel.Text = "Due to streaming issues with MPEG, all DVDs MUST be transcoded and can't be saved in their original format.";
             // 
-            // Export4kEstimatedTimeLabel
-            // 
-            Export4kEstimatedTimeLabel.AutoSize = true;
-            Export4kEstimatedTimeLabel.Location = new Point(232, 44);
-            Export4kEstimatedTimeLabel.Name = "Export4kEstimatedTimeLabel";
-            Export4kEstimatedTimeLabel.Size = new Size(49, 15);
-            Export4kEstimatedTimeLabel.TabIndex = 30;
-            Export4kEstimatedTimeLabel.Text = "00:00:00";
-            // 
-            // Export1080pEstimatedTimeLabel
-            // 
-            Export1080pEstimatedTimeLabel.AutoSize = true;
-            Export1080pEstimatedTimeLabel.Location = new Point(232, 69);
-            Export1080pEstimatedTimeLabel.Name = "Export1080pEstimatedTimeLabel";
-            Export1080pEstimatedTimeLabel.Size = new Size(49, 15);
-            Export1080pEstimatedTimeLabel.TabIndex = 31;
-            Export1080pEstimatedTimeLabel.Text = "00:00:00";
-            // 
-            // Export720pCheckBox
-            // 
-            Export720pCheckBox.AutoSize = true;
-            Export720pCheckBox.Location = new Point(3, 93);
-            Export720pCheckBox.Name = "Export720pCheckBox";
-            Export720pCheckBox.Size = new Size(88, 19);
-            Export720pCheckBox.TabIndex = 32;
-            Export720pCheckBox.Text = "Export 720p";
-            Export720pCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // Export720pEstimatedTimeLabel
-            // 
-            Export720pEstimatedTimeLabel.AutoSize = true;
-            Export720pEstimatedTimeLabel.Location = new Point(232, 94);
-            Export720pEstimatedTimeLabel.Name = "Export720pEstimatedTimeLabel";
-            Export720pEstimatedTimeLabel.Size = new Size(49, 15);
-            Export720pEstimatedTimeLabel.TabIndex = 34;
-            Export720pEstimatedTimeLabel.Text = "00:00:00";
-            // 
-            // Export720pFileSizeLabel
-            // 
-            Export720pFileSizeLabel.AutoSize = true;
-            Export720pFileSizeLabel.Location = new Point(114, 94);
-            Export720pFileSizeLabel.Name = "Export720pFileSizeLabel";
-            Export720pFileSizeLabel.Size = new Size(83, 15);
-            Export720pFileSizeLabel.TabIndex = 33;
-            Export720pFileSizeLabel.Text = "Estimated 2GB";
-            // 
-            // Export480pEstimatedTimeLabel
-            // 
-            Export480pEstimatedTimeLabel.AutoSize = true;
-            Export480pEstimatedTimeLabel.Location = new Point(232, 119);
-            Export480pEstimatedTimeLabel.Name = "Export480pEstimatedTimeLabel";
-            Export480pEstimatedTimeLabel.Size = new Size(49, 15);
-            Export480pEstimatedTimeLabel.TabIndex = 37;
-            Export480pEstimatedTimeLabel.Text = "00:00:00";
-            // 
-            // Export480pFileSizeLabel
-            // 
-            Export480pFileSizeLabel.AutoSize = true;
-            Export480pFileSizeLabel.Location = new Point(114, 119);
-            Export480pFileSizeLabel.Name = "Export480pFileSizeLabel";
-            Export480pFileSizeLabel.Size = new Size(83, 15);
-            Export480pFileSizeLabel.TabIndex = 36;
-            Export480pFileSizeLabel.Text = "Estimated 2GB";
-            // 
-            // Export480pCheckBox
-            // 
-            Export480pCheckBox.AutoSize = true;
-            Export480pCheckBox.Location = new Point(3, 118);
-            Export480pCheckBox.Name = "Export480pCheckBox";
-            Export480pCheckBox.Size = new Size(88, 19);
-            Export480pCheckBox.TabIndex = 35;
-            Export480pCheckBox.Text = "Export 480p";
-            Export480pCheckBox.UseVisualStyleBackColor = true;
-            // 
             // ExportBtn
             // 
-            ExportBtn.Location = new Point(12, 265);
+            ExportBtn.Location = new Point(12, 362);
             ExportBtn.Name = "ExportBtn";
             ExportBtn.Size = new Size(75, 23);
             ExportBtn.TabIndex = 38;
             ExportBtn.Text = "Export";
             ExportBtn.UseVisualStyleBackColor = true;
             ExportBtn.Click += ExportBtn_Click;
-            // 
-            // TotalTimeLabel
-            // 
-            TotalTimeLabel.AutoSize = true;
-            TotalTimeLabel.Location = new Point(241, 220);
-            TotalTimeLabel.Name = "TotalTimeLabel";
-            TotalTimeLabel.Size = new Size(49, 15);
-            TotalTimeLabel.TabIndex = 40;
-            TotalTimeLabel.Text = "00:00:00";
-            // 
-            // TotalFileSizeLabel
-            // 
-            TotalFileSizeLabel.AutoSize = true;
-            TotalFileSizeLabel.Location = new Point(123, 220);
-            TotalFileSizeLabel.Name = "TotalFileSizeLabel";
-            TotalFileSizeLabel.Size = new Size(28, 15);
-            TotalFileSizeLabel.TabIndex = 39;
-            TotalFileSizeLabel.Text = "2GB";
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(52, 220);
-            label1.Name = "label1";
-            label1.Size = new Size(35, 15);
-            label1.TabIndex = 41;
-            label1.Text = "Total:";
-            // 
-            // ExportOriginalTimeLabel
-            // 
-            ExportOriginalTimeLabel.AutoSize = true;
-            ExportOriginalTimeLabel.Location = new Point(232, 19);
-            ExportOriginalTimeLabel.Name = "ExportOriginalTimeLabel";
-            ExportOriginalTimeLabel.Size = new Size(49, 15);
-            ExportOriginalTimeLabel.TabIndex = 42;
-            ExportOriginalTimeLabel.Text = "00:00:00";
             // 
             // label2
             // 
@@ -275,26 +102,87 @@
             // 
             // panel1
             // 
+            panel1.Controls.Add(radioButton3);
+            panel1.Controls.Add(TvEncoding480pCheckBox);
+            panel1.Controls.Add(TvEncoding720pCheckBox);
+            panel1.Controls.Add(TvEncoding1080pCheckBox);
+            panel1.Controls.Add(TvEncodingCheckBox);
             panel1.Controls.Add(MainFeatureLabel);
             panel1.Controls.Add(ExportOriginalCheckBox);
-            panel1.Controls.Add(Export4kCheckBox);
-            panel1.Controls.Add(ExportOriginalTimeLabel);
-            panel1.Controls.Add(Export1080pCheckBox);
-            panel1.Controls.Add(ExportOriginalFileSizeLabel);
-            panel1.Controls.Add(Export4kFileSizeLabel);
-            panel1.Controls.Add(Export1080pFileSizeLabel);
-            panel1.Controls.Add(Export4kEstimatedTimeLabel);
-            panel1.Controls.Add(Export480pEstimatedTimeLabel);
-            panel1.Controls.Add(Export1080pEstimatedTimeLabel);
-            panel1.Controls.Add(Export480pFileSizeLabel);
-            panel1.Controls.Add(Export720pCheckBox);
-            panel1.Controls.Add(Export480pCheckBox);
-            panel1.Controls.Add(Export720pFileSizeLabel);
-            panel1.Controls.Add(Export720pEstimatedTimeLabel);
             panel1.Location = new Point(12, 58);
             panel1.Name = "panel1";
-            panel1.Size = new Size(300, 146);
+            panel1.Size = new Size(219, 164);
             panel1.TabIndex = 45;
+            // 
+            // TvEncoding480pCheckBox
+            // 
+            TvEncoding480pCheckBox.AutoSize = true;
+            TvEncoding480pCheckBox.Location = new Point(3, 117);
+            TvEncoding480pCheckBox.Name = "TvEncoding480pCheckBox";
+            TvEncoding480pCheckBox.Size = new Size(134, 19);
+            TvEncoding480pCheckBox.TabIndex = 49;
+            TvEncoding480pCheckBox.Text = "TV (480p, AV1, EAC3)";
+            TvEncoding480pCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // TvEncoding720pCheckBox
+            // 
+            TvEncoding720pCheckBox.AutoSize = true;
+            TvEncoding720pCheckBox.Location = new Point(3, 93);
+            TvEncoding720pCheckBox.Name = "TvEncoding720pCheckBox";
+            TvEncoding720pCheckBox.Size = new Size(134, 19);
+            TvEncoding720pCheckBox.TabIndex = 48;
+            TvEncoding720pCheckBox.Text = "TV (720p, AV1, EAC3)";
+            TvEncoding720pCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // TvEncoding1080pCheckBox
+            // 
+            TvEncoding1080pCheckBox.AutoSize = true;
+            TvEncoding1080pCheckBox.Location = new Point(3, 68);
+            TvEncoding1080pCheckBox.Name = "TvEncoding1080pCheckBox";
+            TvEncoding1080pCheckBox.Size = new Size(140, 19);
+            TvEncoding1080pCheckBox.TabIndex = 47;
+            TvEncoding1080pCheckBox.Text = "TV (1080p, AV1, EAC3)";
+            TvEncoding1080pCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // TvEncodingCheckBox
+            // 
+            TvEncodingCheckBox.AutoSize = true;
+            TvEncodingCheckBox.Location = new Point(3, 43);
+            TvEncodingCheckBox.Name = "TvEncodingCheckBox";
+            TvEncodingCheckBox.Size = new Size(121, 19);
+            TvEncodingCheckBox.TabIndex = 45;
+            TvEncodingCheckBox.Text = "TV (4k, AV1, EAC3)";
+            TvEncodingCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // MobileEncoding480pCheckBox
+            // 
+            MobileEncoding480pCheckBox.AutoSize = true;
+            MobileEncoding480pCheckBox.Location = new Point(3, 53);
+            MobileEncoding480pCheckBox.Name = "MobileEncoding480pCheckBox";
+            MobileEncoding480pCheckBox.Size = new Size(199, 19);
+            MobileEncoding480pCheckBox.TabIndex = 51;
+            MobileEncoding480pCheckBox.Text = "Mobile (480p, AV1, AAC, 2 Mbps)";
+            MobileEncoding480pCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // MobileEncoding720pCheckBox
+            // 
+            MobileEncoding720pCheckBox.AutoSize = true;
+            MobileEncoding720pCheckBox.Location = new Point(3, 28);
+            MobileEncoding720pCheckBox.Name = "MobileEncoding720pCheckBox";
+            MobileEncoding720pCheckBox.Size = new Size(199, 19);
+            MobileEncoding720pCheckBox.TabIndex = 50;
+            MobileEncoding720pCheckBox.Text = "Mobile (720p, AV1, AAC, 2 Mbps)";
+            MobileEncoding720pCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // MobileEncodingCheckBox
+            // 
+            MobileEncodingCheckBox.AutoSize = true;
+            MobileEncodingCheckBox.Location = new Point(3, 3);
+            MobileEncodingCheckBox.Name = "MobileEncodingCheckBox";
+            MobileEncodingCheckBox.Size = new Size(205, 19);
+            MobileEncodingCheckBox.TabIndex = 46;
+            MobileEncodingCheckBox.Text = "Mobile (1080p, AV1, AAC, 2 Mbps)";
+            MobileEncodingCheckBox.UseVisualStyleBackColor = true;
             // 
             // panel2
             // 
@@ -305,19 +193,9 @@
             panel2.Controls.Add(Export4kRadioButton);
             panel2.Controls.Add(ExportOriginalRadioButton);
             panel2.Controls.Add(ExtrasLabel);
-            panel2.Controls.Add(ExtrasOriginalTimeLabel);
-            panel2.Controls.Add(ExtrasOriginalSizeLabel);
-            panel2.Controls.Add(Extras4kSizeLabel);
-            panel2.Controls.Add(Extras1080pSizeLabel);
-            panel2.Controls.Add(Extras4kTimeLabel);
-            panel2.Controls.Add(Extras480pTimeLabel);
-            panel2.Controls.Add(Extras1080pTimeLabel);
-            panel2.Controls.Add(Extras480pSizeLabel);
-            panel2.Controls.Add(Extras720pSizeLabel);
-            panel2.Controls.Add(Extras720pTimeLabel);
-            panel2.Location = new Point(353, 58);
+            panel2.Location = new Point(237, 58);
             panel2.Name = "panel2";
-            panel2.Size = new Size(300, 164);
+            panel2.Size = new Size(123, 164);
             panel2.TabIndex = 46;
             // 
             // radioButton1
@@ -391,107 +269,50 @@
             ExtrasLabel.TabIndex = 44;
             ExtrasLabel.Text = "Extras:";
             // 
-            // ExtrasOriginalTimeLabel
+            // panel3
             // 
-            ExtrasOriginalTimeLabel.AutoSize = true;
-            ExtrasOriginalTimeLabel.Location = new Point(232, 19);
-            ExtrasOriginalTimeLabel.Name = "ExtrasOriginalTimeLabel";
-            ExtrasOriginalTimeLabel.Size = new Size(49, 15);
-            ExtrasOriginalTimeLabel.TabIndex = 42;
-            ExtrasOriginalTimeLabel.Text = "00:00:00";
+            panel3.Controls.Add(radioButton2);
+            panel3.Controls.Add(MobileEncoding480pCheckBox);
+            panel3.Controls.Add(MobileEncodingCheckBox);
+            panel3.Controls.Add(MobileEncoding720pCheckBox);
+            panel3.Location = new Point(12, 243);
+            panel3.Name = "panel3";
+            panel3.Size = new Size(219, 103);
+            panel3.TabIndex = 47;
             // 
-            // ExtrasOriginalSizeLabel
+            // radioButton2
             // 
-            ExtrasOriginalSizeLabel.AutoSize = true;
-            ExtrasOriginalSizeLabel.Location = new Point(114, 19);
-            ExtrasOriginalSizeLabel.Name = "ExtrasOriginalSizeLabel";
-            ExtrasOriginalSizeLabel.Size = new Size(34, 15);
-            ExtrasOriginalSizeLabel.TabIndex = 26;
-            ExtrasOriginalSizeLabel.Text = "10GB";
+            radioButton2.AutoSize = true;
+            radioButton2.Checked = true;
+            radioButton2.Location = new Point(3, 78);
+            radioButton2.Name = "radioButton2";
+            radioButton2.Size = new Size(54, 19);
+            radioButton2.TabIndex = 52;
+            radioButton2.TabStop = true;
+            radioButton2.Text = "None";
+            radioButton2.UseVisualStyleBackColor = true;
             // 
-            // Extras4kSizeLabel
+            // radioButton3
             // 
-            Extras4kSizeLabel.AutoSize = true;
-            Extras4kSizeLabel.Location = new Point(114, 44);
-            Extras4kSizeLabel.Name = "Extras4kSizeLabel";
-            Extras4kSizeLabel.Size = new Size(83, 15);
-            Extras4kSizeLabel.TabIndex = 27;
-            Extras4kSizeLabel.Text = "Estimated 3GB";
-            // 
-            // Extras1080pSizeLabel
-            // 
-            Extras1080pSizeLabel.AutoSize = true;
-            Extras1080pSizeLabel.Location = new Point(114, 69);
-            Extras1080pSizeLabel.Name = "Extras1080pSizeLabel";
-            Extras1080pSizeLabel.Size = new Size(83, 15);
-            Extras1080pSizeLabel.TabIndex = 28;
-            Extras1080pSizeLabel.Text = "Estimated 2GB";
-            // 
-            // Extras4kTimeLabel
-            // 
-            Extras4kTimeLabel.AutoSize = true;
-            Extras4kTimeLabel.Location = new Point(232, 44);
-            Extras4kTimeLabel.Name = "Extras4kTimeLabel";
-            Extras4kTimeLabel.Size = new Size(49, 15);
-            Extras4kTimeLabel.TabIndex = 30;
-            Extras4kTimeLabel.Text = "00:00:00";
-            // 
-            // Extras480pTimeLabel
-            // 
-            Extras480pTimeLabel.AutoSize = true;
-            Extras480pTimeLabel.Location = new Point(232, 119);
-            Extras480pTimeLabel.Name = "Extras480pTimeLabel";
-            Extras480pTimeLabel.Size = new Size(49, 15);
-            Extras480pTimeLabel.TabIndex = 37;
-            Extras480pTimeLabel.Text = "00:00:00";
-            // 
-            // Extras1080pTimeLabel
-            // 
-            Extras1080pTimeLabel.AutoSize = true;
-            Extras1080pTimeLabel.Location = new Point(232, 69);
-            Extras1080pTimeLabel.Name = "Extras1080pTimeLabel";
-            Extras1080pTimeLabel.Size = new Size(49, 15);
-            Extras1080pTimeLabel.TabIndex = 31;
-            Extras1080pTimeLabel.Text = "00:00:00";
-            // 
-            // Extras480pSizeLabel
-            // 
-            Extras480pSizeLabel.AutoSize = true;
-            Extras480pSizeLabel.Location = new Point(114, 119);
-            Extras480pSizeLabel.Name = "Extras480pSizeLabel";
-            Extras480pSizeLabel.Size = new Size(83, 15);
-            Extras480pSizeLabel.TabIndex = 36;
-            Extras480pSizeLabel.Text = "Estimated 2GB";
-            // 
-            // Extras720pSizeLabel
-            // 
-            Extras720pSizeLabel.AutoSize = true;
-            Extras720pSizeLabel.Location = new Point(114, 94);
-            Extras720pSizeLabel.Name = "Extras720pSizeLabel";
-            Extras720pSizeLabel.Size = new Size(83, 15);
-            Extras720pSizeLabel.TabIndex = 33;
-            Extras720pSizeLabel.Text = "Estimated 2GB";
-            // 
-            // Extras720pTimeLabel
-            // 
-            Extras720pTimeLabel.AutoSize = true;
-            Extras720pTimeLabel.Location = new Point(232, 94);
-            Extras720pTimeLabel.Name = "Extras720pTimeLabel";
-            Extras720pTimeLabel.Size = new Size(49, 15);
-            Extras720pTimeLabel.TabIndex = 34;
-            Extras720pTimeLabel.Text = "00:00:00";
+            radioButton3.AutoSize = true;
+            radioButton3.Checked = true;
+            radioButton3.Location = new Point(3, 142);
+            radioButton3.Name = "radioButton3";
+            radioButton3.Size = new Size(54, 19);
+            radioButton3.TabIndex = 51;
+            radioButton3.TabStop = true;
+            radioButton3.Text = "None";
+            radioButton3.UseVisualStyleBackColor = true;
             // 
             // ExporterForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(664, 300);
+            ClientSize = new Size(452, 402);
+            Controls.Add(panel3);
             Controls.Add(panel2);
             Controls.Add(panel1);
             Controls.Add(label2);
-            Controls.Add(label1);
-            Controls.Add(TotalTimeLabel);
-            Controls.Add(TotalFileSizeLabel);
             Controls.Add(ExportBtn);
             Controls.Add(DVDWarningLabel);
             Name = "ExporterForm";
@@ -501,52 +322,38 @@
             panel1.PerformLayout();
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
+            panel3.ResumeLayout(false);
+            panel3.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private Label Export1080pFileSizeLabel;
-        private Label Export4kFileSizeLabel;
-        private Label ExportOriginalFileSizeLabel;
-        private CheckBox Export1080pCheckBox;
-        private CheckBox Export4kCheckBox;
         private CheckBox ExportOriginalCheckBox;
         private Label DVDWarningLabel;
-        private Label Export4kEstimatedTimeLabel;
-        private Label Export1080pEstimatedTimeLabel;
-        private CheckBox Export720pCheckBox;
-        private Label Export720pEstimatedTimeLabel;
-        private Label Export720pFileSizeLabel;
-        private Label Export480pEstimatedTimeLabel;
-        private Label Export480pFileSizeLabel;
-        private CheckBox Export480pCheckBox;
         private Button ExportBtn;
-        private Label TotalTimeLabel;
-        private Label TotalFileSizeLabel;
-        private Label label1;
-        private Label ExportOriginalTimeLabel;
         private Label label2;
         private Label MainFeatureLabel;
         private Panel panel1;
         private Panel panel2;
         private Label ExtrasLabel;
-        private Label ExtrasOriginalTimeLabel;
-        private Label ExtrasOriginalSizeLabel;
-        private Label Extras4kSizeLabel;
-        private Label Extras1080pSizeLabel;
-        private Label Extras4kTimeLabel;
-        private Label Extras480pTimeLabel;
-        private Label Extras1080pTimeLabel;
-        private Label Extras480pSizeLabel;
-        private Label Extras720pSizeLabel;
-        private Label Extras720pTimeLabel;
         private RadioButton Export480pRadioButton;
         private RadioButton Export720pRadioButton;
         private RadioButton Export1080pRadioButton;
         private RadioButton Export4kRadioButton;
         private RadioButton ExportOriginalRadioButton;
         private RadioButton radioButton1;
+        private RadioButton TvEncodingCheckBox;
+        private RadioButton MobileEncodingCheckBox;
+        private CheckBox checkBox1;
+        private CheckBox checkBox4;
+        private RadioButton MobileEncoding720pCheckBox;
+        private RadioButton TvEncoding480pCheckBox;
+        private RadioButton TvEncoding720pCheckBox;
+        private RadioButton TvEncoding1080pCheckBox;
+        private RadioButton MobileEncoding480pCheckBox;
+        private Panel panel3;
+        private RadioButton radioButton3;
+        private RadioButton radioButton2;
     }
 }

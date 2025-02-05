@@ -35,7 +35,7 @@ namespace PgcDemuxLib.Data.VTS
         public override VTSM_PGCI_UT? MenuProgramChainTable { get; protected set; }
 
         [JsonInclude]
-        public readonly VTS_TMAPTI TimeMap;
+        public readonly VTS_TMAPTI? TimeMap;
 
         [JsonInclude]
         public override VTS_C_ADT? MenuCellAddressTable { get; protected set; }
@@ -98,8 +98,7 @@ namespace PgcDemuxLib.Data.VTS
             MenuProgramChainTable = (addr == 0) ? null : new VTSM_PGCI_UT(file, addr);
 
             addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xD4, 4);
-            Util.AssertValidAddress(addr, "VTS_TMAPTI");
-            TimeMap = new VTS_TMAPTI(file, addr);
+            TimeMap = (addr == 0) ? null : new VTS_TMAPTI(file, addr);
 
             addr = Dvd.SECTOR_SIZE * file.GetNbytes(0xD8, 4);
             MenuCellAddressTable = (addr == 0) ? null : new VTS_C_ADT(file, addr);

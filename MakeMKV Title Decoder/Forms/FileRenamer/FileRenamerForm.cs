@@ -17,6 +17,8 @@ using Utils;
 using MakeMKV_Title_Decoder.Data.Renames;
 using FFMpeg_Wrapper.Filters.Video;
 using MakeMKV_Title_Decoder.Util;
+using FFMpeg_Wrapper.ffmpeg;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 {
@@ -31,8 +33,20 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
         public bool IsTranscodable { get; }
 
-        public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
+        /*public bool Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
         public bool ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
+        public bool ExportForTV(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
+        public bool ExportForMobile(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution? resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);*/
+
+        public bool ExportOriginal(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
+        public bool ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, TranscodeArgs args, ScaleResolution sourceResolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress);
+    }
+
+    public interface TranscodeArgs {
+        public string? VersionTag { get; }
+        public ScaleResolution? ScaleDownToResolution { get; }
+        public void GetVideoOptions(VideoStreamOptions options);
+        public void GetAudioOptions(AudioStreamOptions options);
     }
 
     public partial class FileRenamerForm : Form {
@@ -458,7 +472,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
 
                     if (export.IsTranscodable)
                     {
-                        IEnumerable<ScaleResolution?> selectedResolutions;
+                        IEnumerable<TranscodeArgs?> selectedResolutions;
                         bool rename;
                         if (bonusFolder == null)
                         {
@@ -468,33 +482,34 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
                         } else
                         {
                             // Extras
-                            selectedResolutions = [exporterForm.SelectedExtrasResolutions];
+                            selectedResolutions = exporterForm.SelectedExtrasResolutions.Take(1);
                             rename = false;
                         }
 
-                        foreach (ScaleResolution? scale in selectedResolutions)
+                        foreach (TranscodeArgs? transcodeArgs in selectedResolutions)
                         {
                             string multiversionName = outputFile;
                             if (rename)
                             {
-                                multiversionName = GetMultiversionFileName(outputFile, scale);
+                                multiversionName = GetMultiversionFileName(outputFile, transcodeArgs?.VersionTag ?? "Original");
                             }
 
                             bool result;
-                            if (scale == null)
+                            if (transcodeArgs == null)
                             {
                                 // Original quality
-                                result = export.Export(this.Disc, fullPath, multiversionName, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                                result = export.ExportOriginal(this.Disc, fullPath, multiversionName, progress, new SimpleProgress((uint)i, (uint)exports.Count));
                             } else
                             {
                                 // Transcode
-                                result = export.ExportTranscoding(this.Disc, fullPath, multiversionName, scale.Value, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                                ScaleResolution sourceResolution = ((bonusFolder == null) ? exporterForm.MainFeatureResolution : exporterForm.ExtrasResolution) ?? ScaleResolution.UHD_7680x4320;
+                                result = export.ExportTranscoding(this.Disc, fullPath, multiversionName, transcodeArgs, sourceResolution, progress, new SimpleProgress((uint)i, (uint)exports.Count));
                             }
                             checkExportError(result, export.Name);
                         }
                     } else
                     {
-                        bool result = export.Export(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
+                        bool result = export.ExportOriginal(this.Disc, fullPath, outputFile, progress, new SimpleProgress((uint)i, (uint)exports.Count));
                         checkExportError(result, export.Name);
                     }
                 }
@@ -623,8 +638,8 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer
             }
         }
 
-        private static string GetMultiversionFileName(string fileName, ScaleResolution? resolution) {
-            return $"{Path.GetFileNameWithoutExtension(fileName)} - {GetMultiversionString(resolution)}{Path.GetExtension(fileName)}";
+        private static string GetMultiversionFileName(string fileName, string tag, string extension = ".mkv") {
+            return $"{Path.GetFileNameWithoutExtension(fileName)} - {tag}{extension}";
         }
 
         private static string GetMultiversionString(ScaleResolution? resolution) {

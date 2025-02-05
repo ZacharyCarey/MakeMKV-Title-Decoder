@@ -1,4 +1,6 @@
-﻿using FFMpeg_Wrapper.Filters.Video;
+﻿using FFMpeg_Wrapper.Codecs;
+using FFMpeg_Wrapper.ffmpeg;
+using FFMpeg_Wrapper.Filters.Video;
 using MakeMKV_Title_Decoder.Data;
 using System;
 using System.Collections.Generic;
@@ -11,39 +13,18 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Utils;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
     public partial class ExporterForm : Form {
-        /// <summary>
-        /// The amount of minutes it takes to transfer 1 GB
-        /// </summary>
-        const double CopyTimePerGB = 0.46870601;
-
-        // Key = input/output resolutions
-        Dictionary<string, (double Time, double Size)> TranscodingEstimated = new() {
-            { "2160/2160", (1.48681924330641, 0.177088705132092) },
-            { "2160/1080", (0.564927839087237, 0.100961742870243) },
-            { "2160/720", (0.295599467022854, 0.217953770199662) },
-            { "2160/480", (0.217953770199662, 0.131950416996034) },
-            { "1080/1080", (0.566453599087411, 0.255660869094682) },
-            { "480/1080", (0.554675286250584, 1.75738909866316) },
-            { "480/480", (0.292052505927378, 0.565509889482981) },
-        };
-
-        Dictionary<CheckBox, (DataSize FileSize, TimeSpan ProcessTime)> Estimates = new();
-
-        public IEnumerable<ScaleResolution?> SelectedMainFeatureResolutions => MainFeatureGUI.Where(x => x.IsSelected).Select(x => x.Scale).Where(x => x != null);
-        public ScaleResolution? SelectedExtrasResolutions => ExtrasGUI.Where(x => x.IsSelected).Select(x => x.Scale).Where(x => x != null).FirstOrDefault();
+        public IEnumerable<TranscodeArgs?> SelectedMainFeatureResolutions => MainFeatureGUI.Where(x => x.IsSelected).Select(x => x.GetTranscodeArgs());
+        public IEnumerable<TranscodeArgs?> SelectedExtrasResolutions => ExtrasGUI.Where(x => x.IsSelected).Select(x => x.GetTranscodeArgs());
+        public ScaleResolution? MainFeatureResolution { get; set; } = null;
+        public ScaleResolution? ExtrasResolution { get; set; } = null;
 
         GuiCheckBox[] MainFeatureGUI;
         GuiRadioButton[] ExtrasGUI;
-
-        DataSize[] EstimatedMainFeatureSizes = new DataSize[5];
-        TimeSpan[] EstimatedMainFeatureTime = new TimeSpan[5];
-
-        DataSize[] EstimatedExtrasSizes = new DataSize[5];
-        TimeSpan[] EstimatedExtrasTime = new TimeSpan[5];
 
         LoadedDisc Disc;
 
@@ -60,19 +41,22 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             this.DVDWarningLabel.Visible = !allowOriginalQuality;
 
             this.MainFeatureGUI = [
-                new(ExportOriginalCheckBox, ExportOriginalFileSizeLabel, ExportOriginalTimeLabel, 0, null),
-                new(Export4kCheckBox, Export4kFileSizeLabel, Export4kEstimatedTimeLabel, 2160, ScaleResolution.UHD_3840x2160),
-                new(Export1080pCheckBox, Export1080pFileSizeLabel, Export1080pEstimatedTimeLabel, 1080, ScaleResolution.HD_1920x1080),
-                new(Export720pCheckBox, Export720pFileSizeLabel, Export720pEstimatedTimeLabel, 720, ScaleResolution.HD_1280x720),
-                new(Export480pCheckBox, Export480pFileSizeLabel, Export480pEstimatedTimeLabel, 480, ScaleResolution.SD_720x480)
+                new(ExportOriginalCheckBox, -1, null),
+                new(TvEncodingCheckBox, 2160, new TvTranscodeArgs(ScaleResolution.UHD_3840x2160)),
+                new(TvEncoding1080pCheckBox, 1080, new TvTranscodeArgs(ScaleResolution.HD_1920x1080)),
+                new(TvEncoding720pCheckBox, 720, new TvTranscodeArgs(ScaleResolution.HD_1280x720)),
+                new(TvEncoding480pCheckBox, 480, new TvTranscodeArgs(ScaleResolution.SD_720x480)),
+                new(MobileEncodingCheckBox, 1080, new MobileTranscodeArgs(ScaleResolution.HD_1920x1080)),
+                new(MobileEncoding720pCheckBox, 720, new MobileTranscodeArgs(ScaleResolution.HD_1280x720)),
+                new(MobileEncoding480pCheckBox, 480, new MobileTranscodeArgs(ScaleResolution.SD_720x480))
             ];
 
             this.ExtrasGUI = [
-                new(ExportOriginalRadioButton, ExtrasOriginalSizeLabel, ExtrasOriginalTimeLabel, 0, null),
-                new(Export4kRadioButton, Extras4kSizeLabel, Extras4kTimeLabel, 2160, ScaleResolution.UHD_3840x2160),
-                new(Export1080pRadioButton, Extras1080pSizeLabel, Extras1080pTimeLabel, 1080, ScaleResolution.HD_1920x1080),
-                new(Export720pRadioButton, Extras720pSizeLabel, Extras720pTimeLabel, 720, ScaleResolution.HD_1280x720),
-                new(Export480pRadioButton, Extras480pSizeLabel, Extras480pTimeLabel, 480, ScaleResolution.SD_720x480)
+                new(ExportOriginalRadioButton, -1, null),
+                new(Export4kRadioButton, 2160, new TvTranscodeArgs(ScaleResolution.UHD_3840x2160, null)),
+                new(Export1080pRadioButton, 1080, new TvTranscodeArgs(ScaleResolution.HD_1920x1080, null)),
+                new(Export720pRadioButton, 720, new TvTranscodeArgs(ScaleResolution.HD_1280x720, null)),
+                new(Export480pRadioButton, 480, new TvTranscodeArgs(ScaleResolution.SD_720x480, null))
             ];
 
             List<Playlist> mainFeatures = new();
@@ -95,15 +79,22 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             this.MainFeatureLabel.Text = $"Main Feature: {mainFeatureHeight}p";
             for (int i = 0; i < MainFeatureGUI.Length; i++)
             {
-                this.CalculateEstimated(mainFeatures, MainFeatureGUI[i].Resolution, out EstimatedMainFeatureSizes[i], out EstimatedMainFeatureTime[i]);
-                UpdateUI(MainFeatureGUI[i].EstimatedSizeLabel, MainFeatureGUI[i].Resolution, EstimatedMainFeatureSizes[i]);
-                UpdateUI(MainFeatureGUI[i].EstimatedTimeLabel, EstimatedMainFeatureTime[i]);
-                MainFeatureGUI[i].CheckBox.CheckedChanged += ResolutionCheckBox_Checked;
+                //MainFeatureGUI[i].CheckBox.CheckedChanged += ResolutionCheckBox_Checked;
 
                 // Only allow selection if same or smaller resolution
                 if (i != 0)
                 {
-                    MainFeatureGUI[i].CheckBox.Enabled = (MainFeatureGUI[i].Resolution <= mainFeatureHeight);
+                    int target_res = MainFeatureGUI[i].Resolution;
+                    MainFeatureGUI[i].CheckBox.Enabled = (target_res < 0) || (target_res <= mainFeatureHeight);
+                }
+            }
+
+            // Used externally
+            foreach (ScaleResolution resolution in Enum.GetValues<ScaleResolution>().OrderBy(x => (int)x))
+            {
+                if ((int)resolution <= mainFeatureHeight)
+                {
+                    this.MainFeatureResolution = resolution;
                 }
             }
 
@@ -111,13 +102,27 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             this.ExtrasLabel.Text = $"Extras: {extrasHeight}p";
             for (int i = 0; i < ExtrasGUI.Length; i++)
             {
-                this.CalculateEstimated(extras, ExtrasGUI[i].Resolution, out EstimatedExtrasSizes[i], out EstimatedExtrasTime[i]);
-                UpdateUI(ExtrasGUI[i].EstimatedSizeLabel, ExtrasGUI[i].Resolution, EstimatedExtrasSizes[i]);
-                UpdateUI(ExtrasGUI[i].EstimatedTimeLabel, EstimatedExtrasTime[i]);
                 ExtrasGUI[i].Button.CheckedChanged += ResolutionCheckBox_Checked;
+
+                // Only allow selection if same or smaller resolution
+                if (i != 0)
+                {
+                    int target_res = ExtrasGUI[i].Resolution;
+                    ExtrasGUI[i].Button.Enabled = (target_res < 0) || (target_res <= extrasHeight);
+                }
             }
 
-            UpdateTotalUI();
+            // Always allow the lowest resolution
+            this.ExtrasGUI.Last().Button.Enabled = true;
+
+            // Used externally
+            foreach (ScaleResolution resolution in Enum.GetValues<ScaleResolution>().OrderBy(x => (int)x))
+            {
+                if ((int)resolution <= extrasHeight)
+                {
+                    this.ExtrasResolution = resolution;
+                }
+            }
         }
 
         private void ExporterForm_Load(object sender, EventArgs e) {
@@ -130,33 +135,7 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
         }
 
         private void ResolutionCheckBox_Checked(object? sender, EventArgs e) {
-            UpdateTotalUI();
-        }
-
-        private void UpdateTotalUI() {
-            DataSize totalSize = new();
-            TimeSpan totalTime = new();
-
-            for (int i = 0; i < MainFeatureGUI.Length; i++)
-            {
-                if (MainFeatureGUI[i].IsSelected)
-                {
-                    totalSize += EstimatedMainFeatureSizes[i];
-                    totalTime += EstimatedMainFeatureTime[i];
-                }
-            }
-
-            for (int i = 0; i < ExtrasGUI.Length; i++)
-            {
-                if (ExtrasGUI[i].IsSelected)
-                {
-                    totalSize += EstimatedExtrasSizes[i];
-                    totalTime += EstimatedExtrasTime[i];
-                }
-            }
-
-            this.TotalFileSizeLabel.Text = totalSize.ToString();
-            this.TotalTimeLabel.Text = $"{totalTime:hh\\:mm\\:ss}";
+            
         }
 
         private static void UpdateUI(Label label, int targetResolution, DataSize size) {
@@ -193,47 +172,6 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
             }
         }
 
-        private void CalculateEstimated(IEnumerable<Playlist> playlists, int targetResolution, out DataSize estimatedSize, out TimeSpan estimatedTime) {
-            estimatedSize = new();
-            estimatedTime = new();
-            int verticalResolution = 0;
-
-            // First get the total of all files in the playlist
-            foreach (var file in playlists.SelectMany(x => x.SourceFiles))
-            {
-                LoadedStream stream = this.Disc[file.SourceUID];
-                estimatedSize += stream.Identity.FileSize;
-                estimatedTime += stream.Duration;
-
-                int height = stream.Tracks.Select(x => x.Identity.Height ?? 0).Max();
-                if (height > verticalResolution) verticalResolution = height;
-            }
-
-            // Attempt to calculate estimates
-            if (targetResolution == 0)
-            {
-                // Original file copy
-                estimatedTime = TimeSpan.FromMinutes(estimatedSize.AsGB() * CopyTimePerGB);
-            } else
-            {
-                (double Time, double Size) estimatePercentage;
-                if (verticalResolution != 0 && this.TranscodingEstimated.TryGetValue($"{verticalResolution}/{targetResolution}", out estimatePercentage))
-                {
-                    estimatedSize *= estimatePercentage.Size;
-                    estimatedTime *= estimatePercentage.Time;
-                } else if (verticalResolution != 0)
-                {
-                    Log.Warn($"Unknown estimate for input resolution '{verticalResolution}' and target resolution '{targetResolution}'.");
-                    estimatedSize = new();
-                    estimatedTime = new();
-                } else
-                {
-                    estimatedSize = new();
-                    estimatedTime = new();
-                }
-            }
-        }
-
         private int GetLargestResolution(IEnumerable<Playlist> playlists) {
             int largest = 0;
             foreach(var file in playlists.SelectMany(x => x.SourceFiles))
@@ -247,39 +185,149 @@ namespace MakeMKV_Title_Decoder.Forms.FileRenamer {
 
         private abstract class GuiElement {
             internal abstract bool IsSelected { get; }
-            public Label EstimatedSizeLabel;
-            public Label EstimatedTimeLabel;
             public int Resolution; // Original = 0
-            public ScaleResolution? Scale;
+            TranscodeArgs? TranscodeArgs;
 
-            protected GuiElement(Label sizeLabel, Label timeLabel, int resolution, ScaleResolution? scale) {
-                this.EstimatedSizeLabel = sizeLabel;
-                this.EstimatedTimeLabel = timeLabel;
+            public TranscodeArgs? GetTranscodeArgs() => TranscodeArgs;
+
+            protected GuiElement(int resolution, TranscodeArgs? transcodeArg) {
                 this.Resolution = resolution;
-                this.Scale = scale;
+                this.TranscodeArgs = transcodeArg;
             }
         }
         private class GuiCheckBox : GuiElement {
-            public CheckBox CheckBox;
+            public ButtonBase CheckBox;
 
-            internal override bool IsSelected => CheckBox.Checked;
+            internal override bool IsSelected => getCheckedFunc(CheckBox);
+            private readonly Func<ButtonBase, bool> getCheckedFunc;
 
-            public GuiCheckBox(CheckBox checkBox, Label sizeLabel, Label timeLabel, int resolution, ScaleResolution? scale) 
-                : base(sizeLabel, timeLabel, resolution, scale)    
+            public GuiCheckBox(ButtonBase checkBox, int resolution, TranscodeArgs? transcodeArgs) 
+                : base(resolution, transcodeArgs)    
             {
                 this.CheckBox = checkBox;
+                if (checkBox is CheckBox)
+                {
+                    getCheckedFunc = GetCheckBoxChecked;
+                } else if (checkBox is RadioButton)
+                {
+                    getCheckedFunc = GetRadioButtonChecked;
+                } else
+                {
+                    throw new Exception("Invalid button type.");
+                }
             }
-        }
+
+            private static bool GetCheckBoxChecked(ButtonBase btn) {
+                return ((CheckBox)btn).Checked;
+            }
+
+            private static bool GetRadioButtonChecked(ButtonBase btn) {
+                return ((RadioButton)btn).Checked;
+            }
+        } 
+
         private class GuiRadioButton : GuiElement {
             public RadioButton Button;
 
             internal override bool IsSelected => Button.Checked;
 
-            public GuiRadioButton(RadioButton button, Label sizeLabel, Label timeLabel, int resolution, ScaleResolution? scale)
-                : base(sizeLabel, timeLabel, resolution, scale) {
+            public GuiRadioButton(RadioButton button, int resolution, TranscodeArgs? args)
+                : base(resolution, args) {
                 this.Button = button;
             }
         }
 
+    }
+
+    public class TvTranscodeArgs : TranscodeArgs {
+        public string? VersionTag { get; private set; }
+        public ScaleResolution? ScaleDownToResolution { get; private set; }
+
+        public TvTranscodeArgs(string? tag = "TV") {
+            this.ScaleDownToResolution = null;
+            this.VersionTag = tag;
+        }
+
+        public TvTranscodeArgs(ScaleResolution resolution, string? tag = "TV") {
+            this.ScaleDownToResolution = resolution;
+            this.VersionTag = tag;
+        }
+
+        public void GetVideoOptions(VideoStreamOptions options) {
+            options.SetCodec(
+                Codecs.LibSvtAV1
+                .SetPreset(5)
+                .SetCRF(20)
+            );
+        }
+
+        public void GetAudioOptions(AudioStreamOptions options) {
+            options.SetCodec(Codecs.EAC3);
+        }
+    }
+
+    public class MobileTranscodeArgs : TranscodeArgs {
+        public string? VersionTag { get; private set; }
+        public ScaleResolution? ScaleDownToResolution { get; private set; } = ScaleResolution.HD_1920x1080;
+
+        public MobileTranscodeArgs(string? tag = "Mobile") {
+            this.VersionTag = tag;
+        }
+
+        public MobileTranscodeArgs(ScaleResolution resolution, string? tag = "Mobile") {
+            this.VersionTag = tag;
+            this.ScaleDownToResolution = resolution;
+        }
+
+        public void GetVideoOptions(VideoStreamOptions options) {
+            options.SetCodec(
+                Codecs.LibSvtAV1
+                .SetPreset(8)
+                .SetCRF(35)
+            );
+        }
+
+        public void GetAudioOptions(AudioStreamOptions options) {
+            options.SetCodec(Codecs.AAC)
+                .SetAudioBitrate(384000)
+                .SetAudioChannels(2);
+        }
+    }
+
+    public class CompatibilityTranscodeArgs : TranscodeArgs {
+        public static CompatibilityTranscodeArgs Bitrate25Mbps => new(21992000, 21992000, 43984000, 384000);
+        public static CompatibilityTranscodeArgs Bitrate4Mbps => new(3808000, 3808000, 7616000, 192000);
+
+        public string VersionTag => "Compatibility";
+        public ScaleResolution? ScaleDownToResolution => ScaleResolution.HD_1920x1080;
+
+        private long videoBitrate;
+        private long maxRate;
+        private long bufferSize;
+        private long audioBitrate;
+
+        public CompatibilityTranscodeArgs(long VideoBitrate, long MaxRate, long BufferSize, long AudioBitrate) {
+            this.videoBitrate = VideoBitrate;
+            this.maxRate = MaxRate;
+            this.bufferSize = BufferSize;
+            this.audioBitrate = AudioBitrate;
+        }
+
+        public void GetVideoOptions(VideoStreamOptions options) {
+            options.SetCodec(Codecs.NvidiaH264)
+            .SetVideoBitrate(videoBitrate)
+            .SetGroupOfPictureSize(144)
+            .SetMaxRate(maxRate)
+            .SetBufferSize(bufferSize)
+            .SetMinimumKeyInterval(144)
+            .SetProfile("high")
+            .SetPixelFormat("yuv420p");
+        }
+
+        public void GetAudioOptions(AudioStreamOptions options) {
+            options.SetCodec(Codecs.AAC)
+            .SetAudioBitrate(audioBitrate)
+            .SetAudioChannels(2);
+        }
     }
 }

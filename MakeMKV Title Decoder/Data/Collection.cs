@@ -33,7 +33,7 @@ namespace MakeMKV_Title_Decoder.Data
             return Name;
         }
 
-        bool Exportable.Export(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+        bool Exportable.ExportOriginal(LoadedDisc disc, string outputFolder, string outputFile, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
             string folderName = Path.GetFileNameWithoutExtension(outputFile);
             string folderPath = Path.Combine(outputFolder, folderName);
 
@@ -85,7 +85,7 @@ namespace MakeMKV_Title_Decoder.Data
             return success;
         }
 
-        bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, ScaleResolution resolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
+        bool Exportable.ExportTranscoding(LoadedDisc disc, string outputFolder, string outputFile, TranscodeArgs args, ScaleResolution sourceResolution, IProgress<SimpleProgress>? progress, SimpleProgress? totalProgress) {
             return true;
         }
     }

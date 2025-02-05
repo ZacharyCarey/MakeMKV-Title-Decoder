@@ -227,6 +227,7 @@ namespace PgcDemuxLib
             FFMpeg ffmpeg = new FFMpeg(ffmpegEXE);
 
             SimpleProgress currentProgress = new(0, (uint)cells.Count * 2);
+            bool success = true;
             for (int i = 0; i < cells.Count; i++)
             {
                 CellID cell = cells[i];
@@ -237,11 +238,11 @@ namespace PgcDemuxLib
                 if (file == null)
                 {
                     Log.Error($"Failed to demux source file: VTS={cell.VTS} IsMenu={cell.IsMenu} VID={cell.VID} CID={cell.CID}");
-                    return false;
+                    success = false;
                 }
             }
 
-            return true;
+            return success;
         }
 
         private string? DemuxSourceFile(FFMpeg ffmpeg, FFProbe ffprobe, string outputFolder, CellID cell, string? logsFolder, SimpleProgress maxProgress, IProgress<SimpleProgress>? progress = null) {
@@ -344,17 +345,16 @@ namespace PgcDemuxLib
 
                 if (error != null) throw new Exception(error);
 
+                try
+                {
+                    File.Delete(Path.Combine(outputFolder, vobFileName));
+                } catch (Exception) { }
+
                 return remuxFilePath;
             }catch(Exception e)
             {
                 Log.Error(e.Message);
                 return null;
-            } finally
-            {
-                try
-                {
-                    File.Delete(Path.Combine(outputFolder, vobFileName));
-                } catch (Exception) { }
             }
         }
 
