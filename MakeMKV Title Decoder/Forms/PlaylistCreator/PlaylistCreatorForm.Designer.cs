@@ -56,12 +56,12 @@ namespace MakeMKV_Title_Decoder
             DownFileBtn = new Button();
             PlaylistTrackOrder = new TrackList();
             panel4 = new Panel();
+            PiPBtn = new Button();
             DisableTrackBtn = new Button();
             EnableTrackBtn = new Button();
             SourceList = new ListBox();
             SourcePropertiesPanel = new Panel();
             SourceApplyButton = new Button();
-            PiPBtn = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -281,7 +281,7 @@ namespace MakeMKV_Title_Decoder
             PlaylistFilesList.FullRowSelect = true;
             PlaylistFilesList.HeaderStyle = ColumnHeaderStyle.Nonclickable;
             PlaylistFilesList.Location = new Point(0, 0);
-            PlaylistFilesList.MultiSelect = false;
+            PlaylistFilesList.MultiSelect = true;
             PlaylistFilesList.Name = "PlaylistFilesList";
             PlaylistFilesList.OwnerDraw = true;
             PlaylistFilesList.SelectedIndex = null;
@@ -291,6 +291,7 @@ namespace MakeMKV_Title_Decoder
             PlaylistFilesList.TabIndex = 0;
             PlaylistFilesList.UseCompatibleStateImageBehavior = false;
             PlaylistFilesList.View = View.Details;
+            PlaylistFilesList.SelectedIndexChanged += PlaylistFilesList_SelectedIndexChanged;
             // 
             // columnHeader1
             // 
@@ -384,6 +385,16 @@ namespace MakeMKV_Title_Decoder
             panel4.Size = new Size(91, 721);
             panel4.TabIndex = 0;
             // 
+            // PiPBtn
+            // 
+            PiPBtn.Location = new Point(6, 76);
+            PiPBtn.Name = "PiPBtn";
+            PiPBtn.Size = new Size(75, 63);
+            PiPBtn.TabIndex = 10;
+            PiPBtn.Text = "Picture\r\nIn\r\nPicture\r\n";
+            PiPBtn.UseVisualStyleBackColor = true;
+            PiPBtn.Click += PiPBtn_Click;
+            // 
             // DisableTrackBtn
             // 
             DisableTrackBtn.Location = new Point(6, 32);
@@ -435,16 +446,6 @@ namespace MakeMKV_Title_Decoder
             SourceApplyButton.Text = "Add";
             SourceApplyButton.UseVisualStyleBackColor = true;
             SourceApplyButton.Click += SourceApplyButton_Click;
-            // 
-            // PiPBtn
-            // 
-            PiPBtn.Location = new Point(6, 76);
-            PiPBtn.Name = "PiPBtn";
-            PiPBtn.Size = new Size(75, 63);
-            PiPBtn.TabIndex = 10;
-            PiPBtn.Text = "Picture\r\nIn\r\nPicture\r\n";
-            PiPBtn.UseVisualStyleBackColor = true;
-            PiPBtn.Click += PiPBtn_Click;
             // 
             // PlaylistCreatorForm
             // 

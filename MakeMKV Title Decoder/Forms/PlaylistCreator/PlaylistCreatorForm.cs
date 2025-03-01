@@ -302,7 +302,7 @@ namespace MakeMKV_Title_Decoder
         }
 
         private void PlaylistSourceDeleteBtn_Click(object sender, EventArgs e) {
-            if (PlaylistFilesList.SelectedItems.Count > 0)
+            if (PlaylistFilesList.SelectedItems.Count == 1)
             {
                 PlaylistFile? selectedItem = (PlaylistFile?)((PropertyData?)PlaylistFilesList.SelectedItems[0].Tag)?.Tag;
                 Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
@@ -327,6 +327,40 @@ namespace MakeMKV_Title_Decoder
                         }
                     }
 
+                    UpdatePlaylistUI();
+                }
+            } else if (PlaylistFilesList.SelectedItems.Count > 1)
+            {
+                PlaylistFile[] selectedItems = PlaylistFilesList.SelectedItems
+                    .OfType<ListViewItem>()
+                    .Select(x => x.Tag)
+                    .Where(x => x != null)
+                    .Cast<PropertyData>()
+                    .Select(x => x.Tag)
+                    .Where(x => x != null)
+                    .Cast<PlaylistFile>()
+                    .ToArray();
+                Playlist? selectedPlaylist = this.PlaylistsListBox.SelectedItem?.Playlist;
+                if (selectedItems.Any() && selectedPlaylist != null)
+                {
+                    selectedPlaylist.SourceTracks.Clear(); // Just assume tracks will need refreshed
+                    foreach (var item in selectedItems)
+                    {
+                        selectedPlaylist.SourceFiles.Remove(item);
+                    }
+
+                    // Regenerate tracks
+                    LoadedStream? firstFile = null;
+                    if (selectedPlaylist.SourceFiles.Count > 0) firstFile = this.Disc[selectedPlaylist.SourceFiles[0].SourceUID];
+                    if (firstFile != null)
+                    {
+                        foreach (var track in firstFile.Tracks)
+                        {
+                            selectedPlaylist.SourceTracks.Add(new PlaylistTrack());
+                        }
+                    }
+
+                    // Refresh source file UI
                     UpdatePlaylistUI();
                 }
             }
@@ -470,7 +504,8 @@ namespace MakeMKV_Title_Decoder
                 }
 
                 string baseName = this.PlaylistNameTextBox.Text.TrimEnd();
-                for (int i = 0; i < itemsToRename.Count; i++) {
+                for (int i = 0; i < itemsToRename.Count; i++)
+                {
                     var item = itemsToRename[i];
                     item.Playlist.Name = $"{baseName} {(i + 1)}";
                 }
@@ -505,7 +540,7 @@ namespace MakeMKV_Title_Decoder
                         itemsToDelete.Add(item);
                     }
                 }
-                foreach(var item in itemsToDelete)
+                foreach (var item in itemsToDelete)
                 {
                     this.PlaylistsListBox.Remove(item);
                     this.Disc.RenameData.Playlists.Remove(item.Playlist);
@@ -531,6 +566,10 @@ namespace MakeMKV_Title_Decoder
                 UpdatePlaylistUI();
                 this.PlaylistTrackOrder.Select(selected);
             }
+        }
+
+        private void PlaylistFilesList_SelectedIndexChanged(object sender, EventArgs e) {
+
         }
     }
 }

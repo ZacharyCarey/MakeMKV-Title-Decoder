@@ -112,6 +112,9 @@ namespace MakeMKV_Title_Decoder.Data
         [JsonInclude]
         public long? MultipleEpisodesRange = null;
 
+        [JsonInclude]
+        public string? CustomVersion = null;
+
         public string? GetBonusFolder(ShowType showType) {
             switch (showType)
             {

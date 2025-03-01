@@ -38,6 +38,9 @@
             CopyToOthersBtn = new Button();
             ApplyChangesBtn = new Button();
             OptionsPanel = new Panel();
+            CustomVersionPanel = new Panel();
+            CustomVersionTextBox = new TextBox();
+            CustomVersionCheckBox = new CheckBox();
             GalleryRadioButton = new RadioButton();
             ExtraName = new Label();
             ExtraNameTextBox = new TextBox();
@@ -52,14 +55,14 @@
             SpecialsRadioButton = new RadioButton();
             ExtrasRadioButton = new RadioButton();
             panel3 = new Panel();
+            EpisodeRangeCheckBox = new CheckBox();
+            EpisodeRangeTextBox = new TextBox();
+            EpisodeRangeLabel = new Label();
             TmdbBtn = new Button();
             EpisodeTextBox = new TextBox();
             SeasonTextBox = new TextBox();
             label4 = new Label();
             label3 = new Label();
-            EpisodeRangeTextBox = new TextBox();
-            EpisodeRangeLabel = new Label();
-            EpisodeRangeCheckBox = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -67,6 +70,7 @@
             panel1.SuspendLayout();
             panel2.SuspendLayout();
             OptionsPanel.SuspendLayout();
+            CustomVersionPanel.SuspendLayout();
             panel3.SuspendLayout();
             SuspendLayout();
             // 
@@ -196,6 +200,7 @@
             // OptionsPanel
             // 
             OptionsPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            OptionsPanel.Controls.Add(CustomVersionPanel);
             OptionsPanel.Controls.Add(GalleryRadioButton);
             OptionsPanel.Controls.Add(ExtraName);
             OptionsPanel.Controls.Add(ExtraNameTextBox);
@@ -209,10 +214,37 @@
             OptionsPanel.Controls.Add(ShortsRadioButton);
             OptionsPanel.Controls.Add(SpecialsRadioButton);
             OptionsPanel.Controls.Add(ExtrasRadioButton);
-            OptionsPanel.Location = new Point(6, 305);
+            OptionsPanel.Location = new Point(6, 320);
             OptionsPanel.Name = "OptionsPanel";
-            OptionsPanel.Size = new Size(892, 411);
+            OptionsPanel.Size = new Size(892, 396);
             OptionsPanel.TabIndex = 16;
+            // 
+            // CustomVersionPanel
+            // 
+            CustomVersionPanel.Controls.Add(CustomVersionTextBox);
+            CustomVersionPanel.Controls.Add(CustomVersionCheckBox);
+            CustomVersionPanel.Location = new Point(288, 19);
+            CustomVersionPanel.Name = "CustomVersionPanel";
+            CustomVersionPanel.Size = new Size(426, 116);
+            CustomVersionPanel.TabIndex = 17;
+            // 
+            // CustomVersionTextBox
+            // 
+            CustomVersionTextBox.Location = new Point(3, 38);
+            CustomVersionTextBox.Name = "CustomVersionTextBox";
+            CustomVersionTextBox.Size = new Size(407, 23);
+            CustomVersionTextBox.TabIndex = 1;
+            // 
+            // CustomVersionCheckBox
+            // 
+            CustomVersionCheckBox.AutoSize = true;
+            CustomVersionCheckBox.Location = new Point(3, 13);
+            CustomVersionCheckBox.Name = "CustomVersionCheckBox";
+            CustomVersionCheckBox.Size = new Size(109, 19);
+            CustomVersionCheckBox.TabIndex = 0;
+            CustomVersionCheckBox.Text = "Custom Version";
+            CustomVersionCheckBox.UseVisualStyleBackColor = true;
+            CustomVersionCheckBox.CheckedChanged += CustomVersionCheckBox_CheckedChanged;
             // 
             // GalleryRadioButton
             // 
@@ -372,6 +404,33 @@
             panel3.Size = new Size(501, 84);
             panel3.TabIndex = 10;
             // 
+            // EpisodeRangeCheckBox
+            // 
+            EpisodeRangeCheckBox.AutoSize = true;
+            EpisodeRangeCheckBox.Location = new Point(267, 5);
+            EpisodeRangeCheckBox.Name = "EpisodeRangeCheckBox";
+            EpisodeRangeCheckBox.Size = new Size(119, 19);
+            EpisodeRangeCheckBox.TabIndex = 22;
+            EpisodeRangeCheckBox.Text = "Multiple Episodes";
+            EpisodeRangeCheckBox.UseVisualStyleBackColor = true;
+            EpisodeRangeCheckBox.CheckedChanged += EpisodeRangeCheckBox_CheckedChanged;
+            // 
+            // EpisodeRangeTextBox
+            // 
+            EpisodeRangeTextBox.Location = new Point(324, 32);
+            EpisodeRangeTextBox.Name = "EpisodeRangeTextBox";
+            EpisodeRangeTextBox.Size = new Size(153, 23);
+            EpisodeRangeTextBox.TabIndex = 21;
+            // 
+            // EpisodeRangeLabel
+            // 
+            EpisodeRangeLabel.AutoSize = true;
+            EpisodeRangeLabel.Location = new Point(267, 35);
+            EpisodeRangeLabel.Name = "EpisodeRangeLabel";
+            EpisodeRangeLabel.Size = new Size(51, 15);
+            EpisodeRangeLabel.TabIndex = 20;
+            EpisodeRangeLabel.Text = "Episode:";
+            // 
             // TmdbBtn
             // 
             TmdbBtn.Location = new Point(9, 61);
@@ -416,33 +475,6 @@
             label3.TabIndex = 6;
             label3.Text = "Season:";
             // 
-            // EpisodeRangeTextBox
-            // 
-            EpisodeRangeTextBox.Location = new Point(324, 32);
-            EpisodeRangeTextBox.Name = "EpisodeRangeTextBox";
-            EpisodeRangeTextBox.Size = new Size(153, 23);
-            EpisodeRangeTextBox.TabIndex = 21;
-            // 
-            // EpisodeRangeLabel
-            // 
-            EpisodeRangeLabel.AutoSize = true;
-            EpisodeRangeLabel.Location = new Point(267, 35);
-            EpisodeRangeLabel.Name = "EpisodeRangeLabel";
-            EpisodeRangeLabel.Size = new Size(51, 15);
-            EpisodeRangeLabel.TabIndex = 20;
-            EpisodeRangeLabel.Text = "Episode:";
-            // 
-            // EpisodeRangeCheckBox
-            // 
-            EpisodeRangeCheckBox.AutoSize = true;
-            EpisodeRangeCheckBox.Location = new Point(267, 5);
-            EpisodeRangeCheckBox.Name = "EpisodeRangeCheckBox";
-            EpisodeRangeCheckBox.Size = new Size(119, 19);
-            EpisodeRangeCheckBox.TabIndex = 22;
-            EpisodeRangeCheckBox.Text = "Multiple Episodes";
-            EpisodeRangeCheckBox.UseVisualStyleBackColor = true;
-            EpisodeRangeCheckBox.CheckedChanged += EpisodeRangeCheckBox_CheckedChanged;
-            // 
             // FileRenamerForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -461,6 +493,8 @@
             panel2.PerformLayout();
             OptionsPanel.ResumeLayout(false);
             OptionsPanel.PerformLayout();
+            CustomVersionPanel.ResumeLayout(false);
+            CustomVersionPanel.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
             ResumeLayout(false);
@@ -502,5 +536,8 @@
         private CheckBox EpisodeRangeCheckBox;
         private TextBox EpisodeRangeTextBox;
         private Label EpisodeRangeLabel;
+        private Panel CustomVersionPanel;
+        private TextBox CustomVersionTextBox;
+        private CheckBox CustomVersionCheckBox;
     }
 }
