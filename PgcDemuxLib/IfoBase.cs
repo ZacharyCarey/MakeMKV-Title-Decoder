@@ -269,6 +269,60 @@ namespace PgcDemuxLib
             demux.Close();
             return result ? new DemuxResult(options.CombinedVobName, demux.StreamOrder) : new DemuxResult();
         }
+
+        /// <summary>
+        /// Returns the file name of the generated file if successful, null if failed
+        /// </summary>
+        public DemuxResult DemuxMenuVID(string outputFolder, string outputFile, int vobID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null) {
+            IfoOptions options = new IfoOptions();
+            options.Angle = 1;
+            options.DomainType = DemuxingDomain.Menus;
+            options.ExportVOB = true;
+            options.Mode = DemuxingMode.VID;
+            options.VID = vobID;
+            options.CID = -1;
+            options.CombinedVobName = outputFile;
+            options.CustomVOB = new();
+            options.CustomVOB.PatchLbaNumber = true;
+            options.CustomVOB.OnlyFirstIFrame = false;
+            options.CustomVOB.SplitVOB = false;
+            options.CustomVOB.WriteAudioPacks = true;
+            options.CustomVOB.WriteSubPacks = true;
+            options.CustomVOB.WriteNavPacks = true;
+            options.CustomVOB.WriteVideoPacks = true;
+
+            PgcDemux demux = new PgcDemux(this, options, outputFolder);
+            bool result = demux.Demux(outputFolder, progress, maxProgress);
+            demux.Close();
+            return result ? new DemuxResult(options.CombinedVobName, demux.StreamOrder) : new DemuxResult();
+        }
+
+        /// <summary>
+        /// Returns the file name of the generated file if successful, null if failed
+        /// </summary>
+        public DemuxResult DemuxTitleVID(string outputFolder, string outputFile, int vobID, IProgress<SimpleProgress>? progress = null, SimpleProgress? maxProgress = null) {
+            IfoOptions options = new IfoOptions();
+            options.Angle = 1;
+            options.DomainType = DemuxingDomain.Titles;
+            options.ExportVOB = true;
+            options.Mode = DemuxingMode.VID;
+            options.VID = vobID;
+            options.CID = -1;
+            options.CombinedVobName = outputFile;
+            options.CustomVOB = new();
+            options.CustomVOB.PatchLbaNumber = true;
+            options.CustomVOB.OnlyFirstIFrame = false;
+            options.CustomVOB.SplitVOB = false;
+            options.CustomVOB.WriteAudioPacks = true;
+            options.CustomVOB.WriteSubPacks = true;
+            options.CustomVOB.WriteNavPacks = true;
+            options.CustomVOB.WriteVideoPacks = true;
+
+            PgcDemux demux = new PgcDemux(this, options, outputFolder);
+            bool result = demux.Demux(outputFolder, progress, maxProgress);
+            demux.Close();
+            return result ? new DemuxResult(options.CombinedVobName, demux.StreamOrder) : new DemuxResult();
+        }
     }
 
     public struct DemuxResult {

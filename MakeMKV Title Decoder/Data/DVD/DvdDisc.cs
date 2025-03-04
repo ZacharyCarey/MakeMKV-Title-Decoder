@@ -55,7 +55,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
                 bool success;
                 try
                 {
-                    success = dvd.DemuxSourceFiles(progress);
+                    success = dvd.DemuxVIDFiles(progress); //dvd.DemuxSourceFiles(progress);
                 } catch (Exception e)
                 {
                     success = false;
@@ -98,7 +98,7 @@ namespace MakeMKV_Title_Decoder.Data.DVD
                         pgcs = (dvd.TitleSets[cellID.VTS - 1].MenuProgramChainTable?.All?.SelectMany(x => x.All) ?? new List<PGC>().AsEnumerable()).Concat(dvd.TitleSets[cellID.VTS - 1].TitleProgramChainTable?.All ?? new List<PGC>().AsEnumerable());
                     }
                     IEnumerable<CellInfo> cells = pgcs.SelectMany(x => x.CellInfo);
-                    duration = cells.Where(cell => cell.VobID == cellID.VID && cell.CellID == cellID.CID).First().Duration;
+                    duration = cells.Where(cell => cell.VobID == cellID.VID).Select(x => x.Duration).Aggregate((x, y) => x + y);
                 }catch(Exception)
                 {
                     Log.Warn("Failed to read DVD cell duration.");
@@ -181,7 +181,12 @@ namespace MakeMKV_Title_Decoder.Data.DVD
                         Console.ResetColor();
                     } else
                     {
-                        playlists[angle - 1].SourceFiles.Add(GetSourceFile(demuxDir, vts, cellInfo.VobID, cellInfo.CellID, isMenu));
+                        string file = GetSourceFile(demuxDir, vts, cellInfo.VobID, isMenu);
+                        DiscPlaylist playlist = playlists[angle - 1];
+                        if (!playlist.SourceFiles.Contains(file))
+                        {
+                            playlist.SourceFiles.Add(file);
+                        }
                     }
 
                     if (cellInfo.IsLastAngle)
@@ -196,17 +201,17 @@ namespace MakeMKV_Title_Decoder.Data.DVD
             } else
             {
                 DiscPlaylist playlist = new(baseName);
-                foreach (var cellInfo in pgc.CellInfo)
+                foreach (var cellInfo in pgc.CellInfo.DistinctBy(x => x.VobID))
                 {
-                    playlist.SourceFiles.Add(GetSourceFile(demuxDir, vts, cellInfo.VobID, cellInfo.CellID, isMenu));
+                    playlist.SourceFiles.Add(GetSourceFile(demuxDir, vts, cellInfo.VobID, isMenu));
                 }
                 yield return playlist;
             }
         }
 
-        private static string GetSourceFile(string demuxDir, int vts, int vid, int cid, bool isMenu)
+        private static string GetSourceFile(string demuxDir, int vts, int vid, bool isMenu)
         {
-            string fileName = $"VTS-{vts:00}{(isMenu ? "_Menu" : "")}_VID-{vid:X4}_CID-{cid:X2}.mp4";
+            string fileName = $"VTS-{vts:00}{(isMenu ? "_Menu" : "")}_VID-{vid:X4}.mp4";
             return Path.Combine(demuxDir, fileName);
         }
 

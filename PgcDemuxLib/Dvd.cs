@@ -138,15 +138,218 @@ namespace PgcDemuxLib
             if (!int.TryParse(name.Substring(index, 4), NumberStyles.HexNumber, null, out result.VID)) return false;
             index += 4;
 
-            if (name.Substring(index, "_CID-".Length) != "_CID-") return false;
-            index += "_CID-".Length;
-
-            if (!int.TryParse(name.Substring(index, 2), NumberStyles.HexNumber, null, out result.CID)) return false;
-            index += 2;
-
             if (name[index] != '.') return false;
 
             return true;
+        }
+
+        public bool DemuxVIDFiles(IProgress<SimpleProgress>? progress) {
+            List<CellID> cells = new();
+
+            if (this.VMG.MenuCellAddressTable != null)
+            {
+                foreach (ADT adt in this.VMG.MenuCellAddressTable.All.Distinct(new VIDEqualityComparer()))
+                {
+                    cells.Add(new() {
+                        VTS = 0,
+                        IsMenu = true,
+                        VID = adt.VobID,
+                        CID = -1
+                    });
+                }
+            }
+            foreach (var vts in this.TitleSets)
+            {
+                if (vts.MenuCellAddressTable != null)
+                {
+                    foreach (ADT adt in vts.MenuCellAddressTable.All.Distinct(new VIDEqualityComparer()))
+                    {
+                        cells.Add(new() {
+                            VTS = vts.TitleSet,
+                            IsMenu = true,
+                            VID = adt.VobID,
+                            CID = -1
+                        });
+                    }
+                }
+                if (vts.TitleSetCellAddressTable != null)
+                {
+                    foreach (ADT adt in vts.TitleSetCellAddressTable.All.Distinct(new VIDEqualityComparer()))
+                    {
+                        cells.Add(new() {
+                            VTS = vts.TitleSet,
+                            IsMenu = false,
+                            VID = adt.VobID,
+                            CID = -1
+                        });
+                    }
+                }
+            }
+
+            // Prepare folders
+            string demuxFolder = Path.Combine(this.Folder, "demux");
+            try
+            {
+                var result = Directory.CreateDirectory(demuxFolder);
+                if (!result.Exists) throw new Exception();
+            } catch (Exception)
+            {
+                Log.Error("Failed to create demux folder!");
+                return false;
+            }
+
+            string? logsFolder = Path.Combine(demuxFolder, "logs");
+            try
+            {
+                var result = Directory.CreateDirectory(logsFolder);
+                if (!result.Exists) throw new Exception();
+            } catch (Exception)
+            {
+                Log.Warn("Failed to create ffmpeg logs folder!");
+                logsFolder = null;
+            }
+
+            string? ffprobeEXE = FileUtils.GetFFProbeExe();
+            string? ffmpegEXE = FileUtils.GetFFMpegExe();
+            if (ffprobeEXE == null || ffmpegEXE == null)
+            {
+                Log.Error("FATAL ERROR: Failed to find local .exe files.");
+                return false;
+            }
+
+            FFProbe ffprobe = new FFProbe(ffprobeEXE);
+            FFMpeg ffmpeg = new FFMpeg(ffmpegEXE);
+
+            SimpleProgress currentProgress = new(0, (uint)cells.Count * 2);
+            bool success = true;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                CellID cell = cells[i];
+                currentProgress.Total = (uint)i * 2;
+                progress?.Report(currentProgress);
+
+                string? file = DemuxVIDSourceFile(ffmpeg, ffprobe, demuxFolder, cell, logsFolder, currentProgress, progress);
+                if (file == null)
+                {
+                    Log.Error($"Failed to demux source file: VTS={cell.VTS} IsMenu={cell.IsMenu} VID={cell.VID}");
+                    success = false;
+                }
+            }
+
+            return success;
+        }
+
+        private string? DemuxVIDSourceFile(FFMpeg ffmpeg, FFProbe ffprobe, string outputFolder, CellID cell, string? logsFolder, SimpleProgress maxProgress, IProgress<SimpleProgress>? progress = null) {
+            IfoBase ifo;
+            if (cell.VTS == 0)
+            {
+                ifo = this.VMG;
+            } else
+            {
+                if (cell.VTS < 0 || (cell.VTS - 1) >= this.TitleSets.Count)
+                {
+                    Log.Error($"Invalid VTS number: {cell.VTS}");
+                    return null; // failure
+                }
+                ifo = this.TitleSets[cell.VTS - 1];
+            }
+
+            // Extract the .VOB from the DVD
+            DemuxResult demuxResult;
+            string vobFileName = $"VTS-{cell.VTS:00}{(cell.IsMenu ? "_Menu" : "")}_VID-{cell.VID:X4}.VOB";
+            if (cell.IsMenu)
+            {
+                demuxResult = ifo.DemuxMenuVID(outputFolder, vobFileName, cell.VID, progress, maxProgress);
+            } else
+            {
+                demuxResult = ifo.DemuxTitleVID(outputFolder, vobFileName, cell.VID, progress, maxProgress);
+            }
+
+            if (demuxResult.Successful == false)
+            {
+                Log.Error($"Failed to demux source VOB file: \"{vobFileName}\"");
+                return null;
+            }
+            maxProgress.Total++;
+            progress?.Report(maxProgress);
+
+            try
+            {
+                // Get ffprobe of source file for later remuxing
+                MediaAnalysis? info = ffprobe.Analyse(Path.Combine(outputFolder, vobFileName));
+                if (info == null) throw new Exception($"Failed to analyze file: \"{vobFileName}\"");
+
+                // Get the correct stream order from the DVD
+                ReadOnlyArray<VTS_AudioAttributes> audioAttribs;
+                if (cell.VTS == 0)
+                {
+                    audioAttribs = this.VMG.MenuAudioAttributes;
+                } else
+                {
+                    VtsIfo vts = this.TitleSets[cell.VTS - 1];
+                    audioAttribs = (cell.IsMenu ? vts.MenuAudioAttributes : vts.TitleSetAudioAttributes);
+                }
+
+                // Remux into an mp4 with the streams in the correct order
+                string remuxFilePath = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(vobFileName)}.mp4");
+                OutputFile remuxFile = new OutputFile(remuxFilePath);
+                remuxFile.Title = Path.GetFileNameWithoutExtension(vobFileName);
+                var args = ffmpeg.Transcode(remuxFile);
+                args.AddInput(new FileInput(info));
+                args.AddStreams(info.VideoStreams.Select(x => new StreamOptions(0, x.Index)));
+
+                // Audio streams must be added in a particular order
+                foreach ((int audioStreamID, int index) in demuxResult.AudioStreamIDs.Order().WithIndex())
+                {
+                    var audioAttrib = audioAttribs[index];
+                    Language? lang = null;
+                    if (audioAttrib.LanguageCode != null)
+                    {
+                        lang = Language.FromPart1(audioAttrib.LanguageCode);
+                    }
+
+                    int trackIndex = info.AudioStreams[demuxResult.AudioStreamIDs.IndexOf(audioStreamID)].Index;
+                    args.AddStream(
+                        new StreamOptions(0, trackIndex)
+                            .SetLanguage(lang));
+                }
+
+                // Add any remaining streams we want to copy
+                args.AddStreams(info.SubtitleStreams.Select(x => new StreamOptions(0, x.Index)));
+
+                // Run ffmpeg command
+                var cmd = args
+                    .NotifyOnProgress((double percent) =>
+                    {
+                        maxProgress.Current = (uint)percent;
+                        maxProgress.CurrentMax = 100;
+                        progress?.Report(maxProgress);
+                    })
+                    .SetOverwrite(false); // In case something went wrong, throw an error if the output already exists
+
+                if (logsFolder != null)
+                {
+                    cmd.SetLogPath(Path.Combine(logsFolder, $"FFMpeg_log_{Path.GetFileNameWithoutExtension(vobFileName)}.txt"));
+                }
+
+                string? error = cmd.Run();
+
+                maxProgress.Total++;
+                progress?.Report(maxProgress);
+
+                if (error != null) throw new Exception(error);
+
+                try
+                {
+                    File.Delete(Path.Combine(outputFolder, vobFileName));
+                } catch (Exception) { }
+
+                return remuxFilePath;
+            } catch (Exception e)
+            {
+                Log.Error(e.Message);
+                return null;
+            }
         }
 
         public bool DemuxSourceFiles(IProgress<SimpleProgress>? progress) {
@@ -389,6 +592,23 @@ namespace PgcDemuxLib
 
             public int GetHashCode([DisallowNull] ADT obj) {
                 return HashCode.Combine(obj.VobID, obj.CellID);
+            }
+        }
+
+        private class VIDEqualityComparer : IEqualityComparer<ADT> {
+            public bool Equals(ADT? x, ADT? y) {
+                if (x != null && y != null)
+                {
+                    return (x.VobID == y.VobID);
+                } else
+                {
+                    if ((x == null) && (y == null)) return true;
+                    else return false;
+                }
+            }
+
+            public int GetHashCode([DisallowNull] ADT obj) {
+                return HashCode.Combine(obj.VobID);
             }
         }
     }
