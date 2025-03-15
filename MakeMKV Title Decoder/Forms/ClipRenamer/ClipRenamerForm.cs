@@ -376,7 +376,6 @@ namespace MakeMKV_Title_Decoder
             if (ffprobePath == null || ffmpegPath == null)
             {
                 MessageBox.Show("Failed to find ffprobe/ffmpeg.");
-                this.Close();
                 return;
             }
 
@@ -391,7 +390,6 @@ namespace MakeMKV_Title_Decoder
                 if (fileSize == null)
                 {
                     MessageBox.Show("Failed to find file.");
-                    this.Close();
                     return;
                 }
                 if (fileSize >= new DataSize(10, Unit.Mega))
@@ -399,13 +397,12 @@ namespace MakeMKV_Title_Decoder
                     var user = MessageBox.Show($"The file size is {fileSize}, this may take a while to process. Continue?", "Continue?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                     if (user != DialogResult.Yes)
                     {
-                        this.Close();
                         return;
                     }
                 }
             }
 
-            foreach((var item, var stream) in this.AllSelectedClips)
+            foreach ((var item, var stream) in this.AllSelectedClips)
             {
                 uint nFrames = 0;
                 uint? frames = ffprobe.GetNumberOfFrames(stream.GetFullPath(Disc), true);
@@ -448,6 +445,75 @@ namespace MakeMKV_Title_Decoder
 
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e) {
 
+        }
+
+        private void allFramesOfSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
+            DataSize totalSize = new DataSize();
+            foreach ((var item, var stream) in this.AllSelectedClips)
+            {
+                string filePath = stream.GetFullPath(this.Disc);
+                DataSize? fileSize = DataSize.FromFile(filePath);
+                if (fileSize == null)
+                {
+                    MessageBox.Show("Failed to find file.");
+                    return;
+                }
+                totalSize += fileSize.Value;
+            }
+
+            if (totalSize >= new DataSize(10, Unit.Mega))
+            {
+                var user = MessageBox.Show($"The file size is {totalSize}, this may take a while to process. Continue?", "Continue?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                if (user != DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
+            string? ffprobePath = FileUtils.GetFFProbeExe();
+            string? ffmpegPath = FileUtils.GetFFMpegExe();
+            if (ffprobePath == null || ffmpegPath == null)
+            {
+                MessageBox.Show("Failed to find ffprobe/ffmpeg.");
+                return;
+            }
+
+            FFProbe ffprobe = new FFProbe(ffprobePath);
+            //FFMpeg ffmpeg = new FFMpeg(ffmpegPath);
+
+            bool success = true;
+            foreach ((var item, var stream) in this.AllSelectedClips)
+            {
+                uint nFrames = 0;
+                uint? frames = ffprobe.GetNumberOfFrames(stream.GetFullPath(Disc), true);
+                if (frames == null || frames < 0)
+                {
+                    nFrames = 0;
+                } else
+                {
+                    nFrames = frames.Value;
+                }
+                Console.WriteLine($"Detected {nFrames} frames in {stream.Identity.SourceFile}");
+                if (nFrames > 0)
+                {
+                    for (uint frame = 0; frame < nFrames; frame++)
+                    {
+                        Attachment? attachment = SingleFrameExtracted.Extract(this.Disc, stream, (uint)frame);
+                        if (attachment == null)
+                        {
+                            success = false;
+                        } else
+                        {
+                            this.Disc.RenameData.Attachments.Add(attachment);
+                        }
+                    }
+                }
+            }
+
+            if (!success)
+            {
+                MessageBox.Show("At least one attachment already exists or failed to extract image.");
+            }
         }
     }
 }

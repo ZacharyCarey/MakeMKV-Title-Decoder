@@ -83,6 +83,7 @@ namespace MakeMKV_Title_Decoder
             toolStripMenuItem1 = new ToolStripMenuItem();
             toolStripMenuItem2 = new ToolStripMenuItem();
             AllSelectedStripMenuItem = new ToolStripMenuItem();
+            allFramesOfSelectedToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -662,7 +663,7 @@ namespace MakeMKV_Title_Decoder
             // 
             // toolStripMenuItem2
             // 
-            toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { AllSelectedStripMenuItem });
+            toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { AllSelectedStripMenuItem, allFramesOfSelectedToolStripMenuItem });
             toolStripMenuItem2.Name = "toolStripMenuItem2";
             toolStripMenuItem2.Size = new Size(180, 22);
             toolStripMenuItem2.Text = "Export";
@@ -670,9 +671,16 @@ namespace MakeMKV_Title_Decoder
             // AllSelectedStripMenuItem
             // 
             AllSelectedStripMenuItem.Name = "AllSelectedStripMenuItem";
-            AllSelectedStripMenuItem.Size = new Size(187, 22);
-            AllSelectedStripMenuItem.Text = "AllSelectedMenuItem";
+            AllSelectedStripMenuItem.Size = new Size(193, 22);
+            AllSelectedStripMenuItem.Text = "First Frame of Selected";
             AllSelectedStripMenuItem.Click += exportAllSelectedToolStripMenuItem_Click;
+            // 
+            // allFramesOfSelectedToolStripMenuItem
+            // 
+            allFramesOfSelectedToolStripMenuItem.Name = "allFramesOfSelectedToolStripMenuItem";
+            allFramesOfSelectedToolStripMenuItem.Size = new Size(193, 22);
+            allFramesOfSelectedToolStripMenuItem.Text = "All Frames of Selected";
+            allFramesOfSelectedToolStripMenuItem.Click += allFramesOfSelectedToolStripMenuItem_Click;
             // 
             // ClipRenamerForm
             // 
@@ -769,5 +777,6 @@ namespace MakeMKV_Title_Decoder
         private ToolStripMenuItem toolStripMenuItem1;
         private ToolStripMenuItem toolStripMenuItem2;
         private ToolStripMenuItem AllSelectedStripMenuItem;
+        private ToolStripMenuItem allFramesOfSelectedToolStripMenuItem;
     }
 }

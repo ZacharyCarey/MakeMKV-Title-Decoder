@@ -108,11 +108,17 @@ namespace libbluray.bdnav.Clpi {
                 return null;
             }
 
-            ClpiFile? result = Parse(file);
-
-            file.close();
-
-            return result;
+            try
+            {
+                ClpiFile? result = Parse(file);
+                return result;
+            } catch (Exception e)
+            {
+                return null;
+            } finally
+            {
+                file.close();
+            }
         }
 
         public static ClpiFile? Get(BD_DISC disc, string filename) {

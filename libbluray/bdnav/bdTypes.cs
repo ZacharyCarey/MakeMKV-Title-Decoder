@@ -12,6 +12,7 @@ namespace libbluray.bdnav {
         AUDIO_MPEG1          = 0x03,
         AUDIO_MPEG2          = 0x04,
         VIDEO_H264           = 0x1b,
+        UnknownType1         = 0x20,
         VIDEO_HEVC           = 0x24,
         AUDIO_LPCM           = 0x80, // primary
         AUDIO_AC3            = 0x81, // primary // TODO DolbyDigital audio?? https://github.com/lw/BluRay/wiki/StreamAttributes
@@ -23,6 +24,7 @@ namespace libbluray.bdnav {
         SUB_PresentationGraphics               = 0x90,
         SUB_InteractiveGraphics               = 0x91,
         SUB_TEXT             = 0x92,
+        UnknownType2         = 0xA0,
         AUDIO_Secondary_DolbyDigital = 0xA1, // secondary
         AUDIO_Secondary_DTS  = 0xA2, // secondary
         VIDEO_VC1            = 0xea,

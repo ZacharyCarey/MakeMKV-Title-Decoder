@@ -43,7 +43,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
 
         protected static string? GenerateAttachmentsFolder(LoadedDisc disc)
         {
-            string relativePath = "attachments";
+            string relativePath = AttachmentsFolder;
             string attachmentsFolder = Path.Combine(disc.Root, relativePath);
             if (!Directory.Exists(attachmentsFolder))
             {
@@ -80,7 +80,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
         public override AttachmentType AttachmentType => AttachmentType.Image;
 
         [JsonIgnore]
-        public override string FilePath => Path.Combine(AttachmentsFolder, $"{Path.GetFileNameWithoutExtension(SourceFile)}.png");
+        public override string FilePath => Path.Combine(AttachmentsFolder, $"{Path.GetFileNameWithoutExtension(SourceFile)}_{FrameIndex:0000}.png");
 
         [JsonInclude]
         public readonly string SourceFile;
@@ -104,7 +104,7 @@ namespace MakeMKV_Title_Decoder.Data.Renames
             if (stream == null) return false;
 
             string inputFile = stream.GetFullPath(disc);
-            string outputFile = Path.Combine(disc.Root, attachmentsFolder, $"{Path.GetFileNameWithoutExtension(SourceFile)}.png");
+            string outputFile = Path.Combine(disc.Root, this.FilePath);
 
             if (File.Exists(outputFile))
             {
